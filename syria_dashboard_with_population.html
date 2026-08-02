@@ -232,12 +232,17 @@
   .ranking-mode-btn.active{background:#0B5A7A;color:#fff;border-color:#0B5A7A;}
   .ranking-desc{font-size:12px;color:var(--ink-soft);margin-top:8px;padding:8px 12px;background:var(--paper);border-radius:6px;border-inline-start:3px solid #0B5A7A;line-height:1.7;}
 
+
+  .monthly-report-card{background:var(--sand);border-radius:12px;padding:16px 18px;margin-bottom:14px;border-inline-start:4px solid #0B5A7A;}
+  .monthly-report-card h4{margin:0 0 10px;font-family:'Tajawal';font-size:15px;color:var(--ink);}
+  .monthly-report-card .report-text{white-space:pre-wrap;line-height:2;color:var(--ink-soft);font-size:13.5px;}
 </style>
 <base target="_blank">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+<base target="_blank">
 </head>
 <body class="locked">
 
@@ -589,6 +594,19 @@
       <div class="gov-list" id="govList"></div>
     </div>
   </section>
+
+
+  <section class="category" data-cat="monthly_report">
+    <div class="cat-head" onclick="toggleCat(this)">
+      <div class="icon">📄</div>
+      <div><h2>ملف التقرير الشهري</h2><p>التقارير الشهرية لكل محافظة حسب البيانات المرفوعة</p></div>
+      <div class="chev">⌄</div>
+    </div>
+    <div class="cat-body">
+      <p class="cat-note" id="note-monthly_report">💡 ارفع ملف CSV يحتوي على عمود "التقرير الشهرية" لعرض التقارير هنا.</p>
+      <div class="gov-list" id="monthlyReportList"></div>
+    </div>
+  </section>
 </main>
 
 <footer>
@@ -762,6 +780,7 @@ const COLUMN_MAP = {
   "ذكور": "males",
   "إناث": "females",
 
+  "التقرير الشهرية": "monthly_report",
   // === Qualitative ===
   "اهم ثلاث انجازات": "achievements",
   "اهم ثلال توصيات": "recommendations",
@@ -823,25 +842,83 @@ function detectDelimiter(csvText){
 }
 
 function parseCSVWithDelimiter(csvText, delimiter){
-  const lines = csvText.trim().split('\n');
-  if(lines.length < 2) return [];
+  // Proper CSV parser that supports multi-line quoted fields
+  const rows = [];
+  let currentRow = [];
+  let currentField = '';
+  let inQuotes = false;
+  let i = 0;
 
-  function parseLine(line){
-    const result = []; let current = ''; let inQuotes = false;
-    for(let i = 0; i < line.length; i++){
-      const char = line[i];
-      if(char === '"'){
-        if(inQuotes && line[i+1] === '"'){ current += '"'; i++; }
-        else { inQuotes = !inQuotes; }
-      }
-      else if(char === delimiter && !inQuotes){ result.push(current); current = ''; }
-      else { current += char; }
+  function pushField(){
+    let val = currentField.trim();
+    // Remove surrounding quotes
+    if(val.startsWith('"') && val.endsWith('"')){
+      val = val.slice(1, -1);
     }
-    result.push(current);
-    return result;
+    // Unescape double quotes
+    val = val.replace(/""/g, '"');
+    currentRow.push(val);
+    currentField = '';
   }
 
-  const rawHeaders = parseLine(lines[0]);
+  function pushRow(){
+    if(currentRow.length > 0){
+      rows.push(currentRow);
+      currentRow = [];
+    }
+  }
+
+  while(i < csvText.length){
+    const char = csvText[i];
+    const nextChar = csvText[i+1];
+
+    if(char === '"'){
+      if(inQuotes && nextChar === '"'){
+        currentField += '"';
+        i += 2;
+        continue;
+      }
+      inQuotes = !inQuotes;
+      i++;
+      continue;
+    }
+
+    if(char === '\r'){
+      i++;
+      continue; // Skip carriage return
+    }
+
+    if(char === '\n'){
+      if(inQuotes){
+        currentField += '\n';
+        i++;
+        continue;
+      }
+      pushField();
+      pushRow();
+      i++;
+      continue;
+    }
+
+    if(char === delimiter && !inQuotes){
+      pushField();
+      i++;
+      continue;
+    }
+
+    currentField += char;
+    i++;
+  }
+
+  // Handle last field/row
+  if(currentField !== '' || currentRow.length > 0){
+    pushField();
+    pushRow();
+  }
+
+  if(rows.length < 2) return [];
+
+  const rawHeaders = rows[0];
   const headers = rawHeaders.map(h => {
     const key = h.trim();
     return COLUMN_MAP[key] || key;
@@ -850,18 +927,20 @@ function parseCSVWithDelimiter(csvText, delimiter){
   console.log('Parsed headers:', headers);
 
   const result = [];
-  for(let i = 1; i < lines.length; i++){
-    const values = parseLine(lines[i]);
-    if(values.length < 2) continue; // Skip empty lines
+  for(let r = 1; r < rows.length; r++){
+    const values = rows[r];
+    if(values.length < 2) continue;
 
     const obj = {};
     headers.forEach((h, idx) => {
-      let val = values[idx] ? values[idx].trim() : '';
+      let val = values[idx] !== undefined ? values[idx].trim() : '';
       if(val && val !== ''){
         // Strip % sign and commas for percentage/numeric fields
         const cleanVal = val.replace(/%/g, '').replace(/,/g, '').trim();
         const num = parseFloat(cleanVal);
-        if(!isNaN(num) && cleanVal !== '') obj[h] = num;
+        if(!isNaN(num) && cleanVal !== '' && /^-?\d+\.?\d*$/.test(cleanVal)){
+          obj[h] = num;
+        }
         else obj[h] = val;
       }
       else if(val === '' || val === 'null' || val === 'NULL'){
@@ -1590,7 +1669,32 @@ function renderGovList(){
   });
 
   const govList = Object.values(grouped);
-  document.getElementById('govList').innerHTML = govList.map(d => `
+  document.getElementById('govList').innerHTML = govList.map(d => {
+    // Process monthly report
+    let reportHtml = '';
+    const rawReport = d.monthly_report || '';
+    const urls = extractUrls(rawReport);
+    const hasUrls = urls.length > 0;
+
+    if(hasUrls){
+      // Extract text without URLs
+      let textOnly = rawReport;
+      urls.forEach(url => {
+        textOnly = textOnly.replace(url, '');
+      });
+      textOnly = textOnly.replace(/\n{2,}/g, '\n').replace(/\s{2,}/g, ' ').trim();
+
+      if(textOnly.length > 10){
+        reportHtml += `<div style="margin-bottom:10px;font-size:12.5px;line-height:1.8;color:var(--ink-soft);">${textOnly.replace(/\n/g, '<br>')}</div>`;
+      }
+      reportHtml += renderUrlLinks(rawReport);
+    } else if(rawReport.trim()){
+      reportHtml = rawReport.replace(/\n{3,}/g, '\n\n').trim().replace(/\n/g, '<br>');
+    } else {
+      reportHtml = '<span class="empty-note">لم يُرفَق تقرير شهري</span>';
+    }
+
+    return `
     <div class="gov-item">
       <div class="gh" onclick="this.parentElement.classList.toggle('open')">
         <div class="stamp">${d.gov ? d.gov[0] : '?'}</div>
@@ -1601,18 +1705,230 @@ function renderGovList(){
         <div class="row"><b>🏆 أهم الإنجازات</b><span>${d.achievements ? d.achievements : '<span class="empty-note">لم تُدرَج بيانات</span>'}</span></div>
         <div class="row"><b>📌 أهم التوصيات</b><span>${d.recommendations ? d.recommendations : '<span class="empty-note">لم تُدرَج بيانات</span>'}</span></div>
         <div class="row"><b>🧰 الاحتياجات الرئيسية</b><span>${d.needs ? d.needs : '<span class="empty-note">لم تُدرَج بيانات</span>'}</span></div>
+        <div class="row" style="background:#e8f5e9;border-radius:6px;padding:10px 12px;margin-top:10px;border-inline-start:3px solid #0B5A7A;">
+          <b>📄 التقرير الشهري ${hasUrls ? '<span style="color:#0D8BA8;font-size:11px;">(يحتوي على روابط)</span>' : ''}</b>
+          <span style="white-space:pre-wrap;line-height:1.8;">${reportHtml}</span>
+        </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // =====================
 // RENDER ALL
 // =====================
+// =====================
+// MONTHLY REPORTS
+// =====================
+function extractUrls(text){
+  if(!text || typeof text !== 'string') return [];
+  // Enhanced regex that captures URLs including Google Drive, Dropbox, OneDrive, SharePoint
+  // Supports http, https, ftp, and various domain patterns
+  const urlRegex = /(https?:\/\/|ftp:\/\/|www\.)([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+(\/[a-zA-Z0-9\-._~:\/?#\[\]@!$&'()*+,;=]*)?/gi;
+  const matches = text.match(urlRegex) || [];
+  return matches.map(url => {
+    url = url.trim();
+    // Remove trailing punctuation that's likely not part of the URL
+    url = url.replace(/[.,;:!?\)\]]+$/, '');
+    // Ensure http prefix for www links
+    if(url.startsWith('www.')) url = 'https://' + url;
+    return url;
+  }).filter(url => url.length > 10);
+}
+
+function getFileIcon(url){
+  const lower = (url || '').toLowerCase();
+  if(lower.includes('.pdf') || lower.includes('/pdf') || lower.includes('pdf?')) return '📕';
+  if(lower.includes('.doc') || lower.includes('.docx') || lower.includes('/document') || lower.includes('document?')) return '📝';
+  if(lower.includes('.xls') || lower.includes('.xlsx') || lower.includes('spreadsheet')) return '📊';
+  if(lower.includes('.ppt') || lower.includes('.pptx')) return '📽️';
+  if(lower.includes('.zip') || lower.includes('.rar') || lower.includes('.7z')) return '📦';
+  if(lower.includes('.jpg') || lower.includes('.jpeg') || lower.includes('.png') || lower.includes('.gif')) return '🖼️';
+  if(lower.includes('.mp4') || lower.includes('.avi') || lower.includes('.mov')) return '🎬';
+  if(lower.includes('drive.google.com') || lower.includes('docs.google.com')) return '☁️';
+  if(lower.includes('dropbox.com')) return '📦';
+  if(lower.includes('onedrive') || lower.includes('live.com') || lower.includes('sharepoint')) return '☁️';
+  if(lower.includes('youtube.com') || lower.includes('youtu.be')) return '▶️';
+  return '🔗';
+}
+
+function getFileName(url){
+  try {
+    if(!url) return 'ملف التقرير';
+    // For Google Drive links, try to extract a friendly name
+    if(url.includes('drive.google.com')){
+      // Check if there's a filename in the URL or query params
+      const match = url.match(/[?&]title=([^&]+)/i);
+      if(match) return decodeURIComponent(match[1]);
+      const idMatch = url.match(/[-\w]{25,}/);
+      return idMatch ? 'ملف Google Drive' : 'رابط Google Drive';
+    }
+    if(url.includes('dropbox.com')){
+      const match = url.match(/\/([^\/?]+)\?/);
+      if(match) return decodeURIComponent(match[1]);
+      return 'ملف Dropbox';
+    }
+    const urlObj = new URL(url);
+    const path = urlObj.pathname;
+    const name = path.split('/').pop().split('?')[0];
+    if(name && name.length > 0 && name.includes('.')){
+      return decodeURIComponent(name);
+    }
+    // Try query params
+    const docMatch = urlObj.searchParams?.get('doc') || urlObj.searchParams?.get('file') || urlObj.searchParams?.get('name');
+    if(docMatch) return docMatch;
+    return 'ملف التقرير';
+  } catch(e) {
+    // If URL parsing fails, try regex extraction
+    const match = url.match(/\/([^\/\?]+)(\?|$)/);
+    if(match) return decodeURIComponent(match[1]);
+    return 'ملف التقرير';
+  }
+}
+
+function renderUrlLinks(text){
+  if(!text || typeof text !== 'string') return null;
+  const urls = extractUrls(text);
+  if(urls.length === 0) return null;
+
+  let html = '<div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">';
+  urls.forEach(url => {
+    const icon = getFileIcon(url);
+    const fileName = getFileName(url);
+    const isDrive = url.toLowerCase().includes('drive.google.com') || url.toLowerCase().includes('docs.google.com');
+    const isDropbox = url.toLowerCase().includes('dropbox.com');
+    let btnText = '🔗 فتح الرابط';
+    if(isDrive) btnText = '📁 فتح من Google Drive';
+    else if(isDropbox) btnText = '📦 فتح من Dropbox';
+    else if(url.toLowerCase().includes('.pdf')) btnText = '📕 فتح PDF';
+    else if(url.toLowerCase().includes('.doc')) btnText = '📝 فتح المستند';
+
+    html += `
+      <a href="${url}" target="_blank" rel="noopener noreferrer" 
+         style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#ffffff,#f0f7fa);border:2px solid #0B5A7A;border-radius:12px;padding:14px 16px;text-decoration:none;color:var(--ink);transition:.2s;box-shadow:0 2px 8px rgba(11,90,122,0.08);"
+         onmouseover="this.style.borderColor='#0D8BA8';this.style.background='linear-gradient(135deg,#E0F0F5,#ffffff)';this.style.transform='translateX(-4px)';this.style.boxShadow='0 4px 16px rgba(11,90,122,0.15)';"
+         onmouseout="this.style.borderColor='#0B5A7A';this.style.background='linear-gradient(135deg,#ffffff,#f0f7fa)';this.style.transform='translateX(0)';this.style.boxShadow='0 2px 8px rgba(11,90,122,0.08)';">
+        <span style="font-size:28px;flex-shrink:0;">${icon}</span>
+        <div style="flex:1;min-width:0;text-align:right;">
+          <div style="font-size:13px;font-weight:700;color:#0B5A7A;font-family:'Tajawal';margin-bottom:4px;word-break:break-word;">${fileName}</div>
+          <div style="font-size:10.5px;color:var(--ink-soft);word-break:break-all;direction:ltr;font-family:'IBM Plex Mono';opacity:0.7;">${url.substring(0,60)}${url.length>60?'...':''}</div>
+        </div>
+        <span style="flex-shrink:0;background:linear-gradient(135deg,#0B5A7A,#0D8BA8);color:white;padding:8px 16px;border-radius:100px;font-weight:700;font-size:12px;font-family:'Cairo';white-space:nowrap;box-shadow:0 2px 8px rgba(11,90,122,0.25);">${btnText}</span>
+      </a>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+function renderMonthlyReports(){
+  const arr = filtered();
+  const grouped = {};
+
+  arr.forEach(d => {
+    if(!grouped[d.gov]){
+      grouped[d.gov] = {...d};
+    } else {
+      Object.keys(d).forEach(key => {
+        if(typeof d[key] === 'number'){
+          grouped[d.gov][key] = (grouped[d.gov][key] || 0) + d[key];
+        }
+        else if(typeof d[key] === 'string' && d[key] && key !== 'gov' && key !== 'month'){
+          if(!grouped[d.gov][key]) grouped[d.gov][key] = d[key];
+          else grouped[d.gov][key] += " | " + d[key];
+        }
+      });
+    }
+  });
+
+  const govList = Object.values(grouped);
+  const reportList = document.getElementById('monthlyReportList');
+
+  if(!reportList) return;
+
+  if(govList.length === 0 || !govList.some(d => d.monthly_report)){
+    document.getElementById('note-monthly_report').textContent = '💡 ارفع ملف CSV يحتوي على عمود "التقرير الشهرية" لعرض التقارير هنا.';
+    reportList.innerHTML = '';
+    return;
+  }
+
+  const reportsWithData = govList.filter(d => d.monthly_report && d.monthly_report.trim().length > 0);
+  document.getElementById('note-monthly_report').textContent = `📄 تم العثور على ${reportsWithData.length} تقرير شهري من ${govList.length} محافظة.`;
+
+  reportList.innerHTML = govList.map(d => {
+    let rawReport = d.monthly_report || '';
+    let cleanedReport = rawReport
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      .replace(/\n{4,}/g, '\n\n\n')
+      .trim();
+
+    const hasReport = cleanedReport.length > 0;
+    const urls = extractUrls(cleanedReport);
+    const hasUrls = urls.length > 0;
+
+    // Separate text from URLs for mixed content
+    let textOnly = cleanedReport;
+    urls.forEach(url => {
+      textOnly = textOnly.replace(url, '');
+    });
+    textOnly = textOnly.replace(/\n{2,}/g, '\n').replace(/\s{2,}/g, ' ').trim();
+
+    // Build display HTML
+    let reportHtml = '';
+
+    if(hasUrls){
+      // Show text first if exists, then URL cards
+      if(textOnly.length > 10){
+        reportHtml += `<div style="background:#f8fafb;border-radius:8px;padding:12px 14px;margin-bottom:12px;border-inline-start:3px solid #0D8BA8;font-size:13px;line-height:1.8;color:var(--ink);">${textOnly.replace(/\n/g, '<br>')}</div>`;
+      }
+      reportHtml += renderUrlLinks(cleanedReport);
+    } else if(hasReport){
+      reportHtml = cleanedReport.replace(/\n/g, '<br>');
+    } else {
+      reportHtml = '<span class="empty-note">لا يوجد تقرير شهري مسجل لهذه المحافظة</span>';
+    }
+
+    const badge = hasReport
+      ? (hasUrls ? '<span style="display:inline-block;background:linear-gradient(135deg,#0D8BA8,#0B5A7A);color:white;padding:3px 12px;border-radius:100px;font-size:11px;font-weight:600;margin-inline-start:8px;">🔗 يحتوي على روابط</span>' : '<span style="display:inline-block;background:#0B5A7A;color:white;padding:3px 12px;border-radius:100px;font-size:11px;font-weight:600;margin-inline-start:8px;">📄 نص</span>')
+      : '<span style="display:inline-block;background:#ccc;color:#666;padding:3px 12px;border-radius:100px;font-size:11px;font-weight:600;margin-inline-start:8px;">❌ لا يوجد</span>';
+
+    // Preview
+    let preview = '';
+    if(hasUrls){
+      const firstFile = getFileName(urls[0]);
+      preview = `<div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;opacity:0.8;">${getFileIcon(urls[0])} ${firstFile.substring(0, 50)}${firstFile.length > 50 ? '...' : ''}</div>`;
+    } else if(hasReport){
+      const previewLine = cleanedReport.split('\n')[0] || '';
+      preview = `<div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;opacity:0.8;">${previewLine.substring(0, 60)}${previewLine.length > 60 ? '...' : ''}</div>`;
+    }
+
+    return `
+    <div class="gov-item">
+      <div class="gh" onclick="this.parentElement.classList.toggle('open')">
+        <div class="stamp">${d.gov ? d.gov[0] : '?'}</div>
+        <div style="flex:1;min-width:0;">
+          <strong>${d.gov || 'غير معروف'}</strong>
+          ${preview}
+        </div>
+        ${badge}
+        <div class="chev">⌄</div>
+      </div>
+      <div class="gb">
+        <div class="row" style="background:#f0f7fa;border-radius:8px;padding:14px 16px;border-inline-start:4px solid #0B5A7A;">
+          <b style="color:#0B5A7A;font-size:13px;display:block;margin-bottom:8px;">${hasUrls ? '🔗 روابط ملفات التقرير الشهري' : '📋 نص التقرير الشهري'}</b>
+          <span style="white-space:pre-wrap;line-height:2;color:var(--ink);font-size:13.5px;">${reportHtml}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 function renderAll(){
   console.log('Rendering with', filtered().length, 'rows, activeGov:', activeGov, 'selectedMonths:', [...selectedMonths]);
   renderKPIs();
   ['disability','social','ngo','juvenile','rural','labor','labor_market','insurance','aid','camps','platform','demographics'].forEach(renderCategory);
   renderGovList();
+  renderMonthlyReports();
   updateMastheadBadge();
   updateFooterNote();
   updateMapMarkers();
@@ -1803,7 +2119,7 @@ function renderGovComparison(arr){
       </div>`;
   });
 
-  html += '</div>';
+  html += `</div>`;
   return html;
 }
 
