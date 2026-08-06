@@ -158,6 +158,76 @@
     font-size:13px;
   }
 
+  /* ====== رسالة خطأ ====== */
+  .error-message{
+    position:absolute;
+    inset:0;
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    background:#f0f4f8;
+    z-index:200;
+    text-align:center;
+    padding:24px;
+  }
+  .error-message.show{
+    display:flex;
+  }
+  .error-icon{
+    font-size:48px;
+    margin-bottom:16px;
+  }
+  .error-title{
+    color:#dc2626;
+    font-weight:800;
+    font-size:18px;
+    margin-bottom:8px;
+  }
+  .error-desc{
+    color:#64748b;
+    font-size:14px;
+    margin-bottom:20px;
+    max-width:480px;
+    line-height:1.7;
+  }
+  .error-desc code{
+    background:#e2e8f0;
+    padding:2px 6px;
+    border-radius:4px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+  }
+  .error-actions{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .error-btn{
+    padding:10px 24px;
+    background:#0B5A7A;
+    color:white;
+    border:none;
+    border-radius:8px;
+    font-family:'Tajawal',sans-serif;
+    font-weight:700;
+    cursor:pointer;
+    transition:background 0.2s;
+    font-size:14px;
+  }
+  .error-btn:hover{
+    background:#084a66;
+  }
+  .error-btn.secondary{
+    background:white;
+    color:#0B5A7A;
+    border:1px solid #cbd5e1;
+  }
+  .error-btn.secondary:hover{
+    background:#f1f5f9;
+  }
+
   /* ====== شريط حالة سفلي ====== */
   .status-bar{
     position:fixed;
@@ -188,6 +258,14 @@
     display:inline-block;
     animation:pulse 2s infinite;
   }
+  .status-dot.error{
+    background:#dc2626;
+    animation:none;
+  }
+  .status-dot.warn{
+    background:#f59e0b;
+    animation:none;
+  }
   @keyframes pulse{
     0%,100%{opacity:1;}
     50%{opacity:0.5;}
@@ -203,6 +281,7 @@
     .status-bar{font-size:11px;padding:6px 16px;}
   }
 </style>
+<base target="_blank">
 </head>
 <body>
 
@@ -230,78 +309,239 @@
 
 <!-- منطقة المحتوى -->
 <div class="content-area">
+  <!-- تبويب 0 -->
   <div class="loading-indicator" id="loader0">
     <div class="loading-spinner"></div>
     <div class="loading-text">جاري تحميل لوحة الوحدات والمراكز...</div>
     <div class="loading-sub">التنمية الريفية</div>
   </div>
-  <iframe id="frame0" src="index.html" class="active" onload="hideLoader(0)"></iframe>
+  <div class="error-message" id="error0">
+    <div class="error-icon">⚠️</div>
+    <div class="error-title">تعذر تحميل المحتوى</div>
+    <div class="error-desc">
+      لا يمكن الوصول إلى ملف <code>index.html</code>.<br>
+      تأكد من وضع الملف في نفس المجلد، أو استخدم خادم محلي (مثل <code>python -m http.server</code>).
+    </div>
+    <div class="error-actions">
+      <button class="error-btn" onclick="retryLoad(0)">🔄 إعادة المحاولة</button>
+      <button class="error-btn secondary" onclick="loadViaFetch(0)">📡 تحميل عبر Fetch</button>
+    </div>
+  </div>
+  <iframe id="frame0" class="active" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals" title="لوحة الوحدات والمراكز"></iframe>
 
+  <!-- تبويب 1 -->
   <div class="loading-indicator" id="loader1">
     <div class="loading-spinner"></div>
     <div class="loading-text">جاري تحميل سِجل المؤشرات التشغيلية...</div>
     <div class="loading-sub">المحافظات</div>
   </div>
-  <iframe id="frame1" src="syria_dashboard_with_population%20(1).html" onload="hideLoader(1)"></iframe>
+  <div class="error-message" id="error1">
+    <div class="error-icon">⚠️</div>
+    <div class="error-title">تعذر تحميل المحتوى</div>
+    <div class="error-desc">
+      لا يمكن الوصول إلى ملف <code>syria_dashboard_with_population (1).html</code>.<br>
+      قد يكون الملف غير موجود أو هناك مشكلة في الاتصال.
+    </div>
+    <div class="error-actions">
+      <button class="error-btn" onclick="retryLoad(1)">🔄 إعادة المحاولة</button>
+      <button class="error-btn secondary" onclick="loadViaFetch(1)">📡 تحميل عبر Fetch</button>
+    </div>
+  </div>
+  <iframe id="frame1" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals" title="المؤشرات التشغيلية"></iframe>
 </div>
 
 <!-- شريط الحالة السفلي -->
 <div class="status-bar">
   <div class="left">
-    <span><span class="status-dot"></span> النظام يعمل</span>
+    <span><span class="status-dot" id="statusDot"></span> <span id="statusText">جاري التهيئة...</span></span>
     <span id="activeTabName">🏗️ واقع الوحدات والمراكز</span>
   </div>
   <div>لوحة التحكم الموحدة — الجمهورية العربية السورية</div>
 </div>
 
 <script>
-// ====== التبديل بين التبويبات ======
-function switchTab(idx, btn){
-  // تحديث الأزرار
-  document.querySelectorAll('.nav-tabs button').forEach(b => {
-    b.classList.remove('active');
-    b.style.background = 'rgba(255,255,255,0.08)';
-    b.style.color = 'rgba(255,255,255,0.75)';
-  });
-  btn.classList.add('active');
-
-  // تحديث الـ iframes
-  document.getElementById('frame0').classList.toggle('active', idx === 0);
-  document.getElementById('frame1').classList.toggle('active', idx === 1);
-
-  // تحديث شريط الحالة
-  const names = ['🏗️ واقع الوحدات والمراكز', '📊 المؤشرات التشغيلية'];
-  document.getElementById('activeTabName').textContent = names[idx];
-
-  // إظهار مؤشر التحميل إذا لم يُحمل الـ iframe بعد
-  if(idx === 1 && !document.getElementById('frame1').src){
-    document.getElementById('loader1').classList.remove('hidden');
+// ====== إعدادات ======
+const tabs = [
+  {
+    id: 0,
+    name: '🏗️ واقع الوحدات والمراكز',
+    src: 'index.html',
+    loaded: false,
+    failed: false
+  },
+  {
+    id: 1,
+    name: '📊 المؤشرات التشغيلية',
+    src: 'syria_dashboard_with_population%20(1).html',
+    loaded: false,
+    failed: false
   }
+];
+
+let activeTab = 0;
+
+// ====== تحميل المحتوى ======
+function loadTab(idx) {
+  const tab = tabs[idx];
+  const iframe = document.getElementById('frame' + idx);
+  const loader = document.getElementById('loader' + idx);
+  const errorDiv = document.getElementById('error' + idx);
+
+  if (tab.loaded) return;
+
+  loader.classList.remove('hidden');
+  errorDiv.classList.remove('show');
+  tab.failed = false;
+
+  // تعيين src
+  iframe.src = tab.src;
+
+  // مؤقت انتهاء المهلة (15 ثانية)
+  tab._timeout = setTimeout(() => {
+    if (!tab.loaded && !tab.failed) {
+      showError(idx, 'انتهت مهلة التحميل (15 ثانية). قد يكون الملف غير موجود أو الاتصال بطيء.');
+    }
+  }, 15000);
 }
 
 // ====== إخفاء مؤشر التحميل ======
-function hideLoader(idx){
+function hideLoader(idx) {
+  clearTimeout(tabs[idx]._timeout);
   document.getElementById('loader' + idx).classList.add('hidden');
+  tabs[idx].loaded = true;
+  tabs[idx].failed = false;
+  if (idx === activeTab) updateStatus(true);
+}
+
+// ====== عرض خطأ ======
+function showError(idx, msg) {
+  clearTimeout(tabs[idx]._timeout);
+  document.getElementById('loader' + idx).classList.add('hidden');
+  document.getElementById('error' + idx).classList.add('show');
+  if (msg) {
+    document.getElementById('error' + idx).querySelector('.error-desc').innerHTML = msg;
+  }
+  tabs[idx].failed = true;
+  if (idx === activeTab) updateStatus(false);
+}
+
+// ====== إعادة المحاولة ======
+function retryLoad(idx) {
+  const iframe = document.getElementById('frame' + idx);
+  iframe.src = 'about:blank';
+  tabs[idx].loaded = false;
+  tabs[idx].failed = false;
+  setTimeout(() => loadTab(idx), 100);
+}
+
+// ====== تحميل عبر Fetch (للتعامل مع CORS/ملفات محلية) ======
+async function loadViaFetch(idx) {
+  const tab = tabs[idx];
+  const iframe = document.getElementById('frame' + idx);
+  const loader = document.getElementById('loader' + idx);
+  const errorDiv = document.getElementById('error' + idx);
+
+  loader.classList.remove('hidden');
+  errorDiv.classList.remove('show');
+
+  try {
+    const response = await fetch(tab.src);
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const html = await response.text();
+    iframe.srcdoc = html;
+    hideLoader(idx);
+    updateStatus(true);
+  } catch (err) {
+    console.error('Fetch error:', err);
+    showError(idx, 'فشل تحميل المحتوى عبر Fetch:<br><code>' + err.message + '</code><br><br>تأكد من تشغيل خادم محلي (مثل <code>python -m http.server</code> أو <code>npx serve</code>).');
+  }
+}
+
+// ====== التبديل بين التبويبات ======
+function switchTab(idx, btn) {
+  activeTab = idx;
+
+  // تحديث الأزرار
+  document.querySelectorAll('.nav-tabs button').forEach(b => {
+    b.classList.remove('active');
+    b.style.background = '';
+    b.style.color = '';
+  });
+  btn.classList.add('active');
+
+  // تحديث الـ iframes والـ loaders والأخطاء
+  for (let i = 0; i < 2; i++) {
+    const isActive = i === idx;
+    document.getElementById('frame' + i).classList.toggle('active', isActive);
+    if (!isActive) {
+      document.getElementById('loader' + i).classList.add('hidden');
+      document.getElementById('error' + i).classList.remove('show');
+    }
+  }
+
+  // تحديث شريط الحالة
+  document.getElementById('activeTabName').textContent = tabs[idx].name;
+
+  // تحميل المحتوى إذا لم يُحمل بعد
+  if (!tabs[idx].loaded && !tabs[idx].failed) {
+    loadTab(idx);
+  } else if (tabs[idx].failed) {
+    document.getElementById('error' + idx).classList.add('show');
+    updateStatus(false);
+  } else {
+    updateStatus(true);
+  }
+}
+
+// ====== معالجة أحداث iframe ======
+document.getElementById('frame0').onload = function() {
+  // التحقق من أنه ليس about:blank
+  if (this.contentWindow && this.contentWindow.location.href !== 'about:blank') {
+    hideLoader(0);
+  }
+};
+document.getElementById('frame0').onerror = function() { showError(0, 'حدث خطأ أثناء تحميل iframe.'); };
+
+document.getElementById('frame1').onload = function() {
+  if (this.contentWindow && this.contentWindow.location.href !== 'about:blank') {
+    hideLoader(1);
+  }
+};
+document.getElementById('frame1').onerror = function() { showError(1, 'حدث خطأ أثناء تحميل iframe.'); };
+
+// ====== تحديث حالة النظام ======
+function updateStatus(isOnline) {
+  const dot = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  if (isOnline) {
+    dot.className = 'status-dot';
+    text.textContent = 'النظام يعمل';
+  } else {
+    dot.className = 'status-dot error';
+    text.textContent = 'خلل في التحميل';
+  }
 }
 
 // ====== اختصارات لوحة المفاتيح ======
 document.addEventListener('keydown', function(e){
-  // Alt + 1 = التبويب الأول
   if(e.altKey && e.key === '1'){
     e.preventDefault();
     document.getElementById('tab0').click();
   }
-  // Alt + 2 = التبويب الثاني
   if(e.altKey && e.key === '2'){
     e.preventDefault();
     document.getElementById('tab1').click();
   }
 });
 
-// ====== رسالة ترحيبية في الكونسول ======
-console.log('%cلوحة التحكم الموحدة', 'color:#0B5A7A;font-size:20px;font-weight:bold;');
-console.log('%cوزارة الشؤون الاجتماعية والعمل — الجمهورية العربية السورية', 'color:#64748b;font-size:12px;');
-console.log('%cاختصارات: Alt+1 للوحدات | Alt+2 للمؤشرات', 'color:#0D8BA8;font-size:12px;');
+// ====== تهيئة ======
+window.addEventListener('DOMContentLoaded', () => {
+  loadTab(0);
+
+  console.log('%cلوحة التحكم الموحدة', 'color:#0B5A7A;font-size:20px;font-weight:bold;');
+  console.log('%cوزارة الشؤون الاجتماعية والعمل — الجمهورية العربية السورية', 'color:#64748b;font-size:12px;');
+  console.log('%cاختصارات: Alt+1 للوحدات | Alt+2 للمؤشرات', 'color:#0D8BA8;font-size:12px;');
+});
 </script>
 
 </body>
