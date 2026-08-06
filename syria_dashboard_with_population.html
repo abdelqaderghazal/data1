@@ -243,6 +243,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <base target="_blank">
+<base target="_blank">
 </head>
 <body class="locked">
 
@@ -679,6 +680,9 @@ const COLUMN_MAP = {
 
   // === NEW: Poverty ===
   "تقديرات الفقر وفق الأمن الغذائي ( الاسر الأمنة غذائيا ) %": "food_secure_pct",
+  "تقديرات الفقر وفق الأمن الغذائي (الاسر ذات الهشاشة) %": "food_vulnerable_pct",
+  "تقديرات الفقر وفق الأمن الغذائي (الاسر المعدومة) %": "food_insecure_pct",
+  "تقديرات الفقر - الأمن الغذائي (الاسر المعدومة) %": "food_insecure_pct",
 
   // === Elderly Care ===
   "دور رعاية كبار السن": "elderly_homes",
@@ -1075,11 +1079,11 @@ function setupGovFilter(){
 // =====================
 function kpiDefs(arr){
   return [
-    {em:"👥",lbl:"إجمالي السكان",val:sum("population",arr)},
-    {em:"♂️",lbl:"الذكور",val:sum("males",arr)},
-    {em:"♀️",lbl:"الإناث",val:sum("females",arr)},
-    {em:"💼",lbl:"المشتغلون",val:sum("employed",arr)},
-    {em:"📉",lbl:"معدل البطالة",val:avg("unemployment_rate",arr)+"%",raw:true},
+    {em:"👥",lbl:"إجمالي السكان",val:sumStatic("population")},
+    {em:"♂️",lbl:"الذكور",val:sumStatic("males")},
+    {em:"♀️",lbl:"الإناث",val:sumStatic("females")},
+    {em:"💼",lbl:"المشتغلون",val:sumStatic("employed")},
+    {em:"📉",lbl:"معدل البطالة",val:avgStatic("unemployment_rate")+"%",raw:true},
     {em:"👵",lbl:"دور رعاية المسنين",val:sum("elderly_homes",arr)},
     {em:"🦽",lbl:"بطاقات إعاقة جديدة",val:sum("disabled_cards",arr)},
     {em:"🏛️",lbl:"معاهد الإعاقة",val:sum("disability_centers",arr)},
@@ -1238,7 +1242,7 @@ function renderSingleGovChart(canvasId, arr, categoryField){
     'ngo_active': [
       {key:'ngo_total', label:'إجمالي المنظمات'},
       {key:'ngo_active', label:'منظمات مشهرة 2025'},
-      {key:'ngo_new_pct', label:'نسبة جديدة %'}
+      {key:'ngo_new_pct', label:'منظمات جديدة مشهرة'}
     ],
     'juvenile_inmates': [
       {key:'juvenile_inst', label:'معاهد أحداث'},
@@ -1409,6 +1413,33 @@ function renderCards(containerId, items){
   }).join('');
 }
 
+// =====================
+// STATIC INDICATORS (month-independent)
+// =====================
+function getStaticValues(field){
+  const result = {};
+  ALL_DATA.forEach(d => {
+    if(!result[d.gov] && d[field] !== null && d[field] !== undefined && d[field] !== ''){
+      const n = parseFloat(d[field]);
+      if(!isNaN(n)) result[d.gov] = n;
+    }
+  });
+  if(activeGov !== 'all'){
+    return activeGov in result ? [result[activeGov]] : [];
+  }
+  return Object.values(result);
+}
+
+function sumStatic(field){
+  return getStaticValues(field).reduce((a, v) => a + v, 0);
+}
+
+function avgStatic(field){
+  const vals = getStaticValues(field);
+  if(vals.length === 0) return 0;
+  return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1);
+}
+
 function renderCategory(cat){
   const arr = filtered();
 
@@ -1453,10 +1484,10 @@ function renderCategory(cat){
     renderCards('cards-ngo', [
       {em:'🤝',n:sum('ngo_active',arr),t:'منظمات غير حكومية مشهرة في 2025'},
       {em:'📊',n:sum('ngo_total',arr),t:'إجمالي عدد المنظمات غير الحكومية'},
-      {em:'📈',n:avg('ngo_new_pct',arr)+'%',t:'نسبة المنظمات الجديدة المشهرة'}
+      {em:'📈',n:sum('ngo_new_pct',arr),t:'عدد المنظمات الجديدة المشهرة'}
     ]);
     document.getElementById('note-ngo').textContent = 
-      `💡 ${sum('ngo_active',arr)} منظمة مشهرة في 2025 من إجمالي ${sum('ngo_total',arr)} منظمة — نسبة المنظمات الجديدة ${avg('ngo_new_pct',arr)}%.`;
+      `💡 ${sum('ngo_active',arr)} منظمة مشهرة في 2025 من إجمالي ${sum('ngo_total',arr)} منظمة — عدد المنظمات الجديدة المشهرة: ${sum('ngo_new_pct',arr)}.`;
   }
 
   if(cat === 'juvenile'){
@@ -1611,21 +1642,27 @@ function renderCategory(cat){
   if(cat === 'demographics'){
     barChart('chart-demographics', 'population');
     renderCards('cards-demographics', [
-      {em:'👥',n:sum('population',arr),t:'إجمالي عدد السكان'},
-      {em:'♂️',n:sum('males',arr),t:'إجمالي الذكور'},
-      {em:'♀️',n:sum('females',arr),t:'إجمالي الإناث'},
-      {em:'👶',n:sum('pop_under15',arr),t:'السكان دون 15 سنة'},
-      {em:'🧑',n:sum('pop_15_60',arr),t:'السكان 15-60 سنة'},
-      {em:'👴',n:sum('pop_over60',arr),t:'السكان 60+ سنة'},
-      {em:'📉',n:avg('unemployment_rate',arr)+'%',t:'معدل البطالة العام (متوسط)'},
-      {em:'📉',n:avg('youth_unemployment',arr)+'%',t:'معدل بطالة الشباب (متوسط)'},
-      {em:'💼',n:sum('employed',arr),t:'المشتغلون'},
-      {em:'🚫',n:sum('unemployed',arr),t:'المتعطلون'},
-      {em:'👩‍👧',n:avg('female_breadwinners',arr)+'%',t:'نسبة النساء المعيلات',raw:true},
-      {em:'💍',n:avg('child_marriage_rate',arr)+'%',t:'معدل زواج القاصرات',raw:true},
-      {em:'👷',n:avg('child_labor_rate',arr)+'%',t:'معدل عمل الأطفال',raw:true},
-      {em:'📚',n:avg('basic_edu_completion',arr)+'%',t:'معدل إكمال التعليم الأساسي',raw:true},
-      {em:'🍞',n:avg('food_secure_pct',arr)+'%',t:'% الأسر الآمنة غذائياً'}
+      {em:'👥',n:sumStatic('population'),t:'إجمالي عدد السكان'},
+      {em:'♂️',n:sumStatic('males'),t:'إجمالي الذكور'},
+      {em:'♀️',n:sumStatic('females'),t:'إجمالي الإناث'},
+      {em:'👶',n:sumStatic('pop_under15'),t:'السكان دون 15 سنة'},
+      {em:'🧑',n:sumStatic('pop_15_60'),t:'السكان 15-60 سنة'},
+      {em:'👴',n:sumStatic('pop_over60'),t:'السكان 60+ سنة'},
+      {em:'📉',n:avgStatic('unemployment_rate')+'%',t:'معدل البطالة العام (متوسط)'},
+      {em:'📉',n:avgStatic('male_unemployment')+'%',t:'معدل بطالة الذكور',raw:true},
+      {em:'📉',n:avgStatic('female_unemployment')+'%',t:'معدل بطالة الإناث',raw:true},
+      {em:'📉',n:avgStatic('youth_unemployment')+'%',t:'معدل بطالة الشباب (متوسط)'},
+      {em:'♂️',n:avgStatic('male_participation')+'%',t:'مشاركة الذكور اقتصادياً',raw:true},
+      {em:'♀️',n:avgStatic('female_participation')+'%',t:'مشاركة الإناث اقتصادياً',raw:true},
+      {em:'💼',n:sumStatic('employed'),t:'المشتغلون'},
+      {em:'🚫',n:sumStatic('unemployed'),t:'المتعطلون'},
+      {em:'👩‍👧',n:avgStatic('female_breadwinners')+'%',t:'نسبة النساء المعيلات',raw:true},
+      {em:'💍',n:avgStatic('child_marriage_rate')+'%',t:'معدل زواج القاصرات',raw:true},
+      {em:'👷',n:avgStatic('child_labor_rate')+'%',t:'معدل عمل الأطفال',raw:true},
+      {em:'📚',n:avgStatic('basic_edu_completion')+'%',t:'معدل إكمال التعليم الأساسي',raw:true},
+      {em:'🍞',n:avgStatic('food_secure_pct')+'%',t:'% الأسر الآمنة غذائياً'},
+      {em:'⚠️',n:avgStatic('food_vulnerable_pct')+'%',t:'% الأسر ذات الهشاشة الغذائية'},
+      {em:'🔴',n:avgStatic('food_insecure_pct')+'%',t:'% الأسر المعدومة غذائياً'}
     ]);
     // Add text card for employment relation if exists
     const demoEmpRelation = arr.map(d => d.employment_relation).filter(v => v && v.trim()).join(' | ');
@@ -1633,15 +1670,14 @@ function renderCategory(cat){
       document.getElementById('cards-demographics').innerHTML += 
         `<div class="ind-card" style="grid-column:1/-1;background:#e3f2fd;border-color:#1565c0;"><span class="em">📋</span><div><div class="n" style="font-size:12px;font-family:Cairo;color:#1565c0;">توزع المشتغلين حسب العلاقة برب العمل</div><div class="t" style="color:#333;font-size:11.5px;">${demoEmpRelation}</div></div></div>`;
     }
-    const totalPop = sum('population', arr);
-    const totalMales = sum('males', arr);
-    const totalFemales = sum('females', arr);
+    const totalPop = sumStatic('population');
+    const totalMales = sumStatic('males');
+    const totalFemales = sumStatic('females');
     const genderRatio = totalFemales > 0 ? (totalMales / totalFemales).toFixed(2) : 0;
     const femalePct = totalPop > 0 ? Math.round((totalFemales / totalPop) * 100) : 0;
     const malePct = totalPop > 0 ? Math.round((totalMales / totalPop) * 100) : 0;
-    const avgUnemployment = avg('unemployment_rate', arr);
     document.getElementById('note-demographics').textContent = 
-      `💡 نسبة الذكور ${malePct}% مقابل ${femalePct}% للإناث. معدل البطالة العام: ${avg('unemployment_rate', arr)}%. نسبة الأسر الآمنة غذائياً: ${avg('food_secure_pct', arr)}%.`;
+      `💡 نسبة الذكور ${malePct}% مقابل ${femalePct}% للإناث. معدل البطالة العام: ${avgStatic('unemployment_rate')}%. الأمن الغذائي: آمنة ${avgStatic('food_secure_pct')}% | هشاشة ${avgStatic('food_vulnerable_pct')}% | معدومة ${avgStatic('food_insecure_pct')}%.`;
   }
 }
 
@@ -2699,7 +2735,7 @@ function updateMapMarkers(){
         </div>
         <div class="info-row"><span class="info-label">منظمات نشطة</span><span class="info-val">${fmt(d.ngo_active||0)}</span></div>
         <div class="info-row"><span class="info-label">إجمالي المنظمات</span><span class="info-val">${fmt(d.ngo_total||0)}</span></div>
-        <div class="info-row"><span class="info-label">نسبة المنظمات الجديدة</span><span class="info-val">${fmt(d.ngo_new_pct||0)}%</span></div>
+        <div class="info-row"><span class="info-label">المنظمات الجديدة المشهرة</span><span class="info-val">${fmt(d.ngo_new_pct||0)}</span></div>
 
         <div style="border-top:2px solid #0B5A7A;margin:10px 0;padding-top:8px;">
           <span style="font-weight:700;color:var(--syria-green);font-size:12px;">⚖️ معاهد الأحداث</span>
