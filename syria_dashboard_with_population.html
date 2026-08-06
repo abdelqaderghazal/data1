@@ -1417,26 +1417,37 @@ function renderCards(containerId, items){
 // STATIC INDICATORS (month-independent)
 // =====================
 function getStaticValues(field){
-  const result = {};
+  const govValues = {};
   ALL_DATA.forEach(d => {
-    if(!result[d.gov] && d[field] !== null && d[field] !== undefined && d[field] !== ''){
-      const n = parseFloat(d[field]);
-      if(!isNaN(n)) result[d.gov] = n;
+    if(activeGov !== 'all' && d.gov !== activeGov) return;
+    const val = d[field];
+    if(val !== null && val !== undefined && val !== ''){
+      const n = (typeof val === 'number') ? val : parseFloat(val);
+      if(!isNaN(n)){
+        if(!(d.gov in govValues) || n > govValues[d.gov]){
+          govValues[d.gov] = n;
+        }
+      }
     }
   });
-  if(activeGov !== 'all'){
-    return activeGov in result ? [result[activeGov]] : [];
-  }
-  return Object.values(result);
+  return Object.values(govValues);
 }
 
 function sumStatic(field){
-  return getStaticValues(field).reduce((a, v) => a + v, 0);
+  const vals = getStaticValues(field);
+  if(vals.length === 0){
+    console.warn('sumStatic: no values for field', field, 'gov:', activeGov);
+    return 0;
+  }
+  return vals.reduce((a, v) => a + v, 0);
 }
 
 function avgStatic(field){
   const vals = getStaticValues(field);
-  if(vals.length === 0) return 0;
+  if(vals.length === 0){
+    console.warn('avgStatic: no values for field', field, 'gov:', activeGov);
+    return 0;
+  }
   return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1);
 }
 
