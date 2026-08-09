@@ -406,7 +406,19 @@
     <button class="btn btn-primary" onclick="loadFromSheet()" id="refreshBtn">🔄 تحديث من الرابط</button>
     <button class="btn btn-success" onclick="showUploadModal()">📁 رفع ملف CSV يدوياً</button>
     <span class="status-badge status-loading" id="dataStatus">جاري التحميل التلقائي...</span>
-    <span class="last-updated-badge" id="lastUpdatedBadge" style="display:none;"><span class="dot"></span>آخر تحديث: <span id="lastUpdatedText">—</span></span>
+  </div>
+</div>
+
+<!-- Last Updated Info Bar - Visible for ALL users -->
+<div class="data-panel" id="lastUpdatedPanel" style="display:none;">
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:linear-gradient(90deg,#E0F5F5,#ffffff);border:1px solid #0D8BA8;border-radius:12px;padding:12px 18px;">
+    <span style="font-size:20px;">📅</span>
+    <div style="flex:1;min-width:0;">
+      <span style="font-family:'Tajawal';font-weight:700;font-size:13px;color:#0B5A7A;">البيانات محدّثة حتى:</span>
+      <span id="lastUpdatedDisplay" style="font-family:'IBM Plex Mono';font-weight:600;font-size:13px;color:var(--ink);margin-inline-start:6px;">—</span>
+    </div>
+    <span id="lastUpdatedDot" style="width:10px;height:10px;border-radius:50%;background:#4F7A63;animation:pulse 2s infinite;flex-shrink:0;"></span>
+    <span id="lastUpdatedLabel" style="font-size:11.5px;color:var(--ink-soft);font-weight:600;white-space:nowrap;">بيانات محلية</span>
   </div>
 </div>
 
@@ -3543,6 +3555,9 @@ function enterDashboard(){
     }));
   } catch(e) { console.warn('Failed to save session:', e); }
 
+  // Show last updated panel if data exists
+  updateLastUpdatedDisplay();
+
   // Auto-load data (with offline support)
   setTimeout(() => { autoLoadOnStartup(); }, 500);
   setTimeout(() => { initMapOnDemand(); }, 1200);
@@ -3702,7 +3717,10 @@ function loadDataFromLocalStorage(){
 function updateLastUpdatedDisplay(isoTimestamp){
   const badge = document.getElementById('lastUpdatedBadge');
   const text = document.getElementById('lastUpdatedText');
-  if(!badge || !text) return;
+  const panel = document.getElementById('lastUpdatedPanel');
+  const display = document.getElementById('lastUpdatedDisplay');
+  const dot = document.getElementById('lastUpdatedDot');
+  const label = document.getElementById('lastUpdatedLabel');
 
   let ts = isoTimestamp;
   if(!ts){
@@ -3718,19 +3736,42 @@ function updateLastUpdatedDisplay(isoTimestamp){
       year: 'numeric', month: 'short', day: 'numeric',
       hour: '2-digit', minute: '2-digit'
     });
-    text.textContent = formatted;
-    badge.style.display = 'inline-flex';
 
-    // If data is older than 7 days, show warning color
+    // Update old badge (inside data-source-bar, for admin)
+    if(badge && text){
+      text.textContent = formatted;
+      badge.style.display = 'inline-flex';
+    }
+
+    // Update new visible panel (for ALL users including viewer)
+    if(panel && display){
+      display.textContent = formatted;
+      panel.style.display = 'block';
+    }
+
+    // If data is older than 7 days, show warning
     const daysOld = (Date.now() - date.getTime()) / (1000 * 60 * 60 * 24);
     if(daysOld > 7){
-      badge.classList.add('offline-badge');
-      text.innerHTML = formatted + ' <span style="font-size:10px;margin-inline-start:4px;">(قديم)</span>';
+      if(badge) badge.classList.add('offline-badge');
+      if(text) text.innerHTML = formatted + ' <span style="font-size:10px;margin-inline-start:4px;">(قديم)</span>';
+      if(dot) dot.style.background = '#B5533C';
+      if(label){
+        label.textContent = 'بيانات قديمة';
+        label.style.color = '#B5533C';
+      }
+      if(panel) panel.querySelector('div').style.borderColor = '#B5533C';
     } else {
-      badge.classList.remove('offline-badge');
+      if(badge) badge.classList.remove('offline-badge');
+      if(dot) dot.style.background = '#4F7A63';
+      if(label){
+        label.textContent = navigator.onLine ? 'بيانات محدّثة' : 'بيانات محلية';
+        label.style.color = 'var(--ink-soft)';
+      }
+      if(panel) panel.querySelector('div').style.borderColor = '#0D8BA8';
     }
   } else {
-    badge.style.display = 'none';
+    if(badge) badge.style.display = 'none';
+    if(panel) panel.style.display = 'none';
   }
 }
 
@@ -3877,6 +3918,9 @@ function restoreSession(){
       document.querySelector('.data-source-bar').style.display = 'none';
       document.getElementById('viewerMessage').style.display = 'block';
     }
+
+    // Show last updated panel if data exists
+    updateLastUpdatedDisplay();
 
     return true;
   } catch(e) {
