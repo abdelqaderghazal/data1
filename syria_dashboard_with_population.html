@@ -248,6 +248,18 @@
   .offline-badge{background:#c62828 !important;color:white !important;border-color:#c62828 !important;}
   .offline-badge .dot{background:#ffcdd2 !important;}
 
+  /* ===== DIAGNOSTIC & FALLBACK STYLES ===== */
+  .diag-box{background:#fff3e0;border:1px solid #ff9800;border-radius:12px;padding:16px 18px;margin-bottom:16px;text-align:right;}
+  .diag-box h4{margin:0 0 10px;font-family:Tajawal;font-size:15px;color:#e65100;}
+  .diag-box p{margin:0 0 8px;font-size:12.5px;color:#bf360c;line-height:1.8;}
+  .diag-box code{background:#fff8e1;padding:2px 8px;border-radius:4px;font-family:'IBM Plex Mono';font-size:11px;color:#e65100;direction:ltr;}
+  .diag-box .btn-fallback{background:linear-gradient(135deg,#e65100,#f57c00);color:white;border:none;border-radius:8px;padding:10px 18px;font-family:Cairo;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;}
+  .diag-box .btn-fallback:hover{background:#bf360c;}
+  .file-protocol-warning{background:#ffebee;border:2px solid #c62828;border-radius:12px;padding:16px 18px;margin-bottom:16px;text-align:right;color:#b71c1c;}
+  .file-protocol-warning h4{margin:0 0 8px;color:#c62828;font-family:Tajawal;font-size:15px;}
+  .file-protocol-warning p{margin:0;font-size:12.5px;line-height:1.8;}
+  .file-protocol-warning code{background:#ffcdd2;padding:3px 8px;border-radius:4px;font-family:'IBM Plex Mono';font-size:11px;}
+
 </style>
 <base target="_blank">
 
@@ -419,6 +431,29 @@
     </div>
     <span id="lastUpdatedDot" style="width:10px;height:10px;border-radius:50%;background:#4F7A63;animation:pulse 2s infinite;flex-shrink:0;"></span>
     <span id="lastUpdatedLabel" style="font-size:11.5px;color:var(--ink-soft);font-weight:600;white-space:nowrap;">بيانات محلية</span>
+  </div>
+</div>
+
+<!-- Diagnostic Panel (hidden by default) -->
+<div class="data-panel" id="diagnosticPanel" style="display:none;">
+  <div class="diag-box" id="diagBox">
+    <h4>🔧 مساعدة التشخيص</h4>
+    <p id="diagMessage">جاري التشخيص...</p>
+    <div id="diagActions"></div>
+  </div>
+</div>
+
+<!-- File Protocol Warning (for file:// opens) -->
+<div class="data-panel" id="fileProtocolWarning" style="display:none;">
+  <div class="file-protocol-warning">
+    <h4>⚠️ الملف يُفتح محلياً (file://)</h4>
+    <p>المتصفح يحظر جلب البيانات من الإنترنت عند فتح الملف مباشرة من الجهاز. لحل المشكلة:</p>
+    <p style="margin-top:8px;"><strong>الحل السريع:</strong> استخدم أحد هذه الخيارات:</p>
+    <p>1️⃣ <strong>خادم محلي:</strong> شغّل <code>python -m http.server 8000</code> في مجلد الملف ثم افتح <code>http://localhost:8000</code></p>
+    <p>2️⃣ <strong>VS Code:</strong> انقر بزر الماوس الأيمن → "Open with Live Server"</p>
+    <p>3️⃣ <strong>رفع على الإنترنت:</strong> ارفع الملف على GitHub Pages أو Netlify</p>
+    <p style="margin-top:8px;">أو <strong>ارفع ملف CSV يدوياً</strong> بالضغط على الزر أدناه:</p>
+    <button class="btn-fallback" onclick="showUploadModal()">📁 رفع ملف CSV يدوياً</button>
   </div>
 </div>
 
@@ -3632,6 +3667,135 @@ document.addEventListener('keydown', function(e){
   }
 });
 // =====================
+// DIAGNOSTICS & COMPATIBILITY
+// =====================
+function isFileProtocol(){
+  return window.location.protocol === 'file:';
+}
+
+function showDiagnostic(message, actionsHtml){
+  const panel = document.getElementById('diagnosticPanel');
+  const msg = document.getElementById('diagMessage');
+  const acts = document.getElementById('diagActions');
+  if(!panel || !msg) return;
+  msg.innerHTML = message;
+  if(acts && actionsHtml) acts.innerHTML = actionsHtml;
+  panel.style.display = 'block';
+}
+
+function hideDiagnostic(){
+  const panel = document.getElementById('diagnosticPanel');
+  if(panel) panel.style.display = 'none';
+}
+
+function checkFileProtocol(){
+  if(isFileProtocol()){
+    const warn = document.getElementById('fileProtocolWarning');
+    if(warn) warn.style.display = 'block';
+    return true;
+  }
+  return false;
+}
+
+function generateSampleData(){
+  // Generate minimal sample data so the dashboard shows something
+  const sample = [];
+  const months = ["كانون الثاني","شباط","آذار"];
+  ALL_GOVS.forEach((gov, i) => {
+    months.forEach(m => {
+      sample.push({
+        gov: gov,
+        month: m,
+        year: 2025,
+        population: 500000 + i * 50000,
+        males: 250000 + i * 25000,
+        females: 250000 + i * 25000,
+        disabled_cards: Math.floor(Math.random() * 500),
+        elderly_homes: Math.floor(Math.random() * 10),
+        elderly_benef: Math.floor(Math.random() * 200),
+        orphan_homes: Math.floor(Math.random() * 5),
+        sponsor_internal: Math.floor(Math.random() * 100),
+        sponsor_external: Math.floor(Math.random() * 50),
+        ngo_active: Math.floor(Math.random() * 20),
+        ngo_total: Math.floor(Math.random() * 50),
+        juvenile_inst: Math.floor(Math.random() * 3),
+        juvenile_inst_active: Math.floor(Math.random() * 2),
+        juvenile_inmates: Math.floor(Math.random() * 30),
+        rural_dev_active: Math.floor(Math.random() * 10),
+        rural_dev_benef: Math.floor(Math.random() * 500),
+        rural_ind_active: Math.floor(Math.random() * 8),
+        rural_ind_benef: Math.floor(Math.random() * 300),
+        insp_total: Math.floor(Math.random() * 100),
+        violations: Math.floor(Math.random() * 20),
+        work_permits_new: Math.floor(Math.random() * 50),
+        work_permits_renew: Math.floor(Math.random() * 80),
+        employed: Math.floor(Math.random() * 200000),
+        unemployed: Math.floor(Math.random() * 50000),
+        unemployment_rate: (5 + Math.random() * 20).toFixed(1),
+        insurance_public: Math.floor(Math.random() * 50000),
+        insurance_private: Math.floor(Math.random() * 30000),
+        insurance_total: Math.floor(Math.random() * 80000),
+        food_baskets: Math.floor(Math.random() * 1000),
+        cash_assistance: Math.floor(Math.random() * 500),
+        in_kind_aid: Math.floor(Math.random() * 300),
+        camps_count: Math.floor(Math.random() * 5),
+        camp_families: Math.floor(Math.random() * 200),
+        platform_registered: Math.floor(Math.random() * 1000),
+        platform_establishments: Math.floor(Math.random() * 100),
+        platform_jobs: Math.floor(Math.random() * 200),
+        platform_training: Math.floor(Math.random() * 150),
+        vocational_centers: Math.floor(Math.random() * 5),
+        vocational_benef: Math.floor(Math.random() * 200),
+        pop_under15: Math.floor(Math.random() * 200000),
+        pop_15_60: Math.floor(Math.random() * 250000),
+        pop_over60: Math.floor(Math.random() * 50000),
+        labor_force: (0.5 + Math.random() * 0.5).toFixed(2),
+        male_unemployment: (3 + Math.random() * 15).toFixed(1),
+        female_unemployment: (8 + Math.random() * 25).toFixed(1),
+        youth_unemployment: (10 + Math.random() * 30).toFixed(1),
+        male_participation: (40 + Math.random() * 30).toFixed(1),
+        female_participation: (10 + Math.random() * 20).toFixed(1),
+        unorganized_workers: (30 + Math.random() * 40).toFixed(1),
+        child_marriage_rate: (5 + Math.random() * 15).toFixed(1),
+        child_labor_rate: (2 + Math.random() * 10).toFixed(1),
+        basic_edu_completion: (60 + Math.random() * 30).toFixed(1),
+        female_breadwinners: (10 + Math.random() * 20).toFixed(1),
+        food_secure_pct: (30 + Math.random() * 40).toFixed(1),
+        food_vulnerable_pct: (20 + Math.random() * 30).toFixed(1),
+        food_insecure_pct: (5 + Math.random() * 25).toFixed(1),
+        achievements: "إنجاز تجريبي",
+        recommendations: "توصية تجريبية",
+        needs: "احتياج تجريبي",
+        monthly_report: "تقرير تجريبي"
+      });
+    });
+  });
+  return sample;
+}
+
+function loadSampleData(){
+  const sample = generateSampleData();
+  ALL_DATA = sample;
+  selectedMonths = new Set([...new Set(ALL_DATA.map(d => d.month))]);
+  selectedMonthChips.clear();
+
+  const statusEl = document.getElementById('dataStatus');
+  if(statusEl){
+    statusEl.textContent = `بيانات تجريبية: ${sample.length} سجل`;
+    statusEl.className = 'status-badge status-ok';
+  }
+
+  syncMonthChipsWithData();
+  renderAll();
+  updateLastUpdatedDisplay();
+
+  showDiagnostic(
+    '✅ تم تحميل <strong>بيانات تجريبية</strong> لأغراض العرض. هذه البيانات وهمية — ارفع ملف CSV حقيقي للحصول على نتائج دقيقة.',
+    '<button class="btn-fallback" onclick="showUploadModal()">📁 رفع ملف CSV حقيقي</button>'
+  );
+}
+
+// =====================
 // OFFLINE SUPPORT & LAST UPDATED
 // =====================
 const STORAGE_KEY = 'govDashboard_data';
@@ -3802,8 +3966,27 @@ processCSVData = function(csvText){
 // Override loadFromSheet to handle offline
 const originalLoadFromSheet = loadFromSheet;
 loadFromSheet = async function(){
+  const statusEl = document.getElementById('dataStatus');
+
+  // Check file:// protocol FIRST
+  if(isFileProtocol()){
+    if(statusEl){
+      statusEl.textContent = '⚠️ لا يمكن الجلب — الملف محلي';
+      statusEl.className = 'status-badge status-error';
+    }
+    checkFileProtocol();
+    // Try localStorage fallback
+    const loaded = loadDataFromLocalStorage();
+    if(!loaded){
+      showDiagnostic(
+        '❌ <strong>المتصفح يحظر جلب البيانات</strong> لأن الملف يُفتح مباشرة من الجهاز (file://).<br>الحلول: استخدم خادماً محلياً، أو ارفع ملف CSV يدوياً، أو اضغط "بيانات تجريبية" للمعاينة.',
+        '<button class="btn-fallback" onclick="showUploadModal()">📁 رفع ملف CSV</button> <button class="btn-fallback" onclick="loadSampleData()" style="background:linear-gradient(135deg,#1565c0,#0d47a1);margin-inline-start:8px;">🔬 بيانات تجريبية</button>'
+      );
+    }
+    return;
+  }
+
   if(!navigator.onLine){
-    const statusEl = document.getElementById('dataStatus');
     if(statusEl){
       statusEl.textContent = '⚠️ لا يوجد إنترنت — جاري تحميل البيانات المحفوظة...';
       statusEl.className = 'status-badge status-loading';
@@ -3814,17 +3997,41 @@ loadFromSheet = async function(){
         statusEl.textContent = '❌ لا توجد بيانات محفوظة — يرجى الاتصال بالإنترنت';
         statusEl.className = 'status-badge status-error';
       }
+      showDiagnostic(
+        '❌ لا يوجد إنترنت ولا توجد بيانات محفوظة محلياً.<br>يرجى الاتصال بالإنترنت أو رفع ملف CSV يدوياً.',
+        '<button class="btn-fallback" onclick="showUploadModal()">📁 رفع ملف CSV</button>'
+      );
     }
     return;
   }
 
   // Online: proceed with original function
+  hideDiagnostic();
   await originalLoadFromSheet();
   // Original function calls processCSVData which now auto-saves
 };
 
 // Auto-load on startup (after login)
 function autoLoadOnStartup(){
+  // Check file:// protocol first
+  if(isFileProtocol()){
+    console.log('File protocol detected on startup');
+    checkFileProtocol();
+    const loaded = loadDataFromLocalStorage();
+    if(!loaded){
+      const statusEl = document.getElementById('dataStatus');
+      if(statusEl){
+        statusEl.textContent = '⚠️ الملف محلي — ارفع CSV يدوياً أو استخدم بيانات تجريبية';
+        statusEl.className = 'status-badge status-error';
+      }
+      showDiagnostic(
+        '⚠️ <strong>الملف يُفتح محلياً</strong> — المتصفح يحظر جلب البيانات من الإنترنت.<br>الحلول: استخدم خادماً محلياً، أو ارفع ملف CSV يدوياً، أو جرّب البيانات التجريبية.',
+        '<button class="btn-fallback" onclick="showUploadModal()">📁 رفع ملف CSV</button> <button class="btn-fallback" onclick="loadSampleData()" style="background:linear-gradient(135deg,#1565c0,#0d47a1);margin-inline-start:8px;">🔬 بيانات تجريبية</button>'
+      );
+    }
+    return;
+  }
+
   if(!navigator.onLine){
     console.log('Offline detected on startup, loading from localStorage...');
     const loaded = loadDataFromLocalStorage();
@@ -3834,25 +4041,34 @@ function autoLoadOnStartup(){
         statusEl.textContent = '⚠️ offline — لا توجد بيانات محفوظة';
         statusEl.className = 'status-badge status-error';
       }
+      showDiagnostic(
+        '❌ لا يوجد إنترنت ولا توجد بيانات محفوظة.<br>يرجى الاتصال بالإنترنت أو رفع ملف CSV يدوياً.',
+        '<button class="btn-fallback" onclick="showUploadModal()">📁 رفع ملف CSV</button>'
+      );
     }
-  } else {
-    // Online: try to load fresh data, but if it fails quickly, fallback to local
-    const statusEl = document.getElementById('dataStatus');
-    if(statusEl){
-      statusEl.textContent = '⏳ جاري التحقق من الإنترنت...';
-      statusEl.className = 'status-badge status-loading';
-    }
-
-    // Try loading from sheet with a shorter timeout for startup
-    loadFromSheet().catch(err => {
-      console.warn('Auto-load from sheet failed, trying localStorage:', err);
-      const loaded = loadDataFromLocalStorage();
-      if(!loaded && statusEl){
-        statusEl.textContent = '❌ فشل التحميل — لا توجد بيانات محفوظة';
-        statusEl.className = 'status-badge status-error';
-      }
-    });
+    return;
   }
+
+  // Online: try to load fresh data, but if it fails quickly, fallback to local
+  const statusEl = document.getElementById('dataStatus');
+  if(statusEl){
+    statusEl.textContent = '⏳ جاري التحقق من الإنترنت...';
+    statusEl.className = 'status-badge status-loading';
+  }
+
+  // Try loading from sheet with a shorter timeout for startup
+  loadFromSheet().catch(err => {
+    console.warn('Auto-load from sheet failed, trying localStorage:', err);
+    const loaded = loadDataFromLocalStorage();
+    if(!loaded && statusEl){
+      statusEl.textContent = '❌ فشل التحميل — لا توجد بيانات محفوظة';
+      statusEl.className = 'status-badge status-error';
+      showDiagnostic(
+        '❌ فشل الاتصال بالخادم ولا توجد بيانات محفوظة.<br>قد تكون المشكلة: حظر CORS، رابط غير صحيح، أو مشكلة شبكية.',
+        '<button class="btn-fallback" onclick="showUploadModal()">📁 رفع ملف CSV</button> <button class="btn-fallback" onclick="loadSampleData()" style="background:linear-gradient(135deg,#1565c0,#0d47a1);margin-inline-start:8px;">🔬 بيانات تجريبية</button>'
+      );
+    }
+  });
 }
 
 // Network event listeners
