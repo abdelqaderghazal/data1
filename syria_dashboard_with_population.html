@@ -236,6 +236,18 @@
   .monthly-report-card{background:var(--sand);border-radius:12px;padding:16px 18px;margin-bottom:14px;border-inline-start:4px solid #0B5A7A;}
   .monthly-report-card h4{margin:0 0 10px;font-family:'Tajawal';font-size:15px;color:var(--ink);}
   .monthly-report-card .report-text{white-space:pre-wrap;line-height:2;color:var(--ink-soft);font-size:13.5px;}
+
+  /* ===== OFFLINE & LAST UPDATED STYLES ===== */
+  .connection-bar{position:fixed;top:0;left:0;right:0;z-index:998;padding:6px 20px;text-align:center;font-size:12.5px;font-weight:600;font-family:'Cairo';display:none;box-shadow:0 2px 8px rgba(0,0,0,0.15);transition:.3s ease;}
+  .connection-bar.offline{background:linear-gradient(90deg,#c62828,#e53935);color:white;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .connection-bar.online{background:linear-gradient(90deg,#2e7d32,#43a047);color:white;display:none;}
+  .connection-bar.show{display:flex !important;}
+  .last-updated-badge{display:inline-flex;align-items:center;gap:6px;background:var(--sand);border:1px solid var(--line);padding:5px 12px;border-radius:100px;font-family:'IBM Plex Mono';font-size:11.5px;color:var(--ink-soft);font-weight:600;white-space:nowrap;}
+  .last-updated-badge .dot{width:6px;height:6px;border-radius:50%;background:#4F7A63;animation:pulse 2s infinite;}
+  @keyframes pulse{0%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.8);}100%{opacity:1;transform:scale(1);}}
+  .offline-badge{background:#c62828 !important;color:white !important;border-color:#c62828 !important;}
+  .offline-badge .dot{background:#ffcdd2 !important;}
+
 </style>
 <base target="_blank">
 
@@ -245,8 +257,14 @@
 <base target="_blank">
 <base target="_blank">
 <base target="_blank">
+<base target="_blank">
 </head>
 <body class="locked">
+
+<!-- Connection Status Bar -->
+<div class="connection-bar offline" id="offlineBar">📵 لا يوجد اتصال بالإنترنت — تعمل ببيانات محفوظة محلياً</div>
+<div class="connection-bar online" id="onlineBar">🌐 تم استعادة الاتصال — <button onclick="loadFromSheet()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.5);color:white;padding:3px 12px;border-radius:100px;font-family:Cairo;font-size:11px;font-weight:600;cursor:pointer;margin-inline-start:8px;">تحديث الآن</button></div>
+
 
 <!-- ═══════════════════════════════════════
      LOGIN SCREEN
@@ -388,6 +406,7 @@
     <button class="btn btn-primary" onclick="loadFromSheet()" id="refreshBtn">🔄 تحديث من الرابط</button>
     <button class="btn btn-success" onclick="showUploadModal()">📁 رفع ملف CSV يدوياً</button>
     <span class="status-badge status-loading" id="dataStatus">جاري التحميل التلقائي...</span>
+    <span class="last-updated-badge" id="lastUpdatedBadge" style="display:none;"><span class="dot"></span>آخر تحديث: <span id="lastUpdatedText">—</span></span>
   </div>
 </div>
 
@@ -613,7 +632,10 @@
 
 <footer>
   <div class="line" id="footerNote">⚠️ ارفع ملف CSV لعرض البيانات</div>
-  <div>هذه اللوحة تفاعلية بالكامل: استخدم أزرار المحافظات والأشهر أعلاه للتصفية، أو ارفع ملف CSV مباشرة.</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div>هذه اللوحة تفاعلية بالكامل: استخدم أزرار المحافظات والأشهر أعلاه للتصفية، أو ارفع ملف CSV مباشرة.</div>
+    <button onclick="logout()" style="background:linear-gradient(135deg,#c62828,#e53935);color:white;border:none;border-radius:8px;padding:8px 18px;font-family:Cairo;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;box-shadow:0 2px 8px rgba(198,40,40,0.25);" onmouseover="this.style.background='linear-gradient(135deg,#b71c1c,#c62828)';" onmouseout="this.style.background='linear-gradient(135deg,#c62828,#e53935)';">🚪 تسجيل الخروج</button>
+  </div>
 </footer>
 
 <div class="modal-overlay" id="uploadModal">
@@ -3476,6 +3498,13 @@ function checkPassword(){
 
   if(input === passwords[selectedType]){
     currentUser = selectedType;
+    // Save session to localStorage
+    try {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({
+        userType: selectedType,
+        loginTime: new Date().toISOString()
+      }));
+    } catch(e) { console.warn('Failed to save session:', e); }
 
     if(selectedType === 'admin'){
       // Show admin panel instead of dashboard
@@ -3506,9 +3535,18 @@ function enterDashboard(){
     document.getElementById('viewerMessage').style.display = 'block';
   }
 
-  // Auto-load data
-  setTimeout(() => { loadFromSheet(); }, 500);
+  // Save session state
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify({
+      userType: currentUser,
+      loginTime: new Date().toISOString()
+    }));
+  } catch(e) { console.warn('Failed to save session:', e); }
+
+  // Auto-load data (with offline support)
+  setTimeout(() => { autoLoadOnStartup(); }, 500);
   setTimeout(() => { initMapOnDemand(); }, 1200);
+  setTimeout(() => { updateConnectionStatus(); }, 100);
 }
 
 function showChangePw(userType){
@@ -3577,14 +3615,294 @@ document.addEventListener('keydown', function(e){
       checkPassword();
     }
   }
-});// =====================
+});
+// =====================
+// OFFLINE SUPPORT & LAST UPDATED
+// =====================
+const STORAGE_KEY = 'govDashboard_data';
+const STORAGE_TIMESTAMP_KEY = 'govDashboard_timestamp';
+const STORAGE_VERSION_KEY = 'govDashboard_version';
+const SESSION_KEY = 'govDashboard_session';
+const DATA_VERSION = '1.0'; // bump when schema changes
+
+function updateConnectionStatus(){
+  const offlineBar = document.getElementById('offlineBar');
+  const onlineBar = document.getElementById('onlineBar');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const lastBadge = document.getElementById('lastUpdatedBadge');
+
+  if(navigator.onLine){
+    if(offlineBar) offlineBar.classList.remove('show');
+    // Only flash online bar briefly if we were offline
+    if(onlineBar){
+      onlineBar.classList.add('show');
+      setTimeout(() => { onlineBar.classList.remove('show'); }, 5000);
+    }
+    if(refreshBtn) refreshBtn.disabled = false;
+  } else {
+    if(offlineBar) offlineBar.classList.add('show');
+    if(onlineBar) onlineBar.classList.remove('show');
+    if(refreshBtn) refreshBtn.disabled = true;
+  }
+  // Always show last updated badge if we have data
+  if(ALL_DATA && ALL_DATA.length > 0 && lastBadge){
+    lastBadge.style.display = 'inline-flex';
+  }
+}
+
+function saveDataToLocalStorage(){
+  if(!ALL_DATA || ALL_DATA.length === 0) return;
+  try {
+    const payload = {
+      version: DATA_VERSION,
+      data: ALL_DATA,
+      timestamp: new Date().toISOString(),
+      recordCount: ALL_DATA.length
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    updateLastUpdatedDisplay();
+    console.log('✅ Data saved to localStorage:', ALL_DATA.length, 'records');
+  } catch(e) {
+    console.warn('Failed to save to localStorage:', e);
+  }
+}
+
+function loadDataFromLocalStorage(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return false;
+    const payload = JSON.parse(raw);
+    if(!payload || !payload.data || payload.version !== DATA_VERSION){
+      console.log('localStorage data version mismatch or empty');
+      return false;
+    }
+    ALL_DATA = payload.data;
+    selectedMonths = new Set([...new Set(ALL_DATA.map(d => d.month))]);
+    selectedMonthChips.clear();
+
+    const statusEl = document.getElementById('dataStatus');
+    if(statusEl){
+      const ts = payload.timestamp ? new Date(payload.timestamp).toLocaleString('ar-SY') : 'غير معروف';
+      statusEl.textContent = `تم التحميل من الذاكرة المحلية: ${ALL_DATA.length} سجل`;
+      statusEl.className = 'status-badge status-ok';
+    }
+
+    syncMonthChipsWithData();
+    renderAll();
+    updateLastUpdatedDisplay(payload.timestamp);
+    updateConnectionStatus();
+    console.log('✅ Data loaded from localStorage:', ALL_DATA.length, 'records');
+    return true;
+  } catch(e) {
+    console.warn('Failed to load from localStorage:', e);
+    return false;
+  }
+}
+
+function updateLastUpdatedDisplay(isoTimestamp){
+  const badge = document.getElementById('lastUpdatedBadge');
+  const text = document.getElementById('lastUpdatedText');
+  if(!badge || !text) return;
+
+  let ts = isoTimestamp;
+  if(!ts){
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) ts = JSON.parse(raw).timestamp;
+    } catch(e){}
+  }
+
+  if(ts){
+    const date = new Date(ts);
+    const formatted = date.toLocaleString('ar-SY', {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+    text.textContent = formatted;
+    badge.style.display = 'inline-flex';
+
+    // If data is older than 7 days, show warning color
+    const daysOld = (Date.now() - date.getTime()) / (1000 * 60 * 60 * 24);
+    if(daysOld > 7){
+      badge.classList.add('offline-badge');
+      text.innerHTML = formatted + ' <span style="font-size:10px;margin-inline-start:4px;">(قديم)</span>';
+    } else {
+      badge.classList.remove('offline-badge');
+    }
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function clearSavedData(){
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(STORAGE_TIMESTAMP_KEY);
+  ALL_DATA = [];
+  const badge = document.getElementById('lastUpdatedBadge');
+  if(badge) badge.style.display = 'none';
+  const statusEl = document.getElementById('dataStatus');
+  if(statusEl){
+    statusEl.textContent = 'تم مسح البيانات المحفوظة';
+    statusEl.className = 'status-badge status-loading';
+  }
+  renderAll();
+}
+
+// Override processCSVData to auto-save
+const originalProcessCSVData = processCSVData;
+processCSVData = function(csvText){
+  const result = originalProcessCSVData(csvText);
+  if(result){
+    saveDataToLocalStorage();
+  }
+  return result;
+};
+
+// Override loadFromSheet to handle offline
+const originalLoadFromSheet = loadFromSheet;
+loadFromSheet = async function(){
+  if(!navigator.onLine){
+    const statusEl = document.getElementById('dataStatus');
+    if(statusEl){
+      statusEl.textContent = '⚠️ لا يوجد إنترنت — جاري تحميل البيانات المحفوظة...';
+      statusEl.className = 'status-badge status-loading';
+    }
+    const loaded = loadDataFromLocalStorage();
+    if(!loaded){
+      if(statusEl){
+        statusEl.textContent = '❌ لا توجد بيانات محفوظة — يرجى الاتصال بالإنترنت';
+        statusEl.className = 'status-badge status-error';
+      }
+    }
+    return;
+  }
+
+  // Online: proceed with original function
+  await originalLoadFromSheet();
+  // Original function calls processCSVData which now auto-saves
+};
+
+// Auto-load on startup (after login)
+function autoLoadOnStartup(){
+  if(!navigator.onLine){
+    console.log('Offline detected on startup, loading from localStorage...');
+    const loaded = loadDataFromLocalStorage();
+    if(!loaded){
+      const statusEl = document.getElementById('dataStatus');
+      if(statusEl){
+        statusEl.textContent = '⚠️ offline — لا توجد بيانات محفوظة';
+        statusEl.className = 'status-badge status-error';
+      }
+    }
+  } else {
+    // Online: try to load fresh data, but if it fails quickly, fallback to local
+    const statusEl = document.getElementById('dataStatus');
+    if(statusEl){
+      statusEl.textContent = '⏳ جاري التحقق من الإنترنت...';
+      statusEl.className = 'status-badge status-loading';
+    }
+
+    // Try loading from sheet with a shorter timeout for startup
+    loadFromSheet().catch(err => {
+      console.warn('Auto-load from sheet failed, trying localStorage:', err);
+      const loaded = loadDataFromLocalStorage();
+      if(!loaded && statusEl){
+        statusEl.textContent = '❌ فشل التحميل — لا توجد بيانات محفوظة';
+        statusEl.className = 'status-badge status-error';
+      }
+    });
+  }
+}
+
+// Network event listeners
+window.addEventListener('online', () => {
+  console.log('🌐 Back online');
+  updateConnectionStatus();
+  // Show toast/notification
+  const statusEl = document.getElementById('dataStatus');
+  if(statusEl){
+    statusEl.textContent = '🌐 تم استعادة الاتصال — يمكنك التحديث الآن';
+    statusEl.className = 'status-badge status-ok';
+  }
+});
+
+window.addEventListener('offline', () => {
+  console.log('📵 Gone offline');
+  updateConnectionStatus();
+  const statusEl = document.getElementById('dataStatus');
+  if(statusEl){
+    statusEl.textContent = '📵 لا يوجد إنترنت — تعمل بالبيانات المحفوظة';
+    statusEl.className = 'status-badge status-loading';
+  }
+});
+
+
+
+// =====================
+// SESSION MANAGEMENT (Remember Login)
+// =====================
+function logout(){
+  try {
+    localStorage.removeItem(SESSION_KEY);
+  } catch(e) {}
+  currentUser = null;
+  // Reload page to show login screen
+  window.location.reload();
+}
+
+function restoreSession(){
+  try {
+    const saved = localStorage.getItem(SESSION_KEY);
+    if(!saved) return false;
+    const session = JSON.parse(saved);
+    if(!session || !session.userType) return false;
+
+    // Optional: check if session is too old (e.g., 30 days)
+    const loginTime = new Date(session.loginTime);
+    const daysOld = (Date.now() - loginTime.getTime()) / (1000 * 60 * 60 * 24);
+    if(daysOld > 30){
+      localStorage.removeItem(SESSION_KEY);
+      return false;
+    }
+
+    currentUser = session.userType;
+
+    // Skip login screen and enter dashboard directly
+    document.body.classList.remove('locked');
+    document.getElementById('passwordOverlay').style.display = 'none';
+
+    if(currentUser === 'viewer'){
+      document.body.classList.add('readonly');
+      document.getElementById('readOnlyBanner').classList.add('show');
+      document.querySelector('.data-source-bar').style.display = 'none';
+      document.getElementById('viewerMessage').style.display = 'block';
+    }
+
+    return true;
+  } catch(e) {
+    console.warn('Failed to restore session:', e);
+    return false;
+  }
+}
+
+// =====================
 // INIT
 // =====================
 window.addEventListener('DOMContentLoaded', () => {
   loadSavedPasswords(); // Load saved passwords from localStorage
   setupGovFilter();
   setupMonthFilter();
-  // Data will auto-load after password verification
+
+  // Try to restore saved session (skip login if valid)
+  const restored = restoreSession();
+  if(restored){
+    console.log('✅ Session restored for user:', currentUser);
+    // Auto-load data for returning user
+    setTimeout(() => { autoLoadOnStartup(); }, 300);
+    setTimeout(() => { initMapOnDemand(); }, 1000);
+    setTimeout(() => { updateConnectionStatus(); }, 100);
+  }
+  // If not restored, login screen remains visible (default locked state)
 });</script>
 </body>
 </html>
