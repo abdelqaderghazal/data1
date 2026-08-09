@@ -868,6 +868,7 @@ const COLUMN_MAP = {
   "العاملات المنزليات غير السوريات (نم منحهن ترخيص العمل )": "domestic_permits_new",
   "عدد المكاتب المرخصة لتشغيل العمال المنزليين السوريين": "domestic_offices_syrian",
   "مكاتب مرخصة لمزاولة مهنة تشغيل خاص للعمال السوريين": "private_offices_syrian",
+  "عدد المكاتب الخاصة  المرخصة لمزاولة مهنة تشغيل  للعمال السوريين": "private_offices_syrian",
 
   // === Inspection ===
   "عدد الزيارات التفتيشية على المنشأت (صناعي – زراعي )": "insp_total",
@@ -1371,12 +1372,6 @@ function renderSingleGovChart(canvasId, arr, categoryField){
       {key:'insp_total', label:'إجمالي الزيارات التفتيشية (صناعي+زراعي)'},
       {key:'violations', label:'مخالفات'},
       {key:'new_workers_insp', label:'عمال جدد'},
-      {key:'work_permits_new', label:'تراخيص جديدة'},
-      {key:'work_permits_renew', label:'تجديد تراخيص'},
-      {key:'recruitment_offices', label:'مكاتب استقدام'},
-      {key:'domestic_permits_new', label:'تراخيص منزليات'},
-      {key:'domestic_offices_syrian', label:'مكاتب تشغيل سوريين'},
-      {key:'private_offices_syrian', label:'مكاتب خاصة سوريين'},
       {key:'legal_docs_new', label:'صكوك جديدة'},
       {key:'legal_docs_review', label:'صكوك قيد المراجعة'}
     ],
@@ -1384,12 +1379,6 @@ function renderSingleGovChart(canvasId, arr, categoryField){
       {key:'insp_total', label:'إجمالي الزيارات التفتيشية (صناعي+زراعي)'},
       {key:'violations', label:'مخالفات'},
       {key:'new_workers_insp', label:'عمال جدد'},
-      {key:'work_permits_new', label:'تراخيص جديدة'},
-      {key:'work_permits_renew', label:'تجديد تراخيص'},
-      {key:'recruitment_offices', label:'مكاتب استقدام'},
-      {key:'domestic_permits_new', label:'تراخيص منزليات'},
-      {key:'domestic_offices_syrian', label:'مكاتب تشغيل سوريين'},
-      {key:'private_offices_syrian', label:'مكاتب خاصة سوريين'},
       {key:'legal_docs_new', label:'صكوك جديدة'},
       {key:'legal_docs_review', label:'صكوك قيد المراجعة'}
     ],
@@ -1436,7 +1425,13 @@ function renderSingleGovChart(canvasId, arr, categoryField){
       {key:'female_participation', label:'مشاركة إناث %'},
       {key:'unorganized_workers', label:'غير منظم %'},
       {key:'vocational_centers', label:'مراكز تأهيل'},
-      {key:'vocational_benef', label:'مستفيدو تأهيل'}
+      {key:'vocational_benef', label:'مستفيدو تأهيل'},
+      {key:'work_permits_new', label:'تراخيص عمل جديدة (غير سوريين)'},
+      {key:'work_permits_renew', label:'تجديد تراخيص العمل'},
+      {key:'recruitment_offices', label:'مكاتب استقدام عاملات منزليات'},
+      {key:'domestic_permits_new', label:'تراخيص عاملات منزليات جديدة'},
+      {key:'domestic_offices_syrian', label:'مكاتب تشغيل عمال منزليين سوريين'},
+      {key:'private_offices_syrian', label:'مكاتب تشغيل خاص للعمال السوريين'}
     ],
     'camps_count': [
       {key:'camps_count', label:'المخيمات'},
@@ -1675,13 +1670,7 @@ function renderCategory(cat){
         {em:'🌾',n:sum('insp_agricultural',arr),t:'زيارات تفتيشية على المنشآت (زراعي)'},
         {em:'⚠️',n:sum('violations',arr),t:'مخالفات مسجّلة'},
         {em:'📜',n:sum('legal_docs_new',arr),t:'صكوك قانونية جديدة'},
-        {em:'📝',n:sum('legal_docs_review',arr),t:'صكوك قيد المراجعة'},
-        {em:'📋',n:sum('work_permits_new',arr),t:'تراخيص عمل جديدة (غير سوريين)'},
-        {em:'🔄',n:sum('work_permits_renew',arr),t:'تجديد تراخيص العمل'},
-        {em:'🏢',n:sum('recruitment_offices',arr),t:'مكاتب استقدام عاملات منزليات'},
-        {em:'👩',n:sum('domestic_permits_new',arr),t:'تراخيص عاملات منزليات جديدة'},
-        {em:'🏠',n:sum('domestic_offices_syrian',arr),t:'مكاتب تشغيل عمال منزليين سوريين'},
-        {em:'🔧',n:sum('private_offices_syrian',arr),t:'مكاتب تشغيل خاص للعمال السوريين'}
+        {em:'📝',n:sum('legal_docs_review',arr),t:'صكوك قيد المراجعة'}
       ]);
       const totalInspInd = sum('insp_industrial', arr);
       const totalInspAgri = sum('insp_agricultural', arr);
@@ -1698,13 +1687,7 @@ function renderCategory(cat){
         {em:'🏗️',n:sum('insp_total',arr),t:'الزيارات التفتيشية على المنشآت (صناعي+زراعي)'},
         {em:'⚠️',n:sum('violations',arr),t:'مخالفات مسجّلة'},
         {em:'📜',n:sum('legal_docs_new',arr),t:'صكوك قانونية جديدة'},
-        {em:'📝',n:sum('legal_docs_review',arr),t:'صكوك قيد المراجعة'},
-        {em:'📋',n:sum('work_permits_new',arr),t:'تراخيص عمل جديدة (غير سوريين)'},
-        {em:'🔄',n:sum('work_permits_renew',arr),t:'تجديد تراخيص العمل'},
-        {em:'🏢',n:sum('recruitment_offices',arr),t:'مكاتب استقدام عاملات منزليات'},
-        {em:'👩',n:sum('domestic_permits_new',arr),t:'تراخيص عاملات منزليات جديدة'},
-        {em:'🏠',n:sum('domestic_offices_syrian',arr),t:'مكاتب تشغيل عمال منزليين سوريين'},
-        {em:'🔧',n:sum('private_offices_syrian',arr),t:'مكاتب تشغيل خاص للعمال السوريين'}
+        {em:'📝',n:sum('legal_docs_review',arr),t:'صكوك قيد المراجعة'}
       ]);
       const totalInsp = sum('insp_total', arr);
       const totalViol = sum('violations', arr);
@@ -1720,13 +1703,7 @@ function renderCategory(cat){
         {em:'🌾',n:0,t:'زيارات تفتيشية على المنشآت (زراعي)'},
         {em:'⚠️',n:sum('violations',arr),t:'مخالفات مسجّلة'},
         {em:'📜',n:sum('legal_docs_new',arr),t:'صكوك قانونية جديدة'},
-        {em:'📝',n:sum('legal_docs_review',arr),t:'صكوك قيد المراجعة'},
-        {em:'📋',n:sum('work_permits_new',arr),t:'تراخيص عمل جديدة (غير سوريين)'},
-        {em:'🔄',n:sum('work_permits_renew',arr),t:'تجديد تراخيص العمل'},
-        {em:'🏢',n:sum('recruitment_offices',arr),t:'مكاتب استقدام عاملات منزليات'},
-        {em:'👩',n:sum('domestic_permits_new',arr),t:'تراخيص عاملات منزليات جديدة'},
-        {em:'🏠',n:sum('domestic_offices_syrian',arr),t:'مكاتب تشغيل عمال منزليين سوريين'},
-        {em:'🔧',n:sum('private_offices_syrian',arr),t:'مكاتب تشغيل خاص للعمال السوريين'}
+        {em:'📝',n:sum('legal_docs_review',arr),t:'صكوك قيد المراجعة'}
       ]);
       document.getElementById('note-labor').textContent = 
         `💡 لا توجد بيانات تفتيشية مسجّلة. أضف أعمدة "زيارات تفتيشية على المنشآت (صناعي)" و"زيارات تفتيشية على المنشآت (زراعي)" في ملف CSV.`;
@@ -1747,7 +1724,13 @@ function renderCategory(cat){
       {em:'♀️',n:avg('female_participation',arr)+'%',t:'مشاركة الإناث اقتصادياً',raw:true},
       {em:'🏭',n:avg('unorganized_workers',arr)+'%',t:'عمال القطاع غير المنظم'},
       {em:'🎓',n:sum('vocational_centers',arr),t:'مراكز التأهيل والإرشاد (قدرات)'},
-      {em:'👨‍🔧',n:sum('vocational_benef',arr),t:'مستفيدو التأهيل والإرشاد'}
+      {em:'👨‍🔧',n:sum('vocational_benef',arr),t:'مستفيدو التأهيل والإرشاد'},
+      {em:'📋',n:sum('work_permits_new',arr),t:'تراخيص عمل جديدة (غير سوريين)'},
+      {em:'🔄',n:sum('work_permits_renew',arr),t:'تجديد تراخيص العمل'},
+      {em:'🏢',n:sum('recruitment_offices',arr),t:'مكاتب استقدام عاملات منزليات'},
+      {em:'👩',n:sum('domestic_permits_new',arr),t:'تراخيص عاملات منزليات جديدة'},
+      {em:'🏠',n:sum('domestic_offices_syrian',arr),t:'مكاتب تشغيل عمال منزليين سوريين'},
+      {em:'🔧',n:sum('private_offices_syrian',arr),t:'مكاتب تشغيل خاص للعمال السوريين'}
     ]);
     // Add text card for employment relation if exists
     const empRelation = arr.map(d => d.employment_relation).filter(v => v && v.trim()).join(' | ');
