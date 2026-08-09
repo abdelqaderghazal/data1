@@ -243,6 +243,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <base target="_blank">
+<base target="_blank">
 </head>
 <body class="locked">
 
@@ -678,6 +679,11 @@ const COLUMN_MAP = {
   "نسبة النساء المعيلات": "female_breadwinners",
 
   // === NEW: Poverty ===
+  // Exact names from user's CSV file (% at beginning)
+  "%تقديرات الفقر وفق الأمن الغذائي ( الاسر الأمنة غذائيا )": "food_secure_pct",
+  "%تقديرات الفقر وفق الأمن الغذائي (الاسر ذات الهشاشة)": "food_vulnerable_pct",
+  "%تقديرات الفقر - الأمن الغذائي (الاسر المعدومة )": "food_insecure_pct",
+  // Legacy names (for backward compatibility)
   "تقديرات الفقر وفق الأمن الغذائي ( الاسر الأمنة غذائيا ) %": "food_secure_pct",
   "تقديرات الفقر وفق الأمن الغذائي (الاسر ذات الهشاشة) %": "food_vulnerable_pct",
   "تقديرات الفقر وفق الأمن الغذائي (الاسر المعدومة) %": "food_insecure_pct",
@@ -685,10 +691,12 @@ const COLUMN_MAP = {
 
   // === Elderly Care ===
   "دور رعاية كبار السن": "elderly_homes",
+  "عدد المستفيدين من خدمات دور رعاية المسنين": "elderly_benef",
   "النزلاء المستفيدين من الخدمات": "elderly_benef",
 
   // === Disability ===
   "عدد  معاهد رعاية وتأهيل الأشخاص ذوي الاعاقة": "disability_centers",
+  "عدد الطلاب المسجلين في المعاهد الخاصة بذوي الاعاقة": "disability_benef",
   "المستفيدين من خدمات المعاهد": "disability_benef",
   "عدد المستفيدين من توزيع المعينات الحركية": "mobility_aids",
   "المستفيدين  من المعونة النقدية لأسر الأشخاص من ذوي  الإعاقة": "disability_cash",
@@ -700,8 +708,10 @@ const COLUMN_MAP = {
   "المستفيدين من الخدمات (كفالة خارجية)": "sponsor_external",
 
   // === Beggars ===
+  "عدد مراكز رعاية المتسولين": "beggar_centers_total",
   "دور رعاية المتسولين الاجمالي": "beggar_centers_total",
   "دور رعاية المتسولين في الخدمة": "beggar_centers_active",
+  "عدد النزلاء في مراكز التسول": "beggar_inmates",
   "عدد النزلاء": "beggar_inmates",
 
   // === Juvenile ===
@@ -724,12 +734,12 @@ const COLUMN_MAP = {
   "عدد فرص التدريب على المنصة": "platform_training",
 
   // === Rural ===
-  "عدد مراكز التنمية الريفية / كلي": "rural_dev_total",
+  "عدد مراكز التنمية الريفية خارج الخدمة": "rural_dev_total",
   "مراكز التنمية في الخدمة": "rural_dev_active",
-  "وحدات الصناعات الريفية /كلي": "rural_ind_total",
+  "عدد وحدات الصناعات الريفية خارج الخدمة": "rural_ind_total",
   "عدد وحدات الصناعة في الخدمة": "rural_ind_active",
-  "المستفيديين من المراكز": "rural_dev_benef",
-  " المستفيديين من وحدات الصناعات الريفية": "rural_ind_benef",
+  "مستفيدو مراكز التنمية الريفية": "rural_dev_benef",
+  "مستفيدو وحدات الصناعات الريفية": "rural_ind_benef",
 
   // === NGOs ===
   "اجمالي عدد المنظمات غير الحكومية": "ngo_total",
@@ -752,7 +762,7 @@ const COLUMN_MAP = {
   // === Insurance ===
   "عدد المسجلين في التأمينات الاجتماعية/ قطاع عام": "insurance_public",
   "عدد المسجلين في التأمينات الاجتماعية / قطاع خاص": "insurance_private",
-  "اجمالي عدد المسجلين  القائمين على رأس عملهم": "insurance_total",
+  "اجمالي عدد المسجلين القائمين على رأس عملهم": "insurance_total",
   "عدد المسجلين  الجدد من خلال الزيارات التفتيشية": "new_workers_insp",
 
   // === Pensions ===
@@ -1093,7 +1103,7 @@ function kpiDefs(arr){
     {em:"🏗️",lbl:"المنشآت المسجلة",val:sum("platform_establishments",arr)},
     {em:"📋",lbl:"فرص العمل",val:sum("platform_jobs",arr)},
     {em:"🎓",lbl:"فرص التدريب",val:sum("platform_training",arr)},
-    {em:"🏥",lbl:"التأمينات الاجتماعية",val:sum("insurance_total",arr)},
+    {em:"🏥",lbl:"اجمالي المستفيدين القائمين على راس عملهم",val:sum("insurance_total",arr)},
     {em:"🍞",lbl:"سلل غذائية",val:sum("food_baskets",arr)},
     {em:"🏕️",lbl:"المخيمات",val:sum("camps_count",arr)},
     {em:"⚠️",lbl:"مخالفات مسجّلة",val:sum("violations",arr)},
@@ -1223,16 +1233,16 @@ function renderSingleGovChart(canvasId, arr, categoryField){
     'disabled_cards': [
       {key:'disabled_cards', label:'بطاقات إعاقة'},
       {key:'disability_centers', label:'معاهد الإعاقة'},
-      {key:'disability_benef', label:'مستفيدو المعاهد'},
+      {key:'disability_benef', label:'عدد الطلاب المسجلين في المعاهد الخاصة بذوي الاعاقة'},
       {key:'mobility_aids', label:'معينات حركية'},
       {key:'disability_cash', label:'معونة نقدية'}
     ],
     'elderly_benef': [
       {key:'elderly_homes', label:'دور مسنين'},
-      {key:'elderly_benef', label:'مستفيدو مسنين'},
-      {key:'beggar_centers_total', label:'مراكز تسول'},
+      {key:'elderly_benef', label:'عدد المستفيدين من خدمات دور رعاية المسنين'},
+      {key:'beggar_centers_total', label:'عدد مراكز رعاية المتسولين'},
       {key:'beggar_centers_active', label:'مراكز تسول نشطة'},
-      {key:'beggar_inmates', label:'نزلاء تسول'},
+      {key:'beggar_inmates', label:'عدد النزلاء في مراكز التسول'},
       {key:'orphan_homes', label:'دور أيتام'},
       {key:'sponsor_internal', label:'كفالة داخلية'},
       {key:'sponsor_external', label:'كفالة خارجية'},
@@ -1249,15 +1259,12 @@ function renderSingleGovChart(canvasId, arr, categoryField){
       {key:'juvenile_inmates', label:'نزلاء أحداث'}
     ],
     'rural_dev_benef': [
-      {key:'rural_dev_total', label:'مراكز تنمية'},
-      {key:'rural_dev_active', label:'مراكز تنمية نشطة'},
-      {key:'rural_ind_total', label:'وحدات صناعة'},
-      {key:'rural_ind_active', label:'وحدات صناعة نشطة'},
-      {key:'rural_dev_benef', label:'مستفيدو تنمية'},
-      {key:'rural_ind_benef', label:'مستفيدو صناعة'},
-      {key:'vocational_centers', label:'مراكز تأهيل'},
-      {key:'vocational_active', label:'مراكز تأهيل نشطة'},
-      {key:'vocational_benef', label:'مستفيدو تأهيل'}
+      {key:'rural_dev_total', label:'عدد مراكز التنمية الريفية خارج الخدمة'},
+      {key:'rural_dev_active', label:'مراكز التنمية في الخدمة'},
+      {key:'rural_ind_total', label:'وحدات الصناعات الريفية خارج الخدمة'},
+      {key:'rural_ind_active', label:'عدد وحدات الصناعة في الخدمة'},
+      {key:'rural_dev_benef', label:'مستفيدو مراكز التنمية الريفية'},
+      {key:'rural_ind_benef', label:'مستفيدو صناعة'}
     ],
     'insp_total': [
       {key:'insp_total', label:'زيارات تفتيش'},
@@ -1296,7 +1303,7 @@ function renderSingleGovChart(canvasId, arr, categoryField){
     'insurance_total': [
       {key:'insurance_public', label:'قطاع عام'},
       {key:'insurance_private', label:'قطاع خاص'},
-      {key:'insurance_total', label:'إجمالي'},
+      {key:'insurance_total', label:'اجمالي المستفيدين القائمين على راس عملهم'},
       {key:'pensioners', label:'متقاعدون'},
       {key:'work_injury_comp', label:'تعويضات'},
       {key:'service_merge_decisions', label:'ضم خدمة'},
@@ -1313,7 +1320,9 @@ function renderSingleGovChart(canvasId, arr, categoryField){
       {key:'youth_unemployment', label:'بطالة شباب %'},
       {key:'male_participation', label:'مشاركة ذكور %'},
       {key:'female_participation', label:'مشاركة إناث %'},
-      {key:'unorganized_workers', label:'غير منظم %'}
+      {key:'unorganized_workers', label:'غير منظم %'},
+      {key:'vocational_centers', label:'مراكز تأهيل'},
+      {key:'vocational_benef', label:'مستفيدو تأهيل'}
     ],
     'camps_count': [
       {key:'camps_count', label:'المخيمات'},
@@ -1458,7 +1467,7 @@ function renderCategory(cat){
     renderCards('cards-disability', [
       {em:'🦽',n:sum('disabled_cards',arr),t:'إجمالي بطاقات الإعاقة الصادرة'},
       {em:'🏛️',n:sum('disability_centers',arr),t:'معاهد رعاية وتأهيل الأشخاص ذوي الإعاقة'},
-      {em:'👨‍🎓',n:sum('disability_benef',arr),t:'المستفيدين من خدمات المعاهد'},
+      {em:'👨‍🎓',n:sum('disability_benef',arr),t:'عدد الطلاب المسجلين في المعاهد الخاصة بذوي الاعاقة'},
       {em:'🦽',n:sum('mobility_aids',arr),t:'المستفيدين من توزيع المعينات الحركية'},
       {em:'💰',n:sum('disability_cash',arr),t:'المعونة النقدية لأسر ذوي الإعاقة'}
     ]);
@@ -1472,10 +1481,10 @@ function renderCategory(cat){
     barChart('chart-social', 'elderly_benef');
     renderCards('cards-social', [
       {em:'👵',n:sum('elderly_homes',arr),t:'دور رعاية كبار السن'},
-      {em:'🧓',n:sum('elderly_benef',arr),t:'مستفيدو دور رعاية المسنين'},
-      {em:'🏚️',n:sum('beggar_centers_total',arr),t:'دور رعاية المتسولين (الكلي)'},
+      {em:'🧓',n:sum('elderly_benef',arr),t:'عدد المستفيدين من خدمات دور رعاية المسنين'},
+      {em:'🏚️',n:sum('beggar_centers_total',arr),t:'عدد مراكز رعاية المتسولين'},
       {em:'🏠',n:sum('beggar_centers_active',arr),t:'دور رعاية المتسولين (النشطة)'},
-      {em:'🚶',n:sum('beggar_inmates',arr),t:'نزلاء مراكز رعاية المتسولين'},
+      {em:'🚶',n:sum('beggar_inmates',arr),t:'عدد النزلاء في مراكز التسول'},
       {em:'👶',n:sum('orphan_homes',arr),t:'دور رعاية الأيتام'},
       {em:'💞',n:sum('sponsor_internal',arr),t:'مستفيدو الكفالة الداخلية'},
       {em:'🌍',n:sum('sponsor_external',arr),t:'مستفيدو الكفالة الخارجية'},
@@ -1486,7 +1495,7 @@ function renderCategory(cat){
     const pct = extTotal > 0 ? Math.round((idlibExt/extTotal)*100) : 0;
     const darLahn = sum('dar_lahn_benef', arr);
     document.getElementById('note-social').textContent = 
-      `💡 تتركز الكفالة الخارجية بنسبة ~${pct}% في ادلب. نزلاء التسوّل: ${fmt(sum('beggar_inmates',arr))}. مستفيدو دار لحن: ${fmt(darLahn)}.`;
+      `💡 تتركز الكفالة الخارجية بنسبة ~${pct}% في ادلب. عدد النزلاء في مراكز التسول: ${fmt(sum('beggar_inmates',arr))}. مستفيدو دار لحن: ${fmt(darLahn)}.`;
   }
 
   if(cat === 'ngo'){
@@ -1517,21 +1526,17 @@ function renderCategory(cat){
   if(cat === 'rural'){
     barChart('chart-rural', 'rural_dev_benef');
     renderCards('cards-rural', [
-      {em:'🌾',n:sum('rural_dev_total',arr),t:'مراكز التنمية الريفية (الكلي)'},
+      {em:'🌾',n:sum('rural_dev_total',arr),t:'عدد مراكز التنمية الريفية خارج الخدمة'},
       {em:'🏘️',n:sum('rural_dev_active',arr),t:'مراكز التنمية في الخدمة'},
-      {em:'🏭',n:sum('rural_ind_total',arr),t:'وحدات الصناعات الريفية (الكلي)'},
-      {em:'🏗️',n:sum('rural_ind_active',arr),t:'وحدات الصناعة في الخدمة'},
+      {em:'🏭',n:sum('rural_ind_total',arr),t:'وحدات الصناعات الريفية خارج الخدمة'},
+      {em:'🏗️',n:sum('rural_ind_active',arr),t:'عدد وحدات الصناعة في الخدمة'},
       {em:'👥',n:sum('rural_dev_benef',arr),t:'مستفيدو مراكز التنمية الريفية'},
-      {em:'👷',n:sum('rural_ind_benef',arr),t:'مستفيدو وحدات الصناعات الريفية'},
-      {em:'🎓',n:sum('vocational_centers',arr),t:'مراكز التأهيل والإرشاد (قدرات)'},
-      {em:'✅',n:sum('vocational_active',arr),t:'مراكز التأهيل في الخدمة'},
-      {em:'👨‍🔧',n:sum('vocational_benef',arr),t:'مستفيدو التأهيل والإرشاد'}
+      {em:'👷',n:sum('rural_ind_benef',arr),t:'مستفيدو وحدات الصناعات الريفية'}
     ]);
     const topDev = arr.reduce((a,d) => (d.rural_dev_benef||0) > (a.val||0) ? {gov:d.gov, val:d.rural_dev_benef||0} : a, {gov:'', val:0});
     const topInd = arr.reduce((a,d) => (d.rural_ind_benef||0) > (a.val||0) ? {gov:d.gov, val:d.rural_ind_benef||0} : a, {gov:'', val:0});
-    const vocTotal = sum('vocational_benef', arr);
     document.getElementById('note-rural').textContent = 
-      `💡 ${topDev.gov || 'لا توجد بيانات'} تتصدر التنمية الريفية (${fmt(topDev.val)})، و${topInd.gov || 'لا'} تتصدر الصناعات الريفية (${fmt(topInd.val)}). مستفيدو التأهيل: ${fmt(vocTotal)}.`;
+      `💡 ${topDev.gov || 'لا توجد بيانات'} تتصدر التنمية الريفية (${fmt(topDev.val)})، و${topInd.gov || 'لا'} تتصدر الصناعات الريفية (${fmt(topInd.val)}).`;
   }
 
   if(cat === 'labor'){
@@ -1568,7 +1573,9 @@ function renderCategory(cat){
       {em:'🧑‍🎓',n:avg('youth_unemployment',arr)+'%',t:'بطالة الشباب',raw:true},
       {em:'♂️',n:avg('male_participation',arr)+'%',t:'مشاركة الذكور اقتصادياً',raw:true},
       {em:'♀️',n:avg('female_participation',arr)+'%',t:'مشاركة الإناث اقتصادياً',raw:true},
-      {em:'🏭',n:avg('unorganized_workers',arr)+'%',t:'عمال القطاع غير المنظم'}
+      {em:'🏭',n:avg('unorganized_workers',arr)+'%',t:'عمال القطاع غير المنظم'},
+      {em:'🎓',n:sum('vocational_centers',arr),t:'مراكز التأهيل والإرشاد (قدرات)'},
+      {em:'👨‍🔧',n:sum('vocational_benef',arr),t:'مستفيدو التأهيل والإرشاد'}
     ]);
     // Add text card for employment relation if exists
     const empRelation = arr.map(d => d.employment_relation).filter(v => v && v.trim()).join(' | ');
@@ -1580,8 +1587,9 @@ function renderCategory(cat){
     const unemp = sum('unemployed', arr);
     const total = emp + unemp;
     const rate = total > 0 ? ((unemp/total)*100).toFixed(1) : 0;
+    const vocTotal = sum('vocational_benef', arr);
     document.getElementById('note-labor_market').textContent = 
-      `💡 إجمالي القوى العاملة: ${fmt(total)} — منهم ${fmt(emp)} مشتغل و${fmt(unemp)} متعطل (معدل بطالة محسوب: ${rate}%).`;
+      `💡 إجمالي القوى العاملة: ${fmt(total)} — منهم ${fmt(emp)} مشتغل و${fmt(unemp)} متعطل (معدل بطالة: ${rate}%). مستفيدو التأهيل: ${fmt(vocTotal)}.`;
   }
 
   if(cat === 'insurance'){
@@ -1589,7 +1597,7 @@ function renderCategory(cat){
     renderCards('cards-insurance', [
       {em:'🏛️',n:sum('insurance_public',arr),t:'مسجّلون تأمينات — قطاع عام'},
       {em:'🏭',n:sum('insurance_private',arr),t:'مسجّلون تأمينات — قطاع خاص'},
-      {em:'📊',n:sum('insurance_total',arr),t:'إجمالي المسجّلين'},
+      {em:'📊',n:sum('insurance_total',arr),t:'اجمالي المستفيدين القائمين على راس عملهم'},
       {em:'👴',n:sum('pensioners',arr),t:'المتقاعدون المستفيدون'},
       {em:'💰',n:sum('work_injury_comp',arr),t:'تعويضات إصابات العمل'},
       {em:'📋',n:sum('service_merge_decisions',arr),t:'قرارات ضم الخدمة'},
@@ -1601,7 +1609,7 @@ function renderCategory(cat){
     const priv = sum('insurance_private', arr);
     const total = sum('insurance_total', arr);
     document.getElementById('note-insurance').textContent = 
-      `💡 ${fmt(total)} مسجّل في التأمينات الاجتماعية (${fmt(pub)} قطاع عام، ${fmt(priv)} قطاع خاص).`;
+      `💡 ${fmt(total)} مستفيد قائم على راس عمله (${fmt(pub)} قطاع عام، ${fmt(priv)} قطاع خاص).`;
   }
 
   if(cat === 'aid'){
@@ -2108,6 +2116,7 @@ function renderGovComparison(arr){
         intensity += (d.disabled_cards||0) + (d.elderly_benef||0) + (d.ngo_active||0) +
                      (d.juvenile_inmates||0) + (d.rural_dev_benef||0) + (d.insp_total||0) +
                      (d.new_workers_insp||0) + (d.employed||0) + (d.platform_registered||0) +
+             (d.vocational_benef||0) +
                      (d.food_baskets||0) + (d.insurance_total||0);
       });
       const perCapita = (intensity / pop) * 1000;
@@ -2123,8 +2132,9 @@ function renderGovComparison(arr){
       let count = 0;
       const keys = ['disabled_cards','elderly_benef','ngo_active','juvenile_inmates',
                     'rural_dev_benef','insp_total','new_workers_insp',
-                    'disability_benef','vocational_benef','beggar_inmates','orphan_homes',
-                    'sponsor_internal','sponsor_external','violations','platform_registered'];
+                    'disability_benef','beggar_inmates','orphan_homes',
+                    'sponsor_internal','sponsor_external','violations','platform_registered',
+                    'vocational_centers','vocational_benef'];
       govData.forEach(d => {
         keys.forEach(key => {
           if((d[key]||0) > 0) count++;
@@ -2660,11 +2670,16 @@ function getGovIntensity(gov, arr){
   if(govData.length === 0) return 0;
   let total = 0;
   govData.forEach(d => {
-    total += (d.disabled_cards||0) + (d.elderly_benef||0) + (d.ngo_active||0) + 
+    // Demographic base (population, gender, age groups) — weighted to reflect scale
+    total += (d.population||0) * 0.5 + (d.males||0) * 0.1 + (d.females||0) * 0.1 +
+             (d.pop_under15||0) * 0.05 + (d.pop_15_60||0) * 0.05 + (d.pop_over60||0) * 0.05 +
+             // Social & operational indicators
+             (d.disabled_cards||0) + (d.elderly_benef||0) + (d.ngo_active||0) + 
              (d.juvenile_inmates||0) + (d.rural_dev_benef||0) + (d.insp_total||0) +
              (d.new_workers_insp||0) + (d.employed||0) + (d.platform_registered||0) +
+             (d.vocational_benef||0) +
              (d.food_baskets||0) + (d.insurance_total||0) + (d.camp_families||0) +
-             (d.disability_benef||0) + (d.vocational_benef||0) + (d.cash_assistance||0);
+             (d.disability_benef||0) + (d.cash_assistance||0);
   });
   return total;
 }
@@ -2766,7 +2781,7 @@ function updateMapMarkers(){
           <span style="font-weight:700;color:var(--syria-green);font-size:12px;">🦽 رعاية ذوي الإعاقة</span>
         </div>
         <div class="info-row"><span class="info-label">بطاقات إعاقة</span><span class="info-val">${fmt(d.disabled_cards||0)}</span></div>
-        <div class="info-row"><span class="info-label">مستفيدو خدمات الإعاقة</span><span class="info-val">${fmt(d.disability_benef||0)}</span></div>
+        <div class="info-row"><span class="info-label">عدد الطلاب المسجلين في المعاهد الخاصة بذوي الاعاقة</span><span class="info-val">${fmt(d.disability_benef||0)}</span></div>
         <div class="info-row"><span class="info-label">معينات حركية</span><span class="info-val">${fmt(d.mobility_aids||0)}</span></div>
         <div class="info-row"><span class="info-label">معونة نقدية لأسر الإعاقة</span><span class="info-val">${fmt(d.disability_cash||0)}</span></div>
 
@@ -2774,10 +2789,10 @@ function updateMapMarkers(){
           <span style="font-weight:700;color:var(--syria-green);font-size:12px;">👵 الرعاية الاجتماعية</span>
         </div>
         <div class="info-row"><span class="info-label">دور رعاية المسنين</span><span class="info-val">${fmt(d.elderly_homes||0)}</span></div>
-        <div class="info-row"><span class="info-label">مستفيدو رعاية المسنين</span><span class="info-val">${fmt(d.elderly_benef||0)}</span></div>
-        <div class="info-row"><span class="info-label">مراكز رعاية المتسولين (الكلي)</span><span class="info-val">${fmt(d.beggar_centers_total||0)}</span></div>
+        <div class="info-row"><span class="info-label">عدد المستفيدين من خدمات دور رعاية المسنين</span><span class="info-val">${fmt(d.elderly_benef||0)}</span></div>
+        <div class="info-row"><span class="info-label">عدد مراكز رعاية المتسولين</span><span class="info-val">${fmt(d.beggar_centers_total||0)}</span></div>
         <div class="info-row"><span class="info-label">مراكز رعاية المتسولين (النشطة)</span><span class="info-val">${fmt(d.beggar_centers_active||0)}</span></div>
-        <div class="info-row"><span class="info-label">نزلاء مراكز التسول</span><span class="info-val">${fmt(d.beggar_inmates||0)}</span></div>
+        <div class="info-row"><span class="info-label">عدد النزلاء في مراكز التسول</span><span class="info-val">${fmt(d.beggar_inmates||0)}</span></div>
         <div class="info-row"><span class="info-label">دور رعاية الأيتام</span><span class="info-val">${fmt(d.orphan_homes||0)}</span></div>
         <div class="info-row"><span class="info-label">كفالة داخلية</span><span class="info-val">${fmt(d.sponsor_internal||0)}</span></div>
         <div class="info-row"><span class="info-label">كفالة خارجية</span><span class="info-val">${fmt(d.sponsor_external||0)}</span></div>
@@ -2799,14 +2814,12 @@ function updateMapMarkers(){
         <div style="border-top:2px solid #0B5A7A;margin:10px 0;padding-top:8px;">
           <span style="font-weight:700;color:var(--syria-green);font-size:12px;">🌾 التنمية الريفية</span>
         </div>
-        <div class="info-row"><span class="info-label">مراكز تنمية ريفية (نشطة)</span><span class="info-val">${fmt(d.rural_dev_active||0)}</span></div>
+        <div class="info-row"><span class="info-label">مراكز التنمية في الخدمة</span><span class="info-val">${fmt(d.rural_dev_active||0)}</span></div>
         <div class="info-row"><span class="info-label">مراكز تنمية ريفية (خارج الخدمة)</span><span class="info-val">${fmt(d.rural_dev_inactive||0)}</span></div>
-        <div class="info-row"><span class="info-label">وحدات صناعات ريفية (نشطة)</span><span class="info-val">${fmt(d.rural_ind_active||0)}</span></div>
+        <div class="info-row"><span class="info-label">عدد وحدات الصناعة في الخدمة</span><span class="info-val">${fmt(d.rural_ind_active||0)}</span></div>
         <div class="info-row"><span class="info-label">وحدات صناعات ريفية (خارج الخدمة)</span><span class="info-val">${fmt(d.rural_ind_inactive||0)}</span></div>
         <div class="info-row"><span class="info-label">مستفيدو التنمية الريفية</span><span class="info-val">${fmt(d.rural_dev_benef||0)}</span></div>
         <div class="info-row"><span class="info-label">مستفيدو الصناعات الريفية</span><span class="info-val">${fmt(d.rural_ind_benef||0)}</span></div>
-        <div class="info-row"><span class="info-label">مستفيدو التأهيل (ريفي)</span><span class="info-val">${fmt(d.rural_rehab_benef||0)}</span></div>
-
         <div style="border-top:2px solid #0B5A7A;margin:10px 0;padding-top:8px;">
           <span style="font-weight:700;color:var(--syria-green);font-size:12px;">🏗️ التفتيش والعمالة</span>
         </div>
@@ -2826,9 +2839,9 @@ function updateMapMarkers(){
         <div class="info-row"><span class="info-label">👥 عدد السكان</span><span class="info-val">${fmt(d.population||0)}</span></div>
         <div class="info-row"><span class="info-label">♂️ الذكور</span><span class="info-val">${fmt(d.males||0)}</span></div>
         <div class="info-row"><span class="info-label">♀️ الإناث</span><span class="info-val">${fmt(d.females||0)}</span></div>
-        <div class="info-row"><span class="info-label">👶 دون 15 سنة</span><span class="info-val">${fmt(d.pop_under15||0)}%</span></div>
-        <div class="info-row"><span class="info-label">🧑 15-60 سنة</span><span class="info-val">${fmt(d.pop_15_60||0)}%</span></div>
-        <div class="info-row"><span class="info-label">👴 60+ سنة</span><span class="info-val">${fmt(d.pop_over60||0)}%</span></div>
+        <div class="info-row"><span class="info-label">👶 دون 15 سنة</span><span class="info-val">${fmt(d.pop_under15||0)}</span></div>
+        <div class="info-row"><span class="info-label">🧑 15-60 سنة</span><span class="info-val">${fmt(d.pop_15_60||0)}</span></div>
+        <div class="info-row"><span class="info-label">👴 60+ سنة</span><span class="info-val">${fmt(d.pop_over60||0)}</span></div>
 
         <div style="border-top:2px solid #0B5A7A;margin:10px 0;padding-top:8px;">
           <span style="font-weight:700;color:var(--syria-green);font-size:12px;">💼 سوق العمل</span>
@@ -2841,13 +2854,18 @@ function updateMapMarkers(){
         <div class="info-row"><span class="info-label">♂️ مشاركة الذكور</span><span class="info-val">${fmt(d.male_participation||0)}%</span></div>
         <div class="info-row"><span class="info-label">♀️ مشاركة الإناث</span><span class="info-val">${fmt(d.female_participation||0)}%</span></div>
         <div class="info-row"><span class="info-label">🏭 قطاع غير منظم</span><span class="info-val">${fmt(d.unorganized_workers||0)}%</span></div>
+        <div style="border-top:1px dashed #ccc;margin:8px 0;padding-top:6px;">
+          <span style="font-weight:600;color:#0B5A7A;font-size:11px;">🎓 التأهيل والإرشاد (قدرات)</span>
+        </div>
+        <div class="info-row"><span class="info-label">🎓 مراكز التأهيل والإرشاد</span><span class="info-val">${fmt(d.vocational_centers||0)}</span></div>
+        <div class="info-row"><span class="info-label">👨‍🔧 مستفيدو التأهيل</span><span class="info-val">${fmt(d.vocational_benef||0)}</span></div>
 
         <div style="border-top:2px solid #0B5A7A;margin:10px 0;padding-top:8px;">
           <span style="font-weight:700;color:var(--syria-green);font-size:12px;">🏥 التأمينات</span>
         </div>
         <div class="info-row"><span class="info-label">🏛️ قطاع عام</span><span class="info-val">${fmt(d.insurance_public||0)}</span></div>
         <div class="info-row"><span class="info-label">🏭 قطاع خاص</span><span class="info-val">${fmt(d.insurance_private||0)}</span></div>
-        <div class="info-row"><span class="info-label">📊 الإجمالي</span><span class="info-val">${fmt(d.insurance_total||0)}</span></div>
+        <div class="info-row"><span class="info-label">📊 اجمالي المستفيدين القائمين على راس عملهم</span><span class="info-val">${fmt(d.insurance_total||0)}</span></div>
         <div class="info-row"><span class="info-label">👴 المتقاعدون</span><span class="info-val">${fmt(d.pensioners||0)}</span></div>
 
         <div style="border-top:2px solid #0B5A7A;margin:10px 0;padding-top:8px;">
@@ -2876,9 +2894,14 @@ function updateMapMarkers(){
         </div>
         <div class="info-row"><span class="info-label">💍 زواج القاصرات</span><span class="info-val">${fmt(d.child_marriage_rate||0)}%</span></div>
         <div class="info-row"><span class="info-label">👷 عمل الأطفال</span><span class="info-val">${fmt(d.child_labor_rate||0)}%</span></div>
-        <div class="info-row"><span class="info-label">📚 إكمال التعليم</span><span class="info-val">${fmt(d.basic_edu_completion||0)}%</span></div>
+        <div class="info-row"><span class="info-label">📚 إكمال التعليم الأساسي</span><span class="info-val">${fmt(d.basic_edu_completion||0)}%</span></div>
         <div class="info-row"><span class="info-label">👩‍👧 نساء معيلات</span><span class="info-val">${fmt(d.female_breadwinners||0)}%</span></div>
-        <div class="info-row"><span class="info-label">🍞 أمن غذائي</span><span class="info-val">${fmt(d.food_secure_pct||0)}%</span></div>
+        <div style="border-top:1px dashed #ccc;margin:8px 0;padding-top:6px;">
+          <span style="font-weight:600;color:#0B5A7A;font-size:11px;">🍞 الأمن الغذائي (تقديرات الفقر)</span>
+        </div>
+        <div class="info-row"><span class="info-label">✅ أسر آمنة غذائياً</span><span class="info-val" style="color:#4F7A63;font-weight:700;">${fmt(d.food_secure_pct||0)}%</span></div>
+        <div class="info-row"><span class="info-label">⚠️ أسر ذات هشاشة غذائية</span><span class="info-val" style="color:#B08D57;font-weight:700;">${fmt(d.food_vulnerable_pct||0)}%</span></div>
+        <div class="info-row"><span class="info-label">🔴 أسر معدومة غذائياً</span><span class="info-val" style="color:#B5533C;font-weight:700;">${fmt(d.food_insecure_pct||0)}%</span></div>
 
         ${textFields.achievements && textFields.achievements.length ? `
         <div style="border-top:2px solid #0D8BA8;margin:10px 0;padding-top:8px;">
