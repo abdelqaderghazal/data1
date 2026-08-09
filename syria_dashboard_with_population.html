@@ -243,7 +243,6 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <base target="_blank">
-<base target="_blank">
 </head>
 <body class="locked">
 
@@ -2489,6 +2488,20 @@ function handleCSVPaste(){
   closeUploadModal();
 }
 
+// Helper: fetch with timeout to avoid hanging requests
+async function fetchWithTimeout(url, options = {}, timeout = 8000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+}
+
 async function loadFromSheet(){
   const url = document.getElementById('gsheetUrl').value.trim();
   if(!url){ 
@@ -2503,49 +2516,77 @@ async function loadFromSheet(){
   statusEl.className = 'status-badge status-loading';
   if(refreshBtn) refreshBtn.disabled = true;
 
-  try {
-    // Add cache-buster to force fresh data
-    const cacheBuster = '&_cb=' + Date.now();
-    const fetchUrl = url + (url.includes('?') ? cacheBuster : '?' + cacheBuster);
+  // Add cache-buster to force fresh data
+  const cacheBuster = '&_cb=' + Date.now();
+  const fetchUrl = url + (url.includes('?') ? cacheBuster : '?' + cacheBuster);
 
-    const response = await fetch(fetchUrl, { method: 'GET', mode: 'cors' });
+  // 1. Try direct fetch first (fastest if CORS is enabled by the sheet owner)
+  try {
+    const response = await fetchWithTimeout(fetchUrl, {}, 5000);
     if(response.ok){ 
       const csvText = await response.text(); 
-      if(processCSVData(csvText)) {
-        statusEl.textContent = '✅ تم التحديث بنجاح — ' + new Date().toLocaleTimeString('ar-SY');
-        statusEl.className = 'status-badge status-ok';
-        if(refreshBtn) refreshBtn.disabled = false;
-        return; 
+      if(csvText && csvText.length > 50 && (csvText.includes(',') || csvText.includes(';'))) {
+        if(processCSVData(csvText)) {
+          statusEl.textContent = '✅ تم التحديث بنجاح — ' + new Date().toLocaleTimeString('ar-SY');
+          statusEl.className = 'status-badge status-ok';
+          if(refreshBtn) refreshBtn.disabled = false;
+          return; 
+        }
       }
     }
   } catch(e) { 
     console.log('Direct fetch failed:', e.message); 
   }
 
-  // Try with proxies if direct fetch fails
-  const proxies = ['https://api.allorigins.win/raw?url=','https://api.allorigins.win/get?url=','https://corsproxy.io/?'];
+  // 2. Proxy list — ordered by reliability & speed (corsproxy.io first as it's usually fastest)
+  const proxies = [
+    { 
+      name: 'corsproxy.io',
+      url: (target) => `https://corsproxy.io/?${encodeURIComponent(target)}`,
+      extract: async (r) => r.text()
+    },
+    { 
+      name: 'allorigins (raw)',
+      url: (target) => `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`,
+      extract: async (r) => r.text()
+    },
+    { 
+      name: 'allorigins (json)',
+      url: (target) => `https://api.allorigins.win/get?url=${encodeURIComponent(target)}`,
+      extract: async (r) => {
+        const json = await r.json();
+        return json.contents;
+      }
+    }
+  ];
+
+  // Try proxies sequentially with timeout and content validation
   for(const proxy of proxies){
     try {
-      const cacheBuster = '&_cb=' + Date.now();
-      const proxyUrl = proxy + encodeURIComponent(url + cacheBuster);
-      const response = await fetch(proxyUrl, { method: 'GET' });
-      if(!response.ok) continue;
-      let csvText;
-      if(proxy.includes('allorigins.win/get')) { 
-        const json = await response.json(); 
-        csvText = json.contents; 
+      statusEl.textContent = `⏳ جاري المحاولة عبر ${proxy.name}...`;
+      const proxyUrl = proxy.url(fetchUrl);
+      const response = await fetchWithTimeout(proxyUrl, {}, 10000);
+
+      if(!response.ok) {
+        console.warn(`Proxy ${proxy.name} returned HTTP ${response.status}`);
+        continue;
       }
-      else { 
-        csvText = await response.text(); 
-      }
-      if(processCSVData(csvText)) {
-        statusEl.textContent = '✅ تم التحديث بنجاح — ' + new Date().toLocaleTimeString('ar-SY');
-        statusEl.className = 'status-badge status-ok';
-        if(refreshBtn) refreshBtn.disabled = false;
-        return;
+
+      const csvText = await proxy.extract(response);
+
+      // Validate response actually looks like CSV (not an error page)
+      if(csvText && csvText.length > 50 && (csvText.includes(',') || csvText.includes(';'))) {
+        if(processCSVData(csvText)) {
+          statusEl.textContent = '✅ تم التحديث بنجاح — ' + new Date().toLocaleTimeString('ar-SY');
+          statusEl.className = 'status-badge status-ok';
+          if(refreshBtn) refreshBtn.disabled = false;
+          return;
+        }
+      } else {
+        console.warn(`Proxy ${proxy.name} returned invalid/non-CSV content`);
       }
     } catch(err) { 
-      console.warn('Proxy failed:', proxy, err.message); 
+      console.warn(`Proxy ${proxy.name} failed:`, err.message); 
     }
   }
 
