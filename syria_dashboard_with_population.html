@@ -369,12 +369,24 @@
   .csb-status.warning{background:#fff3cd;color:#856404;}
   .csb-status.off-track{background:#ffebee;color:#c62828;}
   .csb-status.no-data{background:#f5f5f5;color:#999;}
+
+  /* Hide monthly report tab */
+  section[data-cat="monthly_report"],
+  .category[data-cat="monthly_report"] {
+    display: none !important;
+  }
+
+  /* Hide offline/online connection bars */
+  #offlineBar, #onlineBar {
+    display: none !important;
+  }
 </style>
 <base target="_blank">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+<base target="_blank">
 <base target="_blank">
 <base target="_blank">
 <base target="_blank">
