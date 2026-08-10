@@ -241,7 +241,7 @@
   .connection-bar{position:fixed;top:0;left:0;right:0;z-index:998;padding:6px 20px;text-align:center;font-size:12.5px;font-weight:600;font-family:'Cairo';display:none;box-shadow:0 2px 8px rgba(0,0,0,0.15);transition:.3s ease;}
   .connection-bar.offline{background:linear-gradient(90deg,#c62828,#e53935);color:white;display:flex;align-items:center;justify-content:center;gap:8px;}
   .connection-bar.online{background:linear-gradient(90deg,#2e7d32,#43a047);color:white;display:none;}
-  .connection-bar.show{display:flex !important;}
+  .connection-bar.show{display:flex !important;}  .connection-bar[data-manually-closed="true"]{display:none !important;}
   .last-updated-badge{display:inline-flex;align-items:center;gap:6px;background:var(--sand);border:1px solid var(--line);padding:5px 12px;border-radius:100px;font-family:'IBM Plex Mono';font-size:11.5px;color:var(--ink-soft);font-weight:600;white-space:nowrap;}
   .last-updated-badge .dot{width:6px;height:6px;border-radius:50%;background:#4F7A63;animation:pulse 2s infinite;}
   @keyframes pulse{0%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.8);}100%{opacity:1;transform:scale(1);}}
@@ -378,11 +378,12 @@
 <base target="_blank">
 <base target="_blank">
 <base target="_blank">
+<base target="_blank">
 </head>
 <body class="locked">
 
 <!-- Connection Status Bar -->
-<div class="connection-bar offline" id="offlineBar">📵 لا يوجد اتصال بالإنترنت — تعمل ببيانات محفوظة محلياً</div>
+<div class="connection-bar offline" id="offlineBar" style="position:relative;">📵 لا يوجد اتصال بالإنترنت — تعمل ببيانات محفوظة محلياً <button class="close-banner" onclick="var el=document.getElementById('offlineBar');el.classList.remove('show');el.setAttribute('data-manually-closed','true');el.style.display='none';" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);background:none;border:none;color:white;font-size:18px;cursor:pointer;line-height:1;padding:0 8px;" aria-label="إغلاق">×</button></div>
 <div class="connection-bar online" id="onlineBar">🌐 تم استعادة الاتصال — <button onclick="loadFromSheet()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.5);color:white;padding:3px 12px;border-radius:100px;font-family:Cairo;font-size:11px;font-weight:600;cursor:pointer;margin-inline-start:8px;">تحديث الآن</button></div>
 
 
