@@ -260,13 +260,121 @@
   .file-protocol-warning p{margin:0;font-size:12.5px;line-height:1.8;}
   .file-protocol-warning code{background:#ffcdd2;padding:3px 8px;border-radius:4px;font-family:'IBM Plex Mono';font-size:11px;}
 
+  /* ═══════════════════════════════════════
+     STRATEGIC PLAN LAYER — المحور الاستراتيجي
+     ═══════════════════════════════════════ */
+
+  /* --- Compass Section --- */
+  .strategic-compass{background:var(--paper);border:2px solid #0B5A7A;border-radius:20px;margin-bottom:28px;overflow:hidden;box-shadow:0 4px 24px rgba(11,90,122,0.10);}
+  .strategic-compass-head{display:flex;align-items:center;gap:16px;padding:22px 26px;background:linear-gradient(135deg,#0B5A7A 0%,#052a3a 100%);cursor:pointer;}
+  .strategic-compass-head .icon{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+  .strategic-compass-head h2{font-family:'Tajawal',sans-serif;font-weight:900;font-size:20px;margin:0;color:#fff;}
+  .strategic-compass-head p{margin:4px 0 0;font-size:13px;color:rgba(255,255,255,0.8);}
+  .strategic-compass-head .chev{margin-inline-start:auto;font-size:20px;color:rgba(255,255,255,0.8);transition:transform .2s;}
+  .strategic-compass.open .chev{transform:rotate(180deg);}
+  .strategic-compass-body{padding:24px 26px 28px;display:none;}
+  .strategic-compass.open .strategic-compass-body{display:block;}
+
+  /* --- Overall Progress Banner --- */
+  .strat-overall{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px;}
+  .strat-overall-card{background:var(--sand);border-radius:14px;padding:16px 14px;text-align:center;border:1px solid var(--line);}
+  .strat-overall-card.green{border-color:#0B5A7A;background:#e8f5f0;}
+  .strat-overall-card.yellow{border-color:#f0a500;background:#fff8e1;}
+  .strat-overall-card.red{border-color:#c62828;background:#ffebee;}
+  .strat-overall-card .ov-val{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:26px;margin-bottom:4px;}
+  .strat-overall-card.green .ov-val{color:#0B5A7A;}
+  .strat-overall-card.yellow .ov-val{color:#f0a500;}
+  .strat-overall-card.red .ov-val{color:#c62828;}
+  .strat-overall-card .ov-lbl{font-size:11.5px;color:var(--ink-soft);line-height:1.4;}
+
+  /* --- Axis Cards Grid --- */
+  .strat-axes{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:22px;}
+  .strat-axis-card{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:16px 18px;position:relative;overflow:hidden;transition:.15s;}
+  .strat-axis-card:hover{box-shadow:0 4px 16px rgba(11,90,122,0.12);}
+  .strat-axis-card::before{content:"";position:absolute;top:0;right:0;width:4px;height:100%;border-radius:0 14px 14px 0;}
+  .strat-axis-card.on-track::before{background:#0B5A7A;}
+  .strat-axis-card.warning::before{background:#f0a500;}
+  .strat-axis-card.off-track::before{background:#c62828;}
+  .strat-axis-card.no-data::before{background:#bbb;}
+  .sac-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .sac-icon{font-size:22px;flex-shrink:0;}
+  .sac-title{font-family:'Tajawal',sans-serif;font-weight:700;font-size:14px;color:var(--ink);line-height:1.3;}
+  .sac-axis{font-size:11px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;}
+  .sac-status-badge{margin-inline-start:auto;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;white-space:nowrap;}
+  .sac-status-badge.on-track{background:#e8f5f0;color:#0B5A7A;}
+  .sac-status-badge.warning{background:#fff3cd;color:#856404;}
+  .sac-status-badge.off-track{background:#ffebee;color:#c62828;}
+  .sac-status-badge.no-data{background:#f5f5f5;color:#999;}
+  .sac-values{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px;}
+  .sac-actual{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:18px;color:var(--ink);}
+  .sac-target-info{text-align:left;font-size:11px;color:var(--ink-soft);}
+  .sac-target-info span{display:block;font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--ink);font-size:12px;}
+  .sac-progress-bar{height:8px;background:var(--sand-2);border-radius:4px;overflow:hidden;margin-bottom:6px;}
+  .sac-progress-fill{height:100%;border-radius:4px;transition:width .6s ease;}
+  .on-track .sac-progress-fill{background:linear-gradient(90deg,#0B5A7A,#0D8BA8);}
+  .warning .sac-progress-fill{background:linear-gradient(90deg,#f0a500,#ffc107);}
+  .off-track .sac-progress-fill{background:linear-gradient(90deg,#c62828,#ef5350);}
+  .no-data .sac-progress-fill{background:#ddd;}
+  .sac-pct{font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:700;text-align:left;}
+  .on-track .sac-pct{color:#0B5A7A;}
+  .warning .sac-pct{color:#856404;}
+  .off-track .sac-pct{color:#c62828;}
+  .sac-note{font-size:11px;color:var(--ink-soft);margin-top:6px;line-height:1.5;border-top:1px solid var(--sand-2);padding-top:6px;}
+
+  /* --- Quarterly Timeline --- */
+  .strat-timeline{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;border-radius:10px;overflow:hidden;margin-bottom:22px;border:1px solid var(--line);}
+  .qtl-cell{padding:12px 10px;text-align:center;background:var(--sand);}
+  .qtl-cell.current{background:linear-gradient(135deg,#0B5A7A,#084a66);color:#fff;}
+  .qtl-cell.done{background:#e8f5f0;}
+  .qtl-cell .ql{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;margin-bottom:4px;}
+  .qtl-cell.current .ql{color:rgba(255,255,255,0.8);}
+  .qtl-cell.done .ql{color:#0B5A7A;}
+  .qtl-cell .qm{font-size:11.5px;color:var(--ink-soft);margin-bottom:4px;}
+  .qtl-cell.current .qm{color:rgba(255,255,255,0.7);}
+  .qtl-cell .qpct{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:15px;color:var(--ink);}
+  .qtl-cell.current .qpct{color:#fff;}
+  .qtl-cell.done .qpct{color:#0B5A7A;}
+
+  /* --- Settings Panel --- */
+  .strat-settings-toggle{display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+  .strat-settings-btn{border:1px solid var(--line);background:var(--sand);color:var(--ink-soft);padding:7px 16px;border-radius:100px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Cairo';transition:.15s;}
+  .strat-settings-btn:hover{border-color:#0B5A7A;color:#0B5A7A;}
+  .strat-settings-btn.active{background:#0B5A7A;color:#fff;border-color:#0B5A7A;}
+  .strat-settings-panel{display:none;background:var(--sand);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:20px;}
+  .strat-settings-panel.open{display:block;}
+  .strat-settings-panel h4{margin:0 0 14px;font-family:'Tajawal';font-size:15px;color:var(--ink);font-weight:700;}
+  .strat-settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;}
+  .strat-input-row{display:flex;flex-direction:column;gap:4px;}
+  .strat-input-row label{font-size:11.5px;color:var(--ink-soft);font-weight:600;}
+  .strat-input-row input{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink);background:var(--paper);direction:ltr;width:100%;}
+  .strat-input-row input:focus{outline:none;border-color:#0B5A7A;}
+  .strat-save-btn{margin-top:14px;background:#0B5A7A;color:#fff;border:none;border-radius:8px;padding:9px 22px;font-family:'Cairo';font-size:13px;font-weight:600;cursor:pointer;}
+  .strat-save-btn:hover{background:#052a3a;}
+
+  /* --- Category Strategic Badge (inside each section) --- */
+  .cat-strat-badge{display:flex;align-items:center;gap:10px;background:var(--sand);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:14px;flex-wrap:wrap;}
+  .csb-icon{font-size:16px;}
+  .csb-label{font-size:12px;color:var(--ink-soft);font-weight:600;}
+  .csb-actual{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14px;color:var(--ink);}
+  .csb-sep{color:var(--line);font-size:12px;}
+  .csb-target{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);}
+  .csb-bar-wrap{flex:1;min-width:80px;height:6px;background:var(--sand-2);border-radius:3px;overflow:hidden;}
+  .csb-bar-fill{height:100%;border-radius:3px;transition:width .5s;}
+  .csb-pct-lbl{font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:700;white-space:nowrap;}
+  .csb-pct-lbl.on-track{color:#0B5A7A;}
+  .csb-pct-lbl.warning{color:#856404;}
+  .csb-pct-lbl.off-track{color:#c62828;}
+  .csb-status{padding:3px 10px;border-radius:100px;font-size:10.5px;font-weight:700;font-family:'IBM Plex Mono';white-space:nowrap;}
+  .csb-status.on-track{background:#e8f5f0;color:#0B5A7A;}
+  .csb-status.warning{background:#fff3cd;color:#856404;}
+  .csb-status.off-track{background:#ffebee;color:#c62828;}
+  .csb-status.no-data{background:#f5f5f5;color:#999;}
 </style>
 <base target="_blank">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<base target="_blank">
 <base target="_blank">
 <base target="_blank">
 <base target="_blank">
@@ -460,7 +568,87 @@
 <main>
   <div class="kpi-grid" id="kpiGrid"></div>
 
-  
+  <!-- ═══════════════════════════════════════════
+       بوصلة الخطة الاستراتيجية
+       ═══════════════════════════════════════════ -->
+  <section class="strategic-compass open" id="strategicCompass">
+    <div class="strategic-compass-head" onclick="toggleStrategicCompass()">
+      <div class="icon">🎯</div>
+      <div>
+        <h2>بوصلة الخطة الاستراتيجية</h2>
+        <p>مقارنة المؤشرات التشغيلية بالأهداف السنوية — تتبع الإنجاز في الوقت الفعلي</p>
+      </div>
+      <div class="chev">⌄</div>
+    </div>
+    <div class="strategic-compass-body">
+
+      <!-- Overall Summary Cards -->
+      <div class="strat-overall" id="stratOverall">
+        <div class="strat-overall-card green">
+          <div class="ov-val" id="stratOnTrackCount">—</div>
+          <div class="ov-lbl">مؤشرات على المسار ✅</div>
+        </div>
+        <div class="strat-overall-card yellow">
+          <div class="ov-val" id="stratWarningCount">—</div>
+          <div class="ov-lbl">مؤشرات تحتاج متابعة ⚠️</div>
+        </div>
+        <div class="strat-overall-card red">
+          <div class="ov-val" id="stratOffTrackCount">—</div>
+          <div class="ov-lbl">مؤشرات خارج الهدف 🔴</div>
+        </div>
+        <div class="strat-overall-card" style="border-color:#0D8BA8;background:#e0f5f5;">
+          <div class="ov-val" style="color:#0D8BA8;" id="stratAvgPct">—</div>
+          <div class="ov-lbl">متوسط نسبة الإنجاز الكلي</div>
+        </div>
+      </div>
+
+      <!-- Quarterly Timeline -->
+      <div class="strat-timeline" id="stratTimeline">
+        <div class="qtl-cell done">
+          <div class="ql">الربع الأول</div>
+          <div class="qm">كانون — آذار</div>
+          <div class="qpct" id="q1pct">—</div>
+        </div>
+        <div class="qtl-cell done">
+          <div class="ql">الربع الثاني</div>
+          <div class="qm">نيسان — حزيران</div>
+          <div class="qpct" id="q2pct">—</div>
+        </div>
+        <div class="qtl-cell current">
+          <div class="ql">الربع الثالث ← الحالي</div>
+          <div class="qm">تموز — أيلول</div>
+          <div class="qpct" id="q3pct">—</div>
+        </div>
+        <div class="qtl-cell">
+          <div class="ql">الربع الرابع</div>
+          <div class="qm">تشرين — كانون الأول</div>
+          <div class="qpct" id="q4pct">—</div>
+        </div>
+      </div>
+
+      <!-- Settings Toggle (Admin Only) -->
+      <div class="strat-settings-toggle" id="stratAdminTools" style="display:none;">
+        <button class="strat-settings-btn" onclick="toggleStratSettings(this)">⚙️ تعديل الأهداف السنوية</button>
+        <span style="font-size:12px;color:var(--ink-soft);">يمكن للمدير تحديث الأهداف وفق الخطة المعتمدة</span>
+      </div>
+      <div class="strat-settings-panel" id="stratSettingsPanel">
+        <h4>🎯 الأهداف السنوية المعتمدة — اضغط حفظ بعد التعديل</h4>
+        <div class="strat-settings-grid" id="stratSettingsGrid"></div>
+        <button class="strat-save-btn" onclick="saveStrategicTargets()">💾 حفظ الأهداف</button>
+        <span id="stratSaveMsg" style="margin-inline-start:12px;font-size:12px;color:#0B5A7A;display:none;">✅ تم الحفظ بنجاح</span>
+      </div>
+
+      <!-- Axes Cards Grid -->
+      <div class="strat-axes" id="stratAxesGrid">
+        <div style="text-align:center;padding:40px;color:var(--ink-soft);grid-column:1/-1;">
+          <div style="font-size:36px;margin-bottom:10px;">📂</div>
+          <div style="font-size:14px;">ارفع ملف CSV لعرض مؤشرات الخطة الاستراتيجية</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
   <section class="category open map-section" data-cat="map">
     <div class="cat-head" onclick="toggleCat(this)">
       <div class="icon">🗺️</div>
@@ -868,7 +1056,6 @@ const COLUMN_MAP = {
   "العاملات المنزليات غير السوريات (نم منحهن ترخيص العمل )": "domestic_permits_new",
   "عدد المكاتب المرخصة لتشغيل العمال المنزليين السوريين": "domestic_offices_syrian",
   "مكاتب مرخصة لمزاولة مهنة تشغيل خاص للعمال السوريين": "private_offices_syrian",
-  "عدد المكاتب الخاصة  المرخصة لمزاولة مهنة تشغيل  للعمال السوريين": "private_offices_syrian",
 
   // === Inspection ===
   "عدد الزيارات التفتيشية على المنشأت (صناعي – زراعي )": "insp_total",
@@ -1372,6 +1559,12 @@ function renderSingleGovChart(canvasId, arr, categoryField){
       {key:'insp_total', label:'إجمالي الزيارات التفتيشية (صناعي+زراعي)'},
       {key:'violations', label:'مخالفات'},
       {key:'new_workers_insp', label:'عمال جدد'},
+      {key:'work_permits_new', label:'تراخيص جديدة'},
+      {key:'work_permits_renew', label:'تجديد تراخيص'},
+      {key:'recruitment_offices', label:'مكاتب استقدام'},
+      {key:'domestic_permits_new', label:'تراخيص منزليات'},
+      {key:'domestic_offices_syrian', label:'مكاتب تشغيل سوريين'},
+      {key:'private_offices_syrian', label:'مكاتب خاصة سوريين'},
       {key:'legal_docs_new', label:'صكوك جديدة'},
       {key:'legal_docs_review', label:'صكوك قيد المراجعة'}
     ],
@@ -1379,6 +1572,12 @@ function renderSingleGovChart(canvasId, arr, categoryField){
       {key:'insp_total', label:'إجمالي الزيارات التفتيشية (صناعي+زراعي)'},
       {key:'violations', label:'مخالفات'},
       {key:'new_workers_insp', label:'عمال جدد'},
+      {key:'work_permits_new', label:'تراخيص جديدة'},
+      {key:'work_permits_renew', label:'تجديد تراخيص'},
+      {key:'recruitment_offices', label:'مكاتب استقدام'},
+      {key:'domestic_permits_new', label:'تراخيص منزليات'},
+      {key:'domestic_offices_syrian', label:'مكاتب تشغيل سوريين'},
+      {key:'private_offices_syrian', label:'مكاتب خاصة سوريين'},
       {key:'legal_docs_new', label:'صكوك جديدة'},
       {key:'legal_docs_review', label:'صكوك قيد المراجعة'}
     ],
@@ -1425,13 +1624,7 @@ function renderSingleGovChart(canvasId, arr, categoryField){
       {key:'female_participation', label:'مشاركة إناث %'},
       {key:'unorganized_workers', label:'غير منظم %'},
       {key:'vocational_centers', label:'مراكز تأهيل'},
-      {key:'vocational_benef', label:'مستفيدو تأهيل'},
-      {key:'work_permits_new', label:'تراخيص عمل جديدة (غير سوريين)'},
-      {key:'work_permits_renew', label:'تجديد تراخيص العمل'},
-      {key:'recruitment_offices', label:'مكاتب استقدام عاملات منزليات'},
-      {key:'domestic_permits_new', label:'تراخيص عاملات منزليات جديدة'},
-      {key:'domestic_offices_syrian', label:'مكاتب تشغيل عمال منزليين سوريين'},
-      {key:'private_offices_syrian', label:'مكاتب تشغيل خاص للعمال السوريين'}
+      {key:'vocational_benef', label:'مستفيدو تأهيل'}
     ],
     'camps_count': [
       {key:'camps_count', label:'المخيمات'},
@@ -1670,7 +1863,13 @@ function renderCategory(cat){
         {em:'🌾',n:sum('insp_agricultural',arr),t:'زيارات تفتيشية على المنشآت (زراعي)'},
         {em:'⚠️',n:sum('violations',arr),t:'مخالفات مسجّلة'},
         {em:'📜',n:sum('legal_docs_new',arr),t:'صكوك قانونية جديدة'},
-        {em:'📝',n:sum('legal_docs_review',arr),t:'صكوك قيد المراجعة'}
+        {em:'📝',n:sum('legal_docs_review',arr),t:'صكوك قيد المراجعة'},
+        {em:'📋',n:sum('work_permits_new',arr),t:'تراخيص عمل جديدة (غير سوريين)'},
+        {em:'🔄',n:sum('work_permits_renew',arr),t:'تجديد تراخيص العمل'},
+        {em:'🏢',n:sum('recruitment_offices',arr),t:'مكاتب استقدام عاملات منزليات'},
+        {em:'👩',n:sum('domestic_permits_new',arr),t:'تراخيص عاملات منزليات جديدة'},
+        {em:'🏠',n:sum('domestic_offices_syrian',arr),t:'مكاتب تشغيل عمال منزليين سوريين'},
+        {em:'🔧',n:sum('private_offices_syrian',arr),t:'مكاتب تشغيل خاص للعمال السوريين'}
       ]);
       const totalInspInd = sum('insp_industrial', arr);
       const totalInspAgri = sum('insp_agricultural', arr);
@@ -1687,7 +1886,13 @@ function renderCategory(cat){
         {em:'🏗️',n:sum('insp_total',arr),t:'الزيارات التفتيشية على المنشآت (صناعي+زراعي)'},
         {em:'⚠️',n:sum('violations',arr),t:'مخالفات مسجّلة'},
         {em:'📜',n:sum('legal_docs_new',arr),t:'صكوك قانونية جديدة'},
-        {em:'📝',n:sum('legal_docs_review',arr),t:'صكوك قيد المراجعة'}
+        {em:'📝',n:sum('legal_docs_review',arr),t:'صكوك قيد المراجعة'},
+        {em:'📋',n:sum('work_permits_new',arr),t:'تراخيص عمل جديدة (غير سوريين)'},
+        {em:'🔄',n:sum('work_permits_renew',arr),t:'تجديد تراخيص العمل'},
+        {em:'🏢',n:sum('recruitment_offices',arr),t:'مكاتب استقدام عاملات منزليات'},
+        {em:'👩',n:sum('domestic_permits_new',arr),t:'تراخيص عاملات منزليات جديدة'},
+        {em:'🏠',n:sum('domestic_offices_syrian',arr),t:'مكاتب تشغيل عمال منزليين سوريين'},
+        {em:'🔧',n:sum('private_offices_syrian',arr),t:'مكاتب تشغيل خاص للعمال السوريين'}
       ]);
       const totalInsp = sum('insp_total', arr);
       const totalViol = sum('violations', arr);
@@ -1703,7 +1908,13 @@ function renderCategory(cat){
         {em:'🌾',n:0,t:'زيارات تفتيشية على المنشآت (زراعي)'},
         {em:'⚠️',n:sum('violations',arr),t:'مخالفات مسجّلة'},
         {em:'📜',n:sum('legal_docs_new',arr),t:'صكوك قانونية جديدة'},
-        {em:'📝',n:sum('legal_docs_review',arr),t:'صكوك قيد المراجعة'}
+        {em:'📝',n:sum('legal_docs_review',arr),t:'صكوك قيد المراجعة'},
+        {em:'📋',n:sum('work_permits_new',arr),t:'تراخيص عمل جديدة (غير سوريين)'},
+        {em:'🔄',n:sum('work_permits_renew',arr),t:'تجديد تراخيص العمل'},
+        {em:'🏢',n:sum('recruitment_offices',arr),t:'مكاتب استقدام عاملات منزليات'},
+        {em:'👩',n:sum('domestic_permits_new',arr),t:'تراخيص عاملات منزليات جديدة'},
+        {em:'🏠',n:sum('domestic_offices_syrian',arr),t:'مكاتب تشغيل عمال منزليين سوريين'},
+        {em:'🔧',n:sum('private_offices_syrian',arr),t:'مكاتب تشغيل خاص للعمال السوريين'}
       ]);
       document.getElementById('note-labor').textContent = 
         `💡 لا توجد بيانات تفتيشية مسجّلة. أضف أعمدة "زيارات تفتيشية على المنشآت (صناعي)" و"زيارات تفتيشية على المنشآت (زراعي)" في ملف CSV.`;
@@ -1724,13 +1935,7 @@ function renderCategory(cat){
       {em:'♀️',n:avg('female_participation',arr)+'%',t:'مشاركة الإناث اقتصادياً',raw:true},
       {em:'🏭',n:avg('unorganized_workers',arr)+'%',t:'عمال القطاع غير المنظم'},
       {em:'🎓',n:sum('vocational_centers',arr),t:'مراكز التأهيل والإرشاد (قدرات)'},
-      {em:'👨‍🔧',n:sum('vocational_benef',arr),t:'مستفيدو التأهيل والإرشاد'},
-      {em:'📋',n:sum('work_permits_new',arr),t:'تراخيص عمل جديدة (غير سوريين)'},
-      {em:'🔄',n:sum('work_permits_renew',arr),t:'تجديد تراخيص العمل'},
-      {em:'🏢',n:sum('recruitment_offices',arr),t:'مكاتب استقدام عاملات منزليات'},
-      {em:'👩',n:sum('domestic_permits_new',arr),t:'تراخيص عاملات منزليات جديدة'},
-      {em:'🏠',n:sum('domestic_offices_syrian',arr),t:'مكاتب تشغيل عمال منزليين سوريين'},
-      {em:'🔧',n:sum('private_offices_syrian',arr),t:'مكاتب تشغيل خاص للعمال السوريين'}
+      {em:'👨‍🔧',n:sum('vocational_benef',arr),t:'مستفيدو التأهيل والإرشاد'}
     ]);
     // Add text card for employment relation if exists
     const empRelation = arr.map(d => d.employment_relation).filter(v => v && v.trim()).join(' | ');
@@ -2144,6 +2349,8 @@ function renderAll(){
   if(document.getElementById('insightsSection').classList.contains('open')){
     renderInsights();
   }
+  // ← Render strategic plan compass
+  renderStrategicCompass();
 }
 
 function updateMastheadBadge(){
@@ -4095,6 +4302,410 @@ function autoLoadOnStartup(){
         '<button class="btn-fallback" onclick="showUploadModal()">📁 رفع ملف CSV</button> <button class="btn-fallback" onclick="loadSampleData()" style="background:linear-gradient(135deg,#1565c0,#0d47a1);margin-inline-start:8px;">🔬 بيانات تجريبية</button>'
       );
     }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STRATEGIC PLAN ENGINE — محرك الخطة الاستراتيجية
+// ═══════════════════════════════════════════════════════════════
+
+const STRAT_STORAGE_KEY = 'syria_strategic_targets_v1';
+
+// Default annual targets — editable by admin
+const DEFAULT_STRATEGIC_TARGETS = {
+  disability: {
+    label: 'رعاية ذوي الإعاقة',
+    icon: '🦽',
+    axis: 'المحور الاجتماعي',
+    field: 'disabled_cards',
+    target: 15000,
+    unit: 'بطاقة',
+    note: 'عدد بطاقات الإعاقة الجديدة المستهدفة سنوياً'
+  },
+  disability_benef: {
+    label: 'مستفيدو معاهد الإعاقة',
+    icon: '🏫',
+    axis: 'المحور الاجتماعي',
+    field: 'disability_benef',
+    target: 5000,
+    unit: 'طالب',
+    note: 'عدد الطلاب المسجلين في معاهد ذوي الإعاقة'
+  },
+  vocational: {
+    label: 'التأهيل المهني',
+    icon: '🔧',
+    axis: 'محور التشغيل',
+    field: 'vocational_benef',
+    target: 8000,
+    unit: 'مستفيد',
+    note: 'مستفيدو مراكز التأهيل المهني'
+  },
+  elderly: {
+    label: 'رعاية كبار السن',
+    icon: '👴',
+    axis: 'المحور الاجتماعي',
+    field: 'elderly_benef',
+    target: 3000,
+    unit: 'مستفيد',
+    note: 'المستفيدون من دور رعاية المسنين'
+  },
+  orphans: {
+    label: 'كفالة الأيتام',
+    icon: '🏠',
+    axis: 'المحور الاجتماعي',
+    field: 'sponsor_external',
+    target: 5000,
+    unit: 'طفل',
+    note: 'عدد الأيتام المستفيدين من الكفالة الخارجية'
+  },
+  food_aid: {
+    label: 'السلال الغذائية',
+    icon: '🍞',
+    axis: 'محور الإغاثة',
+    field: 'food_baskets',
+    target: 50000,
+    unit: 'سلة',
+    note: 'عدد السلل الغذائية الموزعة سنوياً'
+  },
+  cash_aid: {
+    label: 'الإعانات المالية',
+    icon: '💰',
+    axis: 'محور الإغاثة',
+    field: 'cash_assistance',
+    target: 20000,
+    unit: 'مستفيد',
+    note: 'عدد المستفيدين من الإعانات المالية'
+  },
+  rural_dev: {
+    label: 'التنمية الريفية',
+    icon: '🌾',
+    axis: 'محور التنمية',
+    field: 'rural_dev_benef',
+    target: 10000,
+    unit: 'مستفيد',
+    note: 'مستفيدو مراكز التنمية الريفية'
+  },
+  rural_ind: {
+    label: 'الصناعات الريفية',
+    icon: '🏭',
+    axis: 'محور التنمية',
+    field: 'rural_ind_benef',
+    target: 5000,
+    unit: 'مستفيد',
+    note: 'مستفيدو وحدات الصناعات الريفية'
+  },
+  insurance_new: {
+    label: 'التسجيل بالتأمينات',
+    icon: '🏥',
+    axis: 'محور العمل',
+    field: 'new_workers_insp',
+    target: 10000,
+    unit: 'عامل',
+    note: 'عمال جدد تم تسجيلهم عبر الزيارات التفتيشية'
+  },
+  inspection: {
+    label: 'الزيارات التفتيشية',
+    icon: '🔍',
+    axis: 'محور العمل',
+    field: 'insp_total',
+    target: 5000,
+    unit: 'زيارة',
+    note: 'إجمالي الزيارات التفتيشية على المنشآت'
+  },
+  platform: {
+    label: 'منصة سوق العمل',
+    icon: '💻',
+    axis: 'محور التشغيل',
+    field: 'platform_registered',
+    target: 30000,
+    unit: 'مسجّل',
+    note: 'عدد المسجلين في منصة سوق العمل الرقمية'
+  },
+  platform_jobs: {
+    label: 'فرص العمل المنشورة',
+    icon: '📋',
+    axis: 'محور التشغيل',
+    field: 'platform_jobs',
+    target: 5000,
+    unit: 'فرصة',
+    note: 'عدد فرص العمل المتاحة على المنصة'
+  },
+  ngo_licensed: {
+    label: 'المنظمات المشهرة',
+    icon: '🤝',
+    axis: 'محور المجتمع المدني',
+    field: 'ngo_new_pct',
+    target: 200,
+    unit: 'منظمة',
+    note: 'عدد المنظمات غير الحكومية المشهرة'
+  }
+};
+
+// Load saved targets or use defaults
+function loadStrategicTargets(){
+  try {
+    const saved = localStorage.getItem(STRAT_STORAGE_KEY);
+    if(saved){
+      const parsed = JSON.parse(saved);
+      // Merge with defaults (in case new targets were added)
+      Object.keys(DEFAULT_STRATEGIC_TARGETS).forEach(k => {
+        if(!parsed[k]) parsed[k] = {...DEFAULT_STRATEGIC_TARGETS[k]};
+        else parsed[k] = {...DEFAULT_STRATEGIC_TARGETS[k], ...parsed[k]};
+      });
+      return parsed;
+    }
+  } catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_STRATEGIC_TARGETS));
+}
+
+function saveStrategicTargets(){
+  const targets = loadStrategicTargets();
+  // Read current values from inputs
+  Object.keys(targets).forEach(k => {
+    const inp = document.getElementById('strat-inp-' + k);
+    if(inp){
+      const val = parseInt(inp.value.replace(/,/g, ''));
+      if(!isNaN(val) && val > 0) targets[k].target = val;
+    }
+  });
+  localStorage.setItem(STRAT_STORAGE_KEY, JSON.stringify(targets));
+  // Show save message
+  const msg = document.getElementById('stratSaveMsg');
+  if(msg){ msg.style.display='inline'; setTimeout(()=>{ msg.style.display='none'; }, 2500); }
+  // Re-render
+  renderStrategicCompass();
+}
+
+function toggleStrategicCompass(){
+  const el = document.getElementById('strategicCompass');
+  if(el) el.classList.toggle('open');
+}
+
+function toggleStratSettings(btn){
+  const panel = document.getElementById('stratSettingsPanel');
+  if(!panel) return;
+  panel.classList.toggle('open');
+  btn.classList.toggle('active');
+}
+
+// Calculate status from percentage
+function getStratStatus(pct){
+  if(pct === null) return 'no-data';
+  if(pct >= 85) return 'on-track';
+  if(pct >= 50) return 'warning';
+  return 'off-track';
+}
+
+function getStratStatusLabel(status){
+  const labels = {
+    'on-track': '✅ على المسار',
+    'warning': '⚠️ يحتاج متابعة',
+    'off-track': '🔴 خارج الهدف',
+    'no-data': '— لا بيانات'
+  };
+  return labels[status] || '—';
+}
+
+// Main render function for the strategic compass
+function renderStrategicCompass(){
+  const targets = loadStrategicTargets();
+  const data = filtered();
+
+  // Compute current actual values (sum across all filtered data)
+  const actuals = {};
+  Object.keys(targets).forEach(k => {
+    const field = targets[k].field;
+    const total = data.reduce((acc, row) => acc + (parseFloat(row[field]) || 0), 0);
+    actuals[k] = total;
+  });
+
+  // Calculate statuses
+  let onTrack = 0, warning = 0, offTrack = 0, noData = 0;
+  const percentages = [];
+
+  Object.keys(targets).forEach(k => {
+    const actual = actuals[k];
+    const target = targets[k].target;
+    if(!actual || actual === 0){
+      noData++;
+      return;
+    }
+    const pct = Math.round((actual / target) * 100);
+    percentages.push(Math.min(pct, 100));
+    const status = getStratStatus(pct);
+    if(status === 'on-track') onTrack++;
+    else if(status === 'warning') warning++;
+    else if(status === 'off-track') offTrack++;
+  });
+
+  const avgPct = percentages.length > 0
+    ? Math.round(percentages.reduce((a,b) => a+b, 0) / percentages.length)
+    : null;
+
+  // Update summary cards
+  const el = id => document.getElementById(id);
+  if(el('stratOnTrackCount')) el('stratOnTrackCount').textContent = onTrack;
+  if(el('stratWarningCount')) el('stratWarningCount').textContent = warning;
+  if(el('stratOffTrackCount')) el('stratOffTrackCount').textContent = offTrack;
+  if(el('stratAvgPct')) el('stratAvgPct').textContent = avgPct !== null ? avgPct + '%' : '—';
+
+  // Quarterly progress — infer from month names in data
+  const Q_MONTHS = {
+    q1: ['كانون الثاني','شباط','آذار'],
+    q2: ['نيسان','أيار','حزيران'],
+    q3: ['تموز','آب','أيلول'],
+    q4: ['تشرين الأول','تشرين الثاني','كانون الأول']
+  };
+  ['q1','q2','q3','q4'].forEach(q => {
+    const qData = ALL_DATA.filter(r => Q_MONTHS[q].includes(r.month));
+    const qActuals = {};
+    let qPcts = [];
+    Object.keys(targets).forEach(k => {
+      const field = targets[k].field;
+      const total = qData.reduce((acc, row) => acc + (parseFloat(row[field]) || 0), 0);
+      if(total > 0){
+        const pct = Math.round((total / targets[k].target) * 100);
+        qPcts.push(Math.min(pct, 100));
+      }
+    });
+    const qAvg = qPcts.length > 0 ? Math.round(qPcts.reduce((a,b)=>a+b,0)/qPcts.length) + '%' : '—';
+    const pctEl = el(q + 'pct');
+    if(pctEl) pctEl.textContent = qAvg;
+  });
+
+  // Render axis cards
+  const grid = el('stratAxesGrid');
+  if(grid){
+    if(data.length === 0){
+      grid.innerHTML = `<div style="text-align:center;padding:40px;color:var(--ink-soft);grid-column:1/-1;">
+        <div style="font-size:36px;margin-bottom:10px;">📂</div>
+        <div style="font-size:14px;">ارفع ملف CSV لعرض مؤشرات الخطة الاستراتيجية</div>
+      </div>`;
+    } else {
+      grid.innerHTML = Object.keys(targets).map(k => {
+        const t = targets[k];
+        const actual = actuals[k] || 0;
+        const hasData = actual > 0;
+        const pct = hasData ? Math.min(Math.round((actual / t.target) * 100), 150) : null;
+        const displayPct = pct !== null ? Math.min(pct, 100) : 0;
+        const status = getStratStatus(pct);
+        return `
+        <div class="strat-axis-card ${status}">
+          <div class="sac-header">
+            <span class="sac-icon">${t.icon}</span>
+            <div>
+              <div class="sac-title">${t.label}</div>
+              <div class="sac-axis">${t.axis}</div>
+            </div>
+            <span class="sac-status-badge ${status}">${getStratStatusLabel(status)}</span>
+          </div>
+          <div class="sac-values">
+            <div>
+              <div style="font-size:10px;color:var(--ink-soft);margin-bottom:2px;">الفعلي</div>
+              <div class="sac-actual">${hasData ? actual.toLocaleString('en-US') : '—'}</div>
+            </div>
+            <div class="sac-target-info">
+              <div style="font-size:10px;color:var(--ink-soft);margin-bottom:2px;">الهدف السنوي</div>
+              <span>${t.target.toLocaleString('en-US')} ${t.unit}</span>
+            </div>
+          </div>
+          <div class="sac-progress-bar">
+            <div class="sac-progress-fill" style="width:${displayPct}%"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="sac-pct ${status}">${pct !== null ? pct + '%' : '—'} من الهدف</div>
+            ${pct !== null && pct > 100 ? '<span style="font-size:10px;color:#0B5A7A;font-weight:700;">🏆 تجاوز الهدف</span>' : ''}
+          </div>
+          <div class="sac-note">${t.note}</div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Build settings inputs
+  const settingsGrid = el('stratSettingsGrid');
+  if(settingsGrid){
+    settingsGrid.innerHTML = Object.keys(targets).map(k => {
+      const t = targets[k];
+      return `<div class="strat-input-row">
+        <label>${t.icon} ${t.label} (${t.unit})</label>
+        <input type="number" id="strat-inp-${k}" value="${t.target}" min="0" step="100">
+      </div>`;
+    }).join('');
+  }
+
+  // Show admin tools if admin
+  const adminTools = el('stratAdminTools');
+  if(adminTools) adminTools.style.display = (currentUser === 'admin') ? 'flex' : 'none';
+
+  // Update category strategic badges
+  renderCategoryStrategicBadges(targets, actuals);
+}
+
+// Inject a small strategic badge into each category section
+function renderCategoryStrategicBadges(targets, actuals){
+  const CAT_MAP = {
+    disability: ['disability', 'disability_benef'],
+    social: ['elderly', 'orphans'],
+    aid: ['food_aid', 'cash_aid'],
+    rural: ['rural_dev', 'rural_ind'],
+    labor: ['inspection'],
+    insurance: ['insurance_new'],
+    platform: ['platform', 'platform_jobs'],
+    ngo: ['ngo_licensed'],
+    juvenile: [],
+    camps: [],
+    labor_market: [],
+    demographics: []
+  };
+
+  Object.keys(CAT_MAP).forEach(cat => {
+    const keys = CAT_MAP[cat];
+    if(keys.length === 0) return;
+
+    const catEl = document.querySelector(`section.category[data-cat="${cat}"]`);
+    if(!catEl) return;
+
+    const catBody = catEl.querySelector('.cat-body');
+    if(!catBody) return;
+
+    // Remove existing badge if any
+    const existing = catBody.querySelector('.cat-strat-badge');
+    if(existing) existing.remove();
+
+    // Calculate aggregate for this category
+    let totalActual = 0, totalTarget = 0;
+    keys.forEach(k => {
+      if(targets[k]){
+        totalActual += (actuals[k] || 0);
+        totalTarget += targets[k].target;
+      }
+    });
+
+    if(totalTarget === 0) return;
+
+    const pct = Math.round((totalActual / totalTarget) * 100);
+    const displayPct = Math.min(pct, 100);
+    const status = totalActual === 0 ? 'no-data' : getStratStatus(pct);
+    const statusLabel = getStratStatusLabel(status);
+
+    const barColor = status === 'on-track' ? '#0B5A7A' : status === 'warning' ? '#f0a500' : status === 'no-data' ? '#ccc' : '#c62828';
+    const actualStr = totalActual > 0 ? totalActual.toLocaleString('en-US') : '\u2014';
+    const pctStr = totalActual > 0 ? (pct + '%') : '\u2014';
+
+    const badge = document.createElement('div');
+    badge.className = 'cat-strat-badge';
+    badge.innerHTML = '<span class="csb-icon">🎯</span>'
+      + '<span class="csb-label">الهدف الاستراتيجي:</span>'
+      + '<span class="csb-actual">' + actualStr + '</span>'
+      + '<span class="csb-sep">/</span>'
+      + '<span class="csb-target">' + totalTarget.toLocaleString('en-US') + '</span>'
+      + '<div class="csb-bar-wrap"><div class="csb-bar-fill" style="width:' + displayPct + '%;background:' + barColor + '"></div></div>'
+      + '<span class="csb-pct-lbl ' + status + '">' + pctStr + '</span>'
+      + '<span class="csb-status ' + status + '">' + statusLabel + '</span>';
+
+    // Insert before first child of cat-body
+    catBody.insertBefore(badge, catBody.firstChild);
   });
 }
 
