@@ -238,18 +238,10 @@
   .monthly-report-card .report-text{white-space:pre-wrap;line-height:2;color:var(--ink-soft);font-size:13.5px;}
 
   /* ===== OFFLINE & LAST UPDATED STYLES ===== */
-    /* ===== TOAST NOTIFICATION (Bottom-Right) ===== */
-  .connection-bar{position:fixed;bottom:24px;right:24px;z-index:998;padding:14px 20px;font-size:13px;font-weight:600;font-family:'Cairo';display:none;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.25);transition:all .4s cubic-bezier(0.175,0.885,0.32,1.275);max-width:380px;min-width:280px;transform:translateY(20px) scale(0.95);opacity:0;direction:rtl;text-align:right;align-items:center;gap:10px;backdrop-filter:blur(8px);}
-  .connection-bar.show{display:flex !important;transform:translateY(0) scale(1);opacity:1;}
-  .connection-bar.offline{background:linear-gradient(135deg,#c62828,#e53935);color:white;border:1px solid rgba(255,255,255,0.15);}
-  .connection-bar.online{background:linear-gradient(135deg,#2e7d32,#43a047);color:white;border:1px solid rgba(255,255,255,0.15);}
-  .connection-bar .toast-icon{font-size:20px;flex-shrink:0;}
-  .connection-bar .toast-text{flex:1;line-height:1.6;}
-  .connection-bar .toast-close{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;flex-shrink:0;transition:.15s;margin-inline-start:8px;}
-  .connection-bar .toast-close:hover{background:rgba(255,255,255,0.35);transform:scale(1.1);}
-  .connection-bar .toast-action{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 14px;border-radius:100px;font-family:Cairo;font-size:12px;font-weight:600;cursor:pointer;transition:.15s;flex-shrink:0;margin-top:8px;display:inline-block;}
-  .connection-bar .toast-action:hover{background:rgba(255,255,255,0.35);}
-  @media(max-width:640px){.connection-bar{bottom:16px;right:16px;left:16px;max-width:none;min-width:auto;}}
+  .connection-bar{position:fixed;top:0;left:0;right:0;z-index:998;padding:6px 20px;text-align:center;font-size:12.5px;font-weight:600;font-family:'Cairo';display:none;box-shadow:0 2px 8px rgba(0,0,0,0.15);transition:.3s ease;}
+  .connection-bar.offline{background:linear-gradient(90deg,#c62828,#e53935);color:white;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .connection-bar.online{background:linear-gradient(90deg,#2e7d32,#43a047);color:white;display:none;}
+  .connection-bar.show{display:flex !important;}
   .last-updated-badge{display:inline-flex;align-items:center;gap:6px;background:var(--sand);border:1px solid var(--line);padding:5px 12px;border-radius:100px;font-family:'IBM Plex Mono';font-size:11.5px;color:var(--ink-soft);font-weight:600;white-space:nowrap;}
   .last-updated-badge .dot{width:6px;height:6px;border-radius:50%;background:#4F7A63;animation:pulse 2s infinite;}
   @keyframes pulse{0%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.8);}100%{opacity:1;transform:scale(1);}}
@@ -386,28 +378,12 @@
 <base target="_blank">
 <base target="_blank">
 <base target="_blank">
-<base target="_blank">
-<base target="_blank">
 </head>
 <body class="locked">
 
-<!-- Connection Status Toast (Bottom-Right) -->
-<div class="connection-bar offline" id="offlineBar">
-  <span class="toast-icon">📵</span>
-  <div class="toast-text">
-    <div style="font-weight:700;margin-bottom:2px;">لا يوجد اتصال بالإنترنت</div>
-    <div style="font-size:11.5px;opacity:0.9;font-weight:400;">تعمل ببيانات محفوظة محلياً</div>
-  </div>
-  <button class="toast-close" onclick="hideConnectionToast()">×</button>
-</div>
-<div class="connection-bar online" id="onlineBar">
-  <span class="toast-icon">🌐</span>
-  <div class="toast-text">
-    <div style="font-weight:700;margin-bottom:2px;">تم استعادة الاتصال</div>
-    <button class="toast-action" onclick="loadFromSheet();hideConnectionToast();">تحديث الآن</button>
-  </div>
-  <button class="toast-close" onclick="hideConnectionToast()">×</button>
-</div>
+<!-- Connection Status Bar -->
+<div class="connection-bar offline" id="offlineBar">📵 لا يوجد اتصال بالإنترنت — تعمل ببيانات محفوظة محلياً</div>
+<div class="connection-bar online" id="onlineBar">🌐 تم استعادة الاتصال — <button onclick="loadFromSheet()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.5);color:white;padding:3px 12px;border-radius:100px;font-family:Cairo;font-size:11px;font-weight:600;cursor:pointer;margin-inline-start:8px;">تحديث الآن</button></div>
 
 
 <!-- ═══════════════════════════════════════
@@ -876,7 +852,17 @@
   </section>
 
 
-  
+  <section class="category" data-cat="monthly_report">
+    <div class="cat-head" onclick="toggleCat(this)">
+      <div class="icon">📄</div>
+      <div><h2>ملف التقرير الشهري</h2><p>التقارير الشهرية لكل محافظة حسب البيانات المرفوعة</p></div>
+      <div class="chev">⌄</div>
+    </div>
+    <div class="cat-body">
+      <p class="cat-note" id="note-monthly_report">💡 ارفع ملف CSV يحتوي على عمود "التقرير الشهرية" لعرض التقارير هنا.</p>
+      <div class="gov-list" id="monthlyReportList"></div>
+    </div>
+  </section>
 </main>
 
 <footer>
@@ -1133,24 +1119,6 @@ function sum(field, arr, fallback){
 
 const fmt = n => n.toLocaleString('en-US');
 const PALETTE = ['#123C44','#B08D57','#4F7A63','#B5533C','#6E8FA3','#8C7A5B','#3f5a5f','#C99A62','#5f8a70','#a15a4a','#2E6B7E','#8B6914','#5D4E37','#4A6741'];
-
-// =====================
-// TOAST HELPERS
-// =====================
-function hideConnectionToast(){
-  document.getElementById('offlineBar').classList.remove('show');
-  document.getElementById('onlineBar').classList.remove('show');
-}
-function showOfflineToast(){
-  document.getElementById('onlineBar').classList.remove('show');
-  document.getElementById('offlineBar').classList.add('show');
-}
-function showOnlineToast(){
-  document.getElementById('offlineBar').classList.remove('show');
-  document.getElementById('onlineBar').classList.add('show');
-  // Auto-hide after 8 seconds
-  setTimeout(() => { hideConnectionToast(); }, 8000);
-}
 
 // =====================
 // CSV PARSING - Auto detect delimiter
@@ -2094,20 +2062,6 @@ function renderCategory(cat){
 // =====================
 // GOVERNORATE DETAILS
 // =====================
-function extractUrls(text) {
-  if (!text) return [];
-  const urlRegex = /(https?:\/\/[^\s<>"{}|\^`\[\]]+)/g;
-  return text.match(urlRegex) || [];
-}
-
-function renderUrlLinks(text) {
-  if (!text) return '';
-  const urlRegex = /(https?:\/\/[^\s<>"{}|\^`\[\]]+)/g;
-  return text.replace(urlRegex, function(url) {
-    return '<a href="' + url + '" target="_blank" style="color:#0D8BA8;text-decoration:underline;word-break:break-all;">' + url + '</a>';
-  });
-}
-
 function renderGovList(){
   const arr = filtered();
   const grouped = {};
@@ -2180,21 +2134,215 @@ function renderGovList(){
 // =====================
 // MONTHLY REPORTS
 // =====================
+function extractUrls(text){
+  if(!text || typeof text !== 'string') return [];
+  // Enhanced regex that captures URLs including Google Drive, Dropbox, OneDrive, SharePoint
+  // Supports http, https, ftp, and various domain patterns
+  const urlRegex = /(https?:\/\/|ftp:\/\/|www\.)([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+(\/[a-zA-Z0-9\-._~:\/?#\[\]@!$&'()*+,;=]*)?/gi;
+  const matches = text.match(urlRegex) || [];
+  return matches.map(url => {
+    url = url.trim();
+    // Remove trailing punctuation that's likely not part of the URL
+    url = url.replace(/[.,;:!?\)\]]+$/, '');
+    // Ensure http prefix for www links
+    if(url.startsWith('www.')) url = 'https://' + url;
+    return url;
+  }).filter(url => url.length > 10);
+}
 
+function getFileIcon(url){
+  const lower = (url || '').toLowerCase();
+  if(lower.includes('.pdf') || lower.includes('/pdf') || lower.includes('pdf?')) return '📕';
+  if(lower.includes('.doc') || lower.includes('.docx') || lower.includes('/document') || lower.includes('document?')) return '📝';
+  if(lower.includes('.xls') || lower.includes('.xlsx') || lower.includes('spreadsheet')) return '📊';
+  if(lower.includes('.ppt') || lower.includes('.pptx')) return '📽️';
+  if(lower.includes('.zip') || lower.includes('.rar') || lower.includes('.7z')) return '📦';
+  if(lower.includes('.jpg') || lower.includes('.jpeg') || lower.includes('.png') || lower.includes('.gif')) return '🖼️';
+  if(lower.includes('.mp4') || lower.includes('.avi') || lower.includes('.mov')) return '🎬';
+  if(lower.includes('drive.google.com') || lower.includes('docs.google.com')) return '☁️';
+  if(lower.includes('dropbox.com')) return '📦';
+  if(lower.includes('onedrive') || lower.includes('live.com') || lower.includes('sharepoint')) return '☁️';
+  if(lower.includes('youtube.com') || lower.includes('youtu.be')) return '▶️';
+  return '🔗';
+}
 
+function getFileName(url){
+  try {
+    if(!url) return 'ملف التقرير';
+    // For Google Drive links, try to extract a friendly name
+    if(url.includes('drive.google.com')){
+      // Check if there's a filename in the URL or query params
+      const match = url.match(/[?&]title=([^&]+)/i);
+      if(match) return decodeURIComponent(match[1]);
+      const idMatch = url.match(/[-\w]{25,}/);
+      return idMatch ? 'ملف Google Drive' : 'رابط Google Drive';
+    }
+    if(url.includes('dropbox.com')){
+      const match = url.match(/\/([^\/?]+)\?/);
+      if(match) return decodeURIComponent(match[1]);
+      return 'ملف Dropbox';
+    }
+    const urlObj = new URL(url);
+    const path = urlObj.pathname;
+    const name = path.split('/').pop().split('?')[0];
+    if(name && name.length > 0 && name.includes('.')){
+      return decodeURIComponent(name);
+    }
+    // Try query params
+    const docMatch = urlObj.searchParams?.get('doc') || urlObj.searchParams?.get('file') || urlObj.searchParams?.get('name');
+    if(docMatch) return docMatch;
+    return 'ملف التقرير';
+  } catch(e) {
+    // If URL parsing fails, try regex extraction
+    const match = url.match(/\/([^\/\?]+)(\?|$)/);
+    if(match) return decodeURIComponent(match[1]);
+    return 'ملف التقرير';
+  }
+}
 
+function renderUrlLinks(text){
+  if(!text || typeof text !== 'string') return null;
+  const urls = extractUrls(text);
+  if(urls.length === 0) return null;
 
+  let html = '<div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">';
+  urls.forEach(url => {
+    const icon = getFileIcon(url);
+    const fileName = getFileName(url);
+    const isDrive = url.toLowerCase().includes('drive.google.com') || url.toLowerCase().includes('docs.google.com');
+    const isDropbox = url.toLowerCase().includes('dropbox.com');
+    let btnText = '🔗 فتح الرابط';
+    if(isDrive) btnText = '📁 فتح من Google Drive';
+    else if(isDropbox) btnText = '📦 فتح من Dropbox';
+    else if(url.toLowerCase().includes('.pdf')) btnText = '📕 فتح PDF';
+    else if(url.toLowerCase().includes('.doc')) btnText = '📝 فتح المستند';
 
+    html += `
+      <a href="${url}" target="_blank" rel="noopener noreferrer" 
+         style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#ffffff,#f0f7fa);border:2px solid #0B5A7A;border-radius:12px;padding:14px 16px;text-decoration:none;color:var(--ink);transition:.2s;box-shadow:0 2px 8px rgba(11,90,122,0.08);"
+         onmouseover="this.style.borderColor='#0D8BA8';this.style.background='linear-gradient(135deg,#E0F0F5,#ffffff)';this.style.transform='translateX(-4px)';this.style.boxShadow='0 4px 16px rgba(11,90,122,0.15)';"
+         onmouseout="this.style.borderColor='#0B5A7A';this.style.background='linear-gradient(135deg,#ffffff,#f0f7fa)';this.style.transform='translateX(0)';this.style.boxShadow='0 2px 8px rgba(11,90,122,0.08)';">
+        <span style="font-size:28px;flex-shrink:0;">${icon}</span>
+        <div style="flex:1;min-width:0;text-align:right;">
+          <div style="font-size:13px;font-weight:700;color:#0B5A7A;font-family:'Tajawal';margin-bottom:4px;word-break:break-word;">${fileName}</div>
+          <div style="font-size:10.5px;color:var(--ink-soft);word-break:break-all;direction:ltr;font-family:'IBM Plex Mono';opacity:0.7;">${url.substring(0,60)}${url.length>60?'...':''}</div>
+        </div>
+        <span style="flex-shrink:0;background:linear-gradient(135deg,#0B5A7A,#0D8BA8);color:white;padding:8px 16px;border-radius:100px;font-weight:700;font-size:12px;font-family:'Cairo';white-space:nowrap;box-shadow:0 2px 8px rgba(11,90,122,0.25);">${btnText}</span>
+      </a>`;
+  });
+  html += '</div>';
+  return html;
+}
 
+function renderMonthlyReports(){
+  const arr = filtered();
+  const grouped = {};
 
+  arr.forEach(d => {
+    if(!grouped[d.gov]){
+      grouped[d.gov] = {...d};
+    } else {
+      Object.keys(d).forEach(key => {
+        if(typeof d[key] === 'number'){
+          grouped[d.gov][key] = (grouped[d.gov][key] || 0) + d[key];
+        }
+        else if(typeof d[key] === 'string' && d[key] && key !== 'gov' && key !== 'month'){
+          if(!grouped[d.gov][key]) grouped[d.gov][key] = d[key];
+          else grouped[d.gov][key] += " | " + d[key];
+        }
+      });
+    }
+  });
 
+  const govList = Object.values(grouped);
+  const reportList = document.getElementById('monthlyReportList');
 
+  if(!reportList) return;
+
+  if(govList.length === 0 || !govList.some(d => d.monthly_report)){
+    document.getElementById('note-monthly_report').textContent = '💡 ارفع ملف CSV يحتوي على عمود "التقرير الشهرية" لعرض التقارير هنا.';
+    reportList.innerHTML = '';
+    return;
+  }
+
+  const reportsWithData = govList.filter(d => d.monthly_report && d.monthly_report.trim().length > 0);
+  document.getElementById('note-monthly_report').textContent = `📄 تم العثور على ${reportsWithData.length} تقرير شهري من ${govList.length} محافظة.`;
+
+  reportList.innerHTML = govList.map(d => {
+    let rawReport = d.monthly_report || '';
+    let cleanedReport = rawReport
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      .replace(/\n{4,}/g, '\n\n\n')
+      .trim();
+
+    const hasReport = cleanedReport.length > 0;
+    const urls = extractUrls(cleanedReport);
+    const hasUrls = urls.length > 0;
+
+    // Separate text from URLs for mixed content
+    let textOnly = cleanedReport;
+    urls.forEach(url => {
+      textOnly = textOnly.replace(url, '');
+    });
+    textOnly = textOnly.replace(/\n{2,}/g, '\n').replace(/\s{2,}/g, ' ').trim();
+
+    // Build display HTML
+    let reportHtml = '';
+
+    if(hasUrls){
+      // Show text first if exists, then URL cards
+      if(textOnly.length > 10){
+        reportHtml += `<div style="background:#f8fafb;border-radius:8px;padding:12px 14px;margin-bottom:12px;border-inline-start:3px solid #0D8BA8;font-size:13px;line-height:1.8;color:var(--ink);">${textOnly.replace(/\n/g, '<br>')}</div>`;
+      }
+      reportHtml += renderUrlLinks(cleanedReport);
+    } else if(hasReport){
+      reportHtml = cleanedReport.replace(/\n/g, '<br>');
+    } else {
+      reportHtml = '<span class="empty-note">لا يوجد تقرير شهري مسجل لهذه المحافظة</span>';
+    }
+
+    const badge = hasReport
+      ? (hasUrls ? '<span style="display:inline-block;background:linear-gradient(135deg,#0D8BA8,#0B5A7A);color:white;padding:3px 12px;border-radius:100px;font-size:11px;font-weight:600;margin-inline-start:8px;">🔗 يحتوي على روابط</span>' : '<span style="display:inline-block;background:#0B5A7A;color:white;padding:3px 12px;border-radius:100px;font-size:11px;font-weight:600;margin-inline-start:8px;">📄 نص</span>')
+      : '<span style="display:inline-block;background:#ccc;color:#666;padding:3px 12px;border-radius:100px;font-size:11px;font-weight:600;margin-inline-start:8px;">❌ لا يوجد</span>';
+
+    // Preview
+    let preview = '';
+    if(hasUrls){
+      const firstFile = getFileName(urls[0]);
+      preview = `<div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;opacity:0.8;">${getFileIcon(urls[0])} ${firstFile.substring(0, 50)}${firstFile.length > 50 ? '...' : ''}</div>`;
+    } else if(hasReport){
+      const previewLine = cleanedReport.split('\n')[0] || '';
+      preview = `<div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;opacity:0.8;">${previewLine.substring(0, 60)}${previewLine.length > 60 ? '...' : ''}</div>`;
+    }
+
+    return `
+    <div class="gov-item">
+      <div class="gh" onclick="this.parentElement.classList.toggle('open')">
+        <div class="stamp">${d.gov ? d.gov[0] : '?'}</div>
+        <div style="flex:1;min-width:0;">
+          <strong>${d.gov || 'غير معروف'}</strong>
+          ${preview}
+        </div>
+        ${badge}
+        <div class="chev">⌄</div>
+      </div>
+      <div class="gb">
+        <div class="row" style="background:#f0f7fa;border-radius:8px;padding:14px 16px;border-inline-start:4px solid #0B5A7A;">
+          <b style="color:#0B5A7A;font-size:13px;display:block;margin-bottom:8px;">${hasUrls ? '🔗 روابط ملفات التقرير الشهري' : '📋 نص التقرير الشهري'}</b>
+          <span style="white-space:pre-wrap;line-height:2;color:var(--ink);font-size:13.5px;">${reportHtml}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
 function renderAll(){
   console.log('Rendering with', filtered().length, 'rows, activeGov:', activeGov, 'selectedMonths:', [...selectedMonths]);
   renderKPIs();
   ['disability','social','ngo','juvenile','rural','labor','labor_market','insurance','aid','camps','platform','demographics'].forEach(renderCategory);
   renderGovList();
+  renderMonthlyReports();
   updateMastheadBadge();
   updateFooterNote();
   updateMapMarkers();
@@ -3651,230 +3799,990 @@ function enterDashboard(){
     document.getElementById('viewerMessage').style.display = 'block';
   }
 
-  // Show admin tools if admin
-  if(currentUser === 'admin'){
-    document.getElementById('stratAdminTools').style.display = 'flex';
+  // Save session state
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify({
+      userType: currentUser,
+      loginTime: new Date().toISOString()
+    }));
+  } catch(e) { console.warn('Failed to save session:', e); }
+
+  // Show last updated panel if data exists
+  updateLastUpdatedDisplay();
+
+  // Auto-load data (with offline support)
+  setTimeout(() => { autoLoadOnStartup(); }, 500);
+  setTimeout(() => { initMapOnDemand(); }, 1200);
+  setTimeout(() => { updateConnectionStatus(); }, 100);
+}
+
+function showChangePw(userType){
+  document.getElementById('changePwForm').style.display = 'block';
+  document.getElementById('targetUserType').value = userType;
+  document.getElementById('changePwTitle').textContent = userType === 'admin' ? '🔐 تغيير كلمة مرور المدير' : '🔐 تغيير كلمة مرور المطلع';
+  document.getElementById('pwSuccessMsg').classList.remove('show');
+  document.getElementById('pwChangeError').classList.remove('show');
+  document.getElementById('currentPwInput').value = '';
+  document.getElementById('newPwInput').value = '';
+  document.getElementById('confirmPwInput').value = '';
+  document.getElementById('currentPwInput').focus();
+}
+
+function hideChangePw(){
+  document.getElementById('changePwForm').style.display = 'none';
+}
+
+function changePassword(){
+  const targetType = document.getElementById('targetUserType').value;
+  const current = document.getElementById('currentPwInput').value.trim();
+  const newPw = document.getElementById('newPwInput').value.trim();
+  const confirm = document.getElementById('confirmPwInput').value.trim();
+  const errorEl = document.getElementById('pwChangeError');
+  const successEl = document.getElementById('pwSuccessMsg');
+
+  errorEl.classList.remove('show');
+  successEl.classList.remove('show');
+
+  if(current !== passwords[targetType]){
+    errorEl.textContent = '❌ كلمة المرور الحالية غير صحيحة';
+    errorEl.classList.add('show');
+    return;
+  }
+
+  if(newPw.length < 4){
+    errorEl.textContent = '❌ كلمة المرور الجديدة يجب أن تكون 4 أحرف على الأقل';
+    errorEl.classList.add('show');
+    return;
+  }
+
+  if(newPw !== confirm){
+    errorEl.textContent = '❌ كلمة المرور الجديدة غير متطابقة مع التأكيد';
+    errorEl.classList.add('show');
+    return;
+  }
+
+  passwords[targetType] = newPw;
+  savePasswords();
+
+  document.getElementById('currentPwInput').value = '';
+  document.getElementById('newPwInput').value = '';
+  document.getElementById('confirmPwInput').value = '';
+
+  successEl.classList.add('show');
+  setTimeout(() => { 
+    successEl.classList.remove('show');
+    hideChangePw();
+  }, 2000);
+}
+
+// Allow Enter key to submit password
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Enter' && document.body.classList.contains('locked')){
+    if(document.getElementById('loginBox').style.display !== 'none'){
+      checkPassword();
+    }
+  }
+});
+// =====================
+// DIAGNOSTICS & COMPATIBILITY
+// =====================
+function isFileProtocol(){
+  return window.location.protocol === 'file:';
+}
+
+function showDiagnostic(message, actionsHtml){
+  const panel = document.getElementById('diagnosticPanel');
+  const msg = document.getElementById('diagMessage');
+  const acts = document.getElementById('diagActions');
+  if(!panel || !msg) return;
+  msg.innerHTML = message;
+  if(acts && actionsHtml) acts.innerHTML = actionsHtml;
+  panel.style.display = 'block';
+}
+
+function hideDiagnostic(){
+  const panel = document.getElementById('diagnosticPanel');
+  if(panel) panel.style.display = 'none';
+}
+
+function checkFileProtocol(){
+  if(isFileProtocol()){
+    const warn = document.getElementById('fileProtocolWarning');
+    if(warn) warn.style.display = 'block';
+    return true;
+  }
+  return false;
+}
+
+function generateSampleData(){
+  // Generate minimal sample data so the dashboard shows something
+  const sample = [];
+  const months = ["كانون الثاني","شباط","آذار"];
+  ALL_GOVS.forEach((gov, i) => {
+    months.forEach(m => {
+      sample.push({
+        gov: gov,
+        month: m,
+        year: 2025,
+        population: 500000 + i * 50000,
+        males: 250000 + i * 25000,
+        females: 250000 + i * 25000,
+        disabled_cards: Math.floor(Math.random() * 500),
+        elderly_homes: Math.floor(Math.random() * 10),
+        elderly_benef: Math.floor(Math.random() * 200),
+        orphan_homes: Math.floor(Math.random() * 5),
+        sponsor_internal: Math.floor(Math.random() * 100),
+        sponsor_external: Math.floor(Math.random() * 50),
+        ngo_active: Math.floor(Math.random() * 20),
+        ngo_total: Math.floor(Math.random() * 50),
+        juvenile_inst: Math.floor(Math.random() * 3),
+        juvenile_inst_active: Math.floor(Math.random() * 2),
+        juvenile_inmates: Math.floor(Math.random() * 30),
+        rural_dev_active: Math.floor(Math.random() * 10),
+        rural_dev_benef: Math.floor(Math.random() * 500),
+        rural_ind_active: Math.floor(Math.random() * 8),
+        rural_ind_benef: Math.floor(Math.random() * 300),
+        insp_total: Math.floor(Math.random() * 100),
+        violations: Math.floor(Math.random() * 20),
+        work_permits_new: Math.floor(Math.random() * 50),
+        work_permits_renew: Math.floor(Math.random() * 80),
+        employed: Math.floor(Math.random() * 200000),
+        unemployed: Math.floor(Math.random() * 50000),
+        unemployment_rate: (5 + Math.random() * 20).toFixed(1),
+        insurance_public: Math.floor(Math.random() * 50000),
+        insurance_private: Math.floor(Math.random() * 30000),
+        insurance_total: Math.floor(Math.random() * 80000),
+        food_baskets: Math.floor(Math.random() * 1000),
+        cash_assistance: Math.floor(Math.random() * 500),
+        in_kind_aid: Math.floor(Math.random() * 300),
+        camps_count: Math.floor(Math.random() * 5),
+        camp_families: Math.floor(Math.random() * 200),
+        platform_registered: Math.floor(Math.random() * 1000),
+        platform_establishments: Math.floor(Math.random() * 100),
+        platform_jobs: Math.floor(Math.random() * 200),
+        platform_training: Math.floor(Math.random() * 150),
+        vocational_centers: Math.floor(Math.random() * 5),
+        vocational_benef: Math.floor(Math.random() * 200),
+        pop_under15: Math.floor(Math.random() * 200000),
+        pop_15_60: Math.floor(Math.random() * 250000),
+        pop_over60: Math.floor(Math.random() * 50000),
+        labor_force: (0.5 + Math.random() * 0.5).toFixed(2),
+        male_unemployment: (3 + Math.random() * 15).toFixed(1),
+        female_unemployment: (8 + Math.random() * 25).toFixed(1),
+        youth_unemployment: (10 + Math.random() * 30).toFixed(1),
+        male_participation: (40 + Math.random() * 30).toFixed(1),
+        female_participation: (10 + Math.random() * 20).toFixed(1),
+        unorganized_workers: (30 + Math.random() * 40).toFixed(1),
+        child_marriage_rate: (5 + Math.random() * 15).toFixed(1),
+        child_labor_rate: (2 + Math.random() * 10).toFixed(1),
+        basic_edu_completion: (60 + Math.random() * 30).toFixed(1),
+        female_breadwinners: (10 + Math.random() * 20).toFixed(1),
+        food_secure_pct: (30 + Math.random() * 40).toFixed(1),
+        food_vulnerable_pct: (20 + Math.random() * 30).toFixed(1),
+        food_insecure_pct: (5 + Math.random() * 25).toFixed(1),
+        achievements: "إنجاز تجريبي",
+        recommendations: "توصية تجريبية",
+        needs: "احتياج تجريبي",
+        monthly_report: "تقرير تجريبي"
+      });
+    });
+  });
+  return sample;
+}
+
+function loadSampleData(){
+  const sample = generateSampleData();
+  ALL_DATA = sample;
+  selectedMonths = new Set([...new Set(ALL_DATA.map(d => d.month))]);
+  selectedMonthChips.clear();
+
+  const statusEl = document.getElementById('dataStatus');
+  if(statusEl){
+    statusEl.textContent = `بيانات تجريبية: ${sample.length} سجل`;
+    statusEl.className = 'status-badge status-ok';
+  }
+
+  syncMonthChipsWithData();
+  renderAll();
+  updateLastUpdatedDisplay();
+
+  showDiagnostic(
+    '✅ تم تحميل <strong>بيانات تجريبية</strong> لأغراض العرض. هذه البيانات وهمية — ارفع ملف CSV حقيقي للحصول على نتائج دقيقة.',
+    '<button class="btn-fallback" onclick="showUploadModal()">📁 رفع ملف CSV حقيقي</button>'
+  );
+}
+
+// =====================
+// OFFLINE SUPPORT & LAST UPDATED
+// =====================
+const STORAGE_KEY = 'govDashboard_data';
+const STORAGE_TIMESTAMP_KEY = 'govDashboard_timestamp';
+const STORAGE_VERSION_KEY = 'govDashboard_version';
+const SESSION_KEY = 'govDashboard_session';
+const DATA_VERSION = '1.0'; // bump when schema changes
+
+function updateConnectionStatus(){
+  const offlineBar = document.getElementById('offlineBar');
+  const onlineBar = document.getElementById('onlineBar');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const lastBadge = document.getElementById('lastUpdatedBadge');
+
+  if(navigator.onLine){
+    if(offlineBar) offlineBar.classList.remove('show');
+    // Only flash online bar briefly if we were offline
+    if(onlineBar){
+      onlineBar.classList.add('show');
+      setTimeout(() => { onlineBar.classList.remove('show'); }, 5000);
+    }
+    if(refreshBtn) refreshBtn.disabled = false;
+  } else {
+    if(offlineBar) offlineBar.classList.add('show');
+    if(onlineBar) onlineBar.classList.remove('show');
+    if(refreshBtn) refreshBtn.disabled = true;
+  }
+  // Always show last updated badge if we have data
+  if(ALL_DATA && ALL_DATA.length > 0 && lastBadge){
+    lastBadge.style.display = 'inline-flex';
   }
 }
 
-const SESSION_KEY = 'govDashboard_session';
-
-function logout(){
-  currentUser = null;
-  localStorage.removeItem(SESSION_KEY);
-  location.reload();
+function saveDataToLocalStorage(){
+  if(!ALL_DATA || ALL_DATA.length === 0) return;
+  try {
+    const payload = {
+      version: DATA_VERSION,
+      data: ALL_DATA,
+      timestamp: new Date().toISOString(),
+      recordCount: ALL_DATA.length
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    updateLastUpdatedDisplay();
+    console.log('✅ Data saved to localStorage:', ALL_DATA.length, 'records');
+  } catch(e) {
+    console.warn('Failed to save to localStorage:', e);
+  }
 }
 
-// =====================
-// STRATEGIC PLAN COMPASS
-// =====================
+function loadDataFromLocalStorage(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return false;
+    const payload = JSON.parse(raw);
+    if(!payload || !payload.data || payload.version !== DATA_VERSION){
+      console.log('localStorage data version mismatch or empty');
+      return false;
+    }
+    ALL_DATA = payload.data;
+    selectedMonths = new Set([...new Set(ALL_DATA.map(d => d.month))]);
+    selectedMonthChips.clear();
+
+    const statusEl = document.getElementById('dataStatus');
+    if(statusEl){
+      const ts = payload.timestamp ? new Date(payload.timestamp).toLocaleString('ar-SY') : 'غير معروف';
+      statusEl.textContent = `تم التحميل من الذاكرة المحلية: ${ALL_DATA.length} سجل`;
+      statusEl.className = 'status-badge status-ok';
+    }
+
+    syncMonthChipsWithData();
+    renderAll();
+    updateLastUpdatedDisplay(payload.timestamp);
+    updateConnectionStatus();
+    console.log('✅ Data loaded from localStorage:', ALL_DATA.length, 'records');
+    return true;
+  } catch(e) {
+    console.warn('Failed to load from localStorage:', e);
+    return false;
+  }
+}
+
+function updateLastUpdatedDisplay(isoTimestamp){
+  const badge = document.getElementById('lastUpdatedBadge');
+  const text = document.getElementById('lastUpdatedText');
+  const panel = document.getElementById('lastUpdatedPanel');
+  const display = document.getElementById('lastUpdatedDisplay');
+  const dot = document.getElementById('lastUpdatedDot');
+  const label = document.getElementById('lastUpdatedLabel');
+
+  let ts = isoTimestamp;
+  if(!ts){
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) ts = JSON.parse(raw).timestamp;
+    } catch(e){}
+  }
+
+  if(ts){
+    const date = new Date(ts);
+    const formatted = date.toLocaleString('ar-SY', {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+
+    // Update old badge (inside data-source-bar, for admin)
+    if(badge && text){
+      text.textContent = formatted;
+      badge.style.display = 'inline-flex';
+    }
+
+    // Update new visible panel (for ALL users including viewer)
+    if(panel && display){
+      display.textContent = formatted;
+      panel.style.display = 'block';
+    }
+
+    // If data is older than 7 days, show warning
+    const daysOld = (Date.now() - date.getTime()) / (1000 * 60 * 60 * 24);
+    if(daysOld > 7){
+      if(badge) badge.classList.add('offline-badge');
+      if(text) text.innerHTML = formatted + ' <span style="font-size:10px;margin-inline-start:4px;">(قديم)</span>';
+      if(dot) dot.style.background = '#B5533C';
+      if(label){
+        label.textContent = 'بيانات قديمة';
+        label.style.color = '#B5533C';
+      }
+      if(panel) panel.querySelector('div').style.borderColor = '#B5533C';
+    } else {
+      if(badge) badge.classList.remove('offline-badge');
+      if(dot) dot.style.background = '#4F7A63';
+      if(label){
+        label.textContent = navigator.onLine ? 'بيانات محدّثة' : 'بيانات محلية';
+        label.style.color = 'var(--ink-soft)';
+      }
+      if(panel) panel.querySelector('div').style.borderColor = '#0D8BA8';
+    }
+  } else {
+    if(badge) badge.style.display = 'none';
+    if(panel) panel.style.display = 'none';
+  }
+}
+
+function clearSavedData(){
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(STORAGE_TIMESTAMP_KEY);
+  ALL_DATA = [];
+  const badge = document.getElementById('lastUpdatedBadge');
+  if(badge) badge.style.display = 'none';
+  const statusEl = document.getElementById('dataStatus');
+  if(statusEl){
+    statusEl.textContent = 'تم مسح البيانات المحفوظة';
+    statusEl.className = 'status-badge status-loading';
+  }
+  renderAll();
+}
+
+// Override processCSVData to auto-save
+const originalProcessCSVData = processCSVData;
+processCSVData = function(csvText){
+  const result = originalProcessCSVData(csvText);
+  if(result){
+    saveDataToLocalStorage();
+  }
+  return result;
+};
+
+// Override loadFromSheet to handle offline
+const originalLoadFromSheet = loadFromSheet;
+loadFromSheet = async function(){
+  const statusEl = document.getElementById('dataStatus');
+
+  // Check file:// protocol FIRST
+  if(isFileProtocol()){
+    if(statusEl){
+      statusEl.textContent = '⏳ جاري تحميل البيانات المضمنة...';
+      statusEl.className = 'status-badge status-loading';
+    }
+    // Try localStorage first
+    const loaded = loadDataFromLocalStorage();
+    if(loaded){
+      if(statusEl){
+        statusEl.textContent = '✅ تم التحميل من الذاكرة المحلية';
+        statusEl.className = 'status-badge status-ok';
+      }
+      return;
+    }
+    // Load inline CSV data
+    const success = processCSVData(INLINE_CSV_DATA);
+    if(success){
+      saveDataToLocalStorage();
+      if(statusEl){
+        statusEl.textContent = '✅ تم تحميل البيانات المضمنة';
+        statusEl.className = 'status-badge status-ok';
+      }
+    }
+    return;
+  }
+
+  if(!navigator.onLine){
+    if(statusEl){
+      statusEl.textContent = '⚠️ لا يوجد إنترنت — جاري تحميل البيانات المحفوظة...';
+      statusEl.className = 'status-badge status-loading';
+    }
+    const loaded = loadDataFromLocalStorage();
+    if(!loaded){
+      if(statusEl){
+        statusEl.textContent = '❌ لا توجد بيانات محفوظة — يرجى الاتصال بالإنترنت';
+        statusEl.className = 'status-badge status-error';
+      }
+      showDiagnostic(
+        '❌ لا يوجد إنترنت ولا توجد بيانات محفوظة محلياً.<br>يرجى الاتصال بالإنترنت أو رفع ملف CSV يدوياً.',
+        '<button class="btn-fallback" onclick="showUploadModal()">📁 رفع ملف CSV</button>'
+      );
+    }
+    return;
+  }
+
+  // Online: proceed with original function
+  hideDiagnostic();
+  // Try localStorage before hitting the network
+  const localLoaded = loadDataFromLocalStorage();
+  if(localLoaded){
+    if(statusEl){
+      statusEl.textContent = '✅ تم التحميل من الذاكرة المحلية';
+      statusEl.className = 'status-badge status-ok';
+    }
+    return;
+  }
+  // No local data — now try the network (user-initiated refresh)
+  await originalLoadFromSheet();
+  // Original function calls processCSVData which now auto-saves
+};
+
+// Auto-load on startup (after login)
+function autoLoadOnStartup(){
+  const statusEl = document.getElementById('dataStatus');
+
+  // 1. Always try localStorage first — fastest and most reliable
+  const loaded = loadDataFromLocalStorage();
+  if(loaded){
+    if(statusEl){
+      statusEl.textContent = '✅ تم التحميل من الذاكرة المحلية';
+      statusEl.className = 'status-badge status-ok';
+    }
+    return;
+  }
+
+  // 2. Fall back to inline CSV data built into the file
+  if(statusEl){
+    statusEl.textContent = '⏳ جاري تحميل البيانات المضمنة...';
+    statusEl.className = 'status-badge status-loading';
+  }
+  const success = processCSVData(INLINE_CSV_DATA);
+  if(success){
+    saveDataToLocalStorage();
+    if(statusEl){
+      statusEl.textContent = '✅ تم تحميل البيانات المضمنة';
+      statusEl.className = 'status-badge status-ok';
+    }
+    return;
+  }
+
+  // 3. Nothing worked — prompt user to upload
+  if(statusEl){
+    statusEl.textContent = '⚠️ لا توجد بيانات — ارفع ملف CSV';
+    statusEl.className = 'status-badge status-error';
+  }
+  showDiagnostic(
+    'ℹ️ لم يتم العثور على بيانات. ارفع ملف CSV أو اضغط زر التحديث لجلب البيانات من الرابط.',
+    '<button class="btn-fallback" onclick="showUploadModal()">📁 رفع ملف CSV</button> <button class="btn-fallback" onclick="loadSampleData()" style="background:linear-gradient(135deg,#1565c0,#0d47a1);margin-inline-start:8px;">🔬 بيانات تجريبية</button>'
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STRATEGIC PLAN ENGINE — محرك الخطة الاستراتيجية
+// ═══════════════════════════════════════════════════════════════
+
+const STRAT_STORAGE_KEY = 'syria_strategic_targets_v1';
+
+// Default annual targets — editable by admin
+const DEFAULT_STRATEGIC_TARGETS = {
+  disability: {
+    label: 'رعاية ذوي الإعاقة',
+    icon: '🦽',
+    axis: 'المحور الاجتماعي',
+    field: 'disabled_cards',
+    target: 15000,
+    unit: 'بطاقة',
+    note: 'عدد بطاقات الإعاقة الجديدة المستهدفة سنوياً'
+  },
+  disability_benef: {
+    label: 'مستفيدو معاهد الإعاقة',
+    icon: '🏫',
+    axis: 'المحور الاجتماعي',
+    field: 'disability_benef',
+    target: 5000,
+    unit: 'طالب',
+    note: 'عدد الطلاب المسجلين في معاهد ذوي الإعاقة'
+  },
+  vocational: {
+    label: 'التأهيل المهني',
+    icon: '🔧',
+    axis: 'محور التشغيل',
+    field: 'vocational_benef',
+    target: 8000,
+    unit: 'مستفيد',
+    note: 'مستفيدو مراكز التأهيل المهني'
+  },
+  elderly: {
+    label: 'رعاية كبار السن',
+    icon: '👴',
+    axis: 'المحور الاجتماعي',
+    field: 'elderly_benef',
+    target: 3000,
+    unit: 'مستفيد',
+    note: 'المستفيدون من دور رعاية المسنين'
+  },
+  orphans: {
+    label: 'كفالة الأيتام',
+    icon: '🏠',
+    axis: 'المحور الاجتماعي',
+    field: 'sponsor_external',
+    target: 5000,
+    unit: 'طفل',
+    note: 'عدد الأيتام المستفيدين من الكفالة الخارجية'
+  },
+  food_aid: {
+    label: 'السلال الغذائية',
+    icon: '🍞',
+    axis: 'محور الإغاثة',
+    field: 'food_baskets',
+    target: 50000,
+    unit: 'سلة',
+    note: 'عدد السلل الغذائية الموزعة سنوياً'
+  },
+  cash_aid: {
+    label: 'الإعانات المالية',
+    icon: '💰',
+    axis: 'محور الإغاثة',
+    field: 'cash_assistance',
+    target: 20000,
+    unit: 'مستفيد',
+    note: 'عدد المستفيدين من الإعانات المالية'
+  },
+  rural_dev: {
+    label: 'التنمية الريفية',
+    icon: '🌾',
+    axis: 'محور التنمية',
+    field: 'rural_dev_benef',
+    target: 10000,
+    unit: 'مستفيد',
+    note: 'مستفيدو مراكز التنمية الريفية'
+  },
+  rural_ind: {
+    label: 'الصناعات الريفية',
+    icon: '🏭',
+    axis: 'محور التنمية',
+    field: 'rural_ind_benef',
+    target: 5000,
+    unit: 'مستفيد',
+    note: 'مستفيدو وحدات الصناعات الريفية'
+  },
+  insurance_new: {
+    label: 'التسجيل بالتأمينات',
+    icon: '🏥',
+    axis: 'محور العمل',
+    field: 'new_workers_insp',
+    target: 10000,
+    unit: 'عامل',
+    note: 'عمال جدد تم تسجيلهم عبر الزيارات التفتيشية'
+  },
+  inspection: {
+    label: 'الزيارات التفتيشية',
+    icon: '🔍',
+    axis: 'محور العمل',
+    field: 'insp_total',
+    target: 5000,
+    unit: 'زيارة',
+    note: 'إجمالي الزيارات التفتيشية على المنشآت'
+  },
+  platform: {
+    label: 'منصة سوق العمل',
+    icon: '💻',
+    axis: 'محور التشغيل',
+    field: 'platform_registered',
+    target: 30000,
+    unit: 'مسجّل',
+    note: 'عدد المسجلين في منصة سوق العمل الرقمية'
+  },
+  platform_jobs: {
+    label: 'فرص العمل المنشورة',
+    icon: '📋',
+    axis: 'محور التشغيل',
+    field: 'platform_jobs',
+    target: 5000,
+    unit: 'فرصة',
+    note: 'عدد فرص العمل المتاحة على المنصة'
+  },
+  ngo_licensed: {
+    label: 'المنظمات المشهرة',
+    icon: '🤝',
+    axis: 'محور المجتمع المدني',
+    field: 'ngo_new_pct',
+    target: 200,
+    unit: 'منظمة',
+    note: 'عدد المنظمات غير الحكومية المشهرة'
+  }
+};
+
+// Load saved targets or use defaults
+function loadStrategicTargets(){
+  try {
+    const saved = localStorage.getItem(STRAT_STORAGE_KEY);
+    if(saved){
+      const parsed = JSON.parse(saved);
+      // Merge with defaults (in case new targets were added)
+      Object.keys(DEFAULT_STRATEGIC_TARGETS).forEach(k => {
+        if(!parsed[k]) parsed[k] = {...DEFAULT_STRATEGIC_TARGETS[k]};
+        else parsed[k] = {...DEFAULT_STRATEGIC_TARGETS[k], ...parsed[k]};
+      });
+      return parsed;
+    }
+  } catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_STRATEGIC_TARGETS));
+}
+
+function saveStrategicTargets(){
+  const targets = loadStrategicTargets();
+  // Read current values from inputs
+  Object.keys(targets).forEach(k => {
+    const inp = document.getElementById('strat-inp-' + k);
+    if(inp){
+      const val = parseInt(inp.value.replace(/,/g, ''));
+      if(!isNaN(val) && val > 0) targets[k].target = val;
+    }
+  });
+  localStorage.setItem(STRAT_STORAGE_KEY, JSON.stringify(targets));
+  // Show save message
+  const msg = document.getElementById('stratSaveMsg');
+  if(msg){ msg.style.display='inline'; setTimeout(()=>{ msg.style.display='none'; }, 2500); }
+  // Re-render
+  renderStrategicCompass();
+}
+
 function toggleStrategicCompass(){
-  document.getElementById('strategicCompass').classList.toggle('open');
+  const el = document.getElementById('strategicCompass');
+  if(el) el.classList.toggle('open');
 }
 
 function toggleStratSettings(btn){
   const panel = document.getElementById('stratSettingsPanel');
+  if(!panel) return;
   panel.classList.toggle('open');
   btn.classList.toggle('active');
 }
 
-// Default strategic targets (can be edited by admin)
-const DEFAULT_STRATEGIC_TARGETS = {
-  disabled_cards: { target: 5000, label: 'بطاقات إعاقة جديدة' },
-  elderly_benef: { target: 5000, label: 'مستفيدو رعاية المسنين' },
-  insurance_total: { target: 1000000, label: 'المشمولون بالتأمينات' },
-  employed: { target: 500000, label: 'المشتغلون' },
-  platform_registered: { target: 50000, label: 'مسجّلو المنصة' },
-  food_baskets: { target: 50000, label: 'السلل الغذائية' },
-  ngo_active: { target: 100, label: 'المنظمات المشهرة' },
-  rural_dev_benef: { target: 10000, label: 'مستفيدو التنمية الريفية' },
-  insp_total: { target: 1000, label: 'الزيارات التفتيشية' },
-  vocational_benef: { target: 5000, label: 'مستفيدو التأهيل المهني' }
-};
-
-let strategicTargets = { ...DEFAULT_STRATEGIC_TARGETS };
-
-function loadStrategicTargets(){
-  const saved = localStorage.getItem('govDashboard_strategicTargets');
-  if(saved){
-    try {
-      strategicTargets = { ...DEFAULT_STRATEGIC_TARGETS, ...JSON.parse(saved) };
-    } catch(e) {}
-  }
+// Calculate status from percentage
+function getStratStatus(pct){
+  if(pct === null) return 'no-data';
+  if(pct >= 85) return 'on-track';
+  if(pct >= 50) return 'warning';
+  return 'off-track';
 }
 
-function saveStrategicTargets(){
-  const inputs = document.querySelectorAll('#stratSettingsGrid input');
-  inputs.forEach(input => {
-    const key = input.getAttribute('data-key');
-    if(key && strategicTargets[key]){
-      strategicTargets[key].target = parseInt(input.value) || 0;
-    }
-  });
-  localStorage.setItem('govDashboard_strategicTargets', JSON.stringify(strategicTargets));
-
-  const msg = document.getElementById('stratSaveMsg');
-  msg.style.display = 'inline';
-  setTimeout(() => { msg.style.display = 'none'; }, 3000);
-
-  renderStrategicCompass();
+function getStratStatusLabel(status){
+  const labels = {
+    'on-track': '✅ على المسار',
+    'warning': '⚠️ يحتاج متابعة',
+    'off-track': '🔴 خارج الهدف',
+    'no-data': '— لا بيانات'
+  };
+  return labels[status] || '—';
 }
 
+// Main render function for the strategic compass
 function renderStrategicCompass(){
-  const arr = filtered();
-  if(arr.length === 0){
-    document.getElementById('stratAxesGrid').innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink-soft);grid-column:1/-1;"><div style="font-size:36px;margin-bottom:10px;">📂</div><div style="font-size:14px;">ارفع ملف CSV لعرض مؤشرات الخطة الاستراتيجية</div></div>';
-    document.getElementById('stratOnTrackCount').textContent = '—';
-    document.getElementById('stratWarningCount').textContent = '—';
-    document.getElementById('stratOffTrackCount').textContent = '—';
-    document.getElementById('stratAvgPct').textContent = '—';
-    return;
-  }
+  const targets = loadStrategicTargets();
+  const data = filtered();
 
-  loadStrategicTargets();
+  // Compute current actual values (sum across all filtered data)
+  const actuals = {};
+  Object.keys(targets).forEach(k => {
+    const field = targets[k].field;
+    const total = data.reduce((acc, row) => acc + (parseFloat(row[field]) || 0), 0);
+    actuals[k] = total;
+  });
 
-  // Build settings grid if admin
-  const settingsGrid = document.getElementById('stratSettingsGrid');
-  if(settingsGrid && currentUser === 'admin'){
-    settingsGrid.innerHTML = Object.entries(strategicTargets).map(([key, cfg]) => `
-      <div class="strat-input-row">
-        <label>${cfg.label}</label>
-        <input type="number" data-key="${key}" value="${cfg.target}" min="0">
-      </div>
-    `).join('');
-  }
+  // Calculate statuses
+  let onTrack = 0, warning = 0, offTrack = 0, noData = 0;
+  const percentages = [];
 
-  // Calculate progress for each axis
-  let onTrack = 0, warning = 0, offTrack = 0;
-  let totalPct = 0, count = 0;
-
-  const axesHtml = Object.entries(strategicTargets).map(([key, cfg]) => {
-    const actual = sum(key, arr);
-    const target = cfg.target;
-    const pct = target > 0 ? Math.min((actual / target) * 100, 100) : 0;
-    const displayPct = target > 0 ? ((actual / target) * 100).toFixed(1) : 0;
-
-    let status = 'no-data';
-    let statusLabel = 'لا بيانات';
-    if(target > 0){
-      if(pct >= 80) { status = 'on-track'; statusLabel = 'على المسار ✅'; onTrack++; }
-      else if(pct >= 50) { status = 'warning'; statusLabel = 'يحتاج متابعة ⚠️'; warning++; }
-      else { status = 'off-track'; statusLabel = 'خارج الهدف 🔴'; offTrack++; }
-      totalPct += parseFloat(displayPct);
-      count++;
+  Object.keys(targets).forEach(k => {
+    const actual = actuals[k];
+    const target = targets[k].target;
+    if(!actual || actual === 0){
+      noData++;
+      return;
     }
+    const pct = Math.round((actual / target) * 100);
+    percentages.push(Math.min(pct, 100));
+    const status = getStratStatus(pct);
+    if(status === 'on-track') onTrack++;
+    else if(status === 'warning') warning++;
+    else if(status === 'off-track') offTrack++;
+  });
 
-    return `
-      <div class="strat-axis-card ${status}">
-        <div class="sac-header">
-          <span class="sac-icon">${getAxisIcon(key)}</span>
-          <div>
-            <div class="sac-title">${cfg.label}</div>
-            <div class="sac-axis">${COLUMN_MAP_INV[key] || key}</div>
-          </div>
-          <span class="sac-status-badge ${status}">${statusLabel}</span>
-        </div>
-        <div class="sac-values">
-          <div class="sac-actual">${fmt(actual)}</div>
-          <div class="sac-target-info">الهدف: <span>${fmt(target)}</span></div>
-        </div>
-        <div class="sac-progress-bar">
-          <div class="sac-progress-fill" style="width:${pct}%"></div>
-        </div>
-        <div class="sac-pct">${displayPct}% من الهدف</div>
-      </div>
-    `;
-  }).join('');
+  const avgPct = percentages.length > 0
+    ? Math.round(percentages.reduce((a,b) => a+b, 0) / percentages.length)
+    : null;
 
-  document.getElementById('stratAxesGrid').innerHTML = axesHtml;
-  document.getElementById('stratOnTrackCount').textContent = onTrack;
-  document.getElementById('stratWarningCount').textContent = warning;
-  document.getElementById('stratOffTrackCount').textContent = offTrack;
-  document.getElementById('stratAvgPct').textContent = count > 0 ? (totalPct / count).toFixed(1) + '%' : '—';
+  // Update summary cards
+  const el = id => document.getElementById(id);
+  if(el('stratOnTrackCount')) el('stratOnTrackCount').textContent = onTrack;
+  if(el('stratWarningCount')) el('stratWarningCount').textContent = warning;
+  if(el('stratOffTrackCount')) el('stratOffTrackCount').textContent = offTrack;
+  if(el('stratAvgPct')) el('stratAvgPct').textContent = avgPct !== null ? avgPct + '%' : '—';
 
-  // Update quarterly timeline (simplified)
-  const months = [...new Set(arr.map(d => d.month))];
-  const q1 = ['كانون الثاني','شباط','آذار'];
-  const q2 = ['نيسان','أيار','حزيران'];
-  const q3 = ['تموز','آب','أيلول'];
-  const q4 = ['تشرين الأول','تشرين الثاني','كانون الأول'];
-
-  function qPct(qMonths){
-    const qData = arr.filter(d => qMonths.includes(d.month));
-    if(qData.length === 0) return '—';
-    let qTotal = 0, qCount = 0;
-    Object.entries(strategicTargets).forEach(([key, cfg]) => {
-      const actual = sum(key, qData);
-      const target = cfg.target;
-      if(target > 0){
-        qTotal += Math.min((actual/target)*100, 100);
-        qCount++;
+  // Quarterly progress — infer from month names in data
+  const Q_MONTHS = {
+    q1: ['كانون الثاني','شباط','آذار'],
+    q2: ['نيسان','أيار','حزيران'],
+    q3: ['تموز','آب','أيلول'],
+    q4: ['تشرين الأول','تشرين الثاني','كانون الأول']
+  };
+  ['q1','q2','q3','q4'].forEach(q => {
+    const qData = ALL_DATA.filter(r => Q_MONTHS[q].includes(r.month));
+    const qActuals = {};
+    let qPcts = [];
+    Object.keys(targets).forEach(k => {
+      const field = targets[k].field;
+      const total = qData.reduce((acc, row) => acc + (parseFloat(row[field]) || 0), 0);
+      if(total > 0){
+        const pct = Math.round((total / targets[k].target) * 100);
+        qPcts.push(Math.min(pct, 100));
       }
     });
-    return qCount > 0 ? Math.round(qTotal/qCount) + '%' : '—';
+    const qAvg = qPcts.length > 0 ? Math.round(qPcts.reduce((a,b)=>a+b,0)/qPcts.length) + '%' : '—';
+    const pctEl = el(q + 'pct');
+    if(pctEl) pctEl.textContent = qAvg;
+  });
+
+  // Render axis cards
+  const grid = el('stratAxesGrid');
+  if(grid){
+    if(data.length === 0){
+      grid.innerHTML = `<div style="text-align:center;padding:40px;color:var(--ink-soft);grid-column:1/-1;">
+        <div style="font-size:36px;margin-bottom:10px;">📂</div>
+        <div style="font-size:14px;">ارفع ملف CSV لعرض مؤشرات الخطة الاستراتيجية</div>
+      </div>`;
+    } else {
+      grid.innerHTML = Object.keys(targets).map(k => {
+        const t = targets[k];
+        const actual = actuals[k] || 0;
+        const hasData = actual > 0;
+        const pct = hasData ? Math.min(Math.round((actual / t.target) * 100), 150) : null;
+        const displayPct = pct !== null ? Math.min(pct, 100) : 0;
+        const status = getStratStatus(pct);
+        return `
+        <div class="strat-axis-card ${status}">
+          <div class="sac-header">
+            <span class="sac-icon">${t.icon}</span>
+            <div>
+              <div class="sac-title">${t.label}</div>
+              <div class="sac-axis">${t.axis}</div>
+            </div>
+            <span class="sac-status-badge ${status}">${getStratStatusLabel(status)}</span>
+          </div>
+          <div class="sac-values">
+            <div>
+              <div style="font-size:10px;color:var(--ink-soft);margin-bottom:2px;">الفعلي</div>
+              <div class="sac-actual">${hasData ? actual.toLocaleString('en-US') : '—'}</div>
+            </div>
+            <div class="sac-target-info">
+              <div style="font-size:10px;color:var(--ink-soft);margin-bottom:2px;">الهدف السنوي</div>
+              <span>${t.target.toLocaleString('en-US')} ${t.unit}</span>
+            </div>
+          </div>
+          <div class="sac-progress-bar">
+            <div class="sac-progress-fill" style="width:${displayPct}%"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="sac-pct ${status}">${pct !== null ? pct + '%' : '—'} من الهدف</div>
+            ${pct !== null && pct > 100 ? '<span style="font-size:10px;color:#0B5A7A;font-weight:700;">🏆 تجاوز الهدف</span>' : ''}
+          </div>
+          <div class="sac-note">${t.note}</div>
+        </div>`;
+      }).join('');
+    }
   }
 
-  document.getElementById('q1pct').textContent = qPct(q1);
-  document.getElementById('q2pct').textContent = qPct(q2);
-  document.getElementById('q3pct').textContent = qPct(q3);
-  document.getElementById('q4pct').textContent = qPct(q4);
+  // Build settings inputs
+  const settingsGrid = el('stratSettingsGrid');
+  if(settingsGrid){
+    settingsGrid.innerHTML = Object.keys(targets).map(k => {
+      const t = targets[k];
+      return `<div class="strat-input-row">
+        <label>${t.icon} ${t.label} (${t.unit})</label>
+        <input type="number" id="strat-inp-${k}" value="${t.target}" min="0" step="100">
+      </div>`;
+    }).join('');
+  }
+
+  // Show admin tools if admin
+  const adminTools = el('stratAdminTools');
+  if(adminTools) adminTools.style.display = (currentUser === 'admin') ? 'flex' : 'none';
+
+  // Update category strategic badges
+  renderCategoryStrategicBadges(targets, actuals);
 }
 
-function getAxisIcon(key){
-  const icons = {
-    disabled_cards: '🦽',
-    elderly_benef: '👵',
-    insurance_total: '🏥',
-    employed: '💼',
-    platform_registered: '💻',
-    food_baskets: '🍞',
-    ngo_active: '🤝',
-    rural_dev_benef: '🌾',
-    insp_total: '🏗️',
-    vocational_benef: '🎓'
+// Inject a small strategic badge into each category section
+function renderCategoryStrategicBadges(targets, actuals){
+  const CAT_MAP = {
+    disability: ['disability', 'disability_benef'],
+    social: ['elderly', 'orphans'],
+    aid: ['food_aid', 'cash_aid'],
+    rural: ['rural_dev', 'rural_ind'],
+    labor: ['inspection'],
+    insurance: ['insurance_new'],
+    platform: ['platform', 'platform_jobs'],
+    ngo: ['ngo_licensed'],
+    juvenile: [],
+    camps: [],
+    labor_market: [],
+    demographics: []
   };
-  return icons[key] || '📊';
+
+  Object.keys(CAT_MAP).forEach(cat => {
+    const keys = CAT_MAP[cat];
+    if(keys.length === 0) return;
+
+    const catEl = document.querySelector(`section.category[data-cat="${cat}"]`);
+    if(!catEl) return;
+
+    const catBody = catEl.querySelector('.cat-body');
+    if(!catBody) return;
+
+    // Remove existing badge if any
+    const existing = catBody.querySelector('.cat-strat-badge');
+    if(existing) existing.remove();
+
+    // Calculate aggregate for this category
+    let totalActual = 0, totalTarget = 0;
+    keys.forEach(k => {
+      if(targets[k]){
+        totalActual += (actuals[k] || 0);
+        totalTarget += targets[k].target;
+      }
+    });
+
+    if(totalTarget === 0) return;
+
+    const pct = Math.round((totalActual / totalTarget) * 100);
+    const displayPct = Math.min(pct, 100);
+    const status = totalActual === 0 ? 'no-data' : getStratStatus(pct);
+    const statusLabel = getStratStatusLabel(status);
+
+    const barColor = status === 'on-track' ? '#0B5A7A' : status === 'warning' ? '#f0a500' : status === 'no-data' ? '#ccc' : '#c62828';
+    const actualStr = totalActual > 0 ? totalActual.toLocaleString('en-US') : '\u2014';
+    const pctStr = totalActual > 0 ? (pct + '%') : '\u2014';
+
+    const badge = document.createElement('div');
+    badge.className = 'cat-strat-badge';
+    badge.innerHTML = '<span class="csb-icon">🎯</span>'
+      + '<span class="csb-label">الهدف الاستراتيجي:</span>'
+      + '<span class="csb-actual">' + actualStr + '</span>'
+      + '<span class="csb-sep">/</span>'
+      + '<span class="csb-target">' + totalTarget.toLocaleString('en-US') + '</span>'
+      + '<div class="csb-bar-wrap"><div class="csb-bar-fill" style="width:' + displayPct + '%;background:' + barColor + '"></div></div>'
+      + '<span class="csb-pct-lbl ' + status + '">' + pctStr + '</span>'
+      + '<span class="csb-status ' + status + '">' + statusLabel + '</span>';
+
+    // Insert before first child of cat-body
+    catBody.insertBefore(badge, catBody.firstChild);
+  });
+}
+
+// Network event listeners
+window.addEventListener('online', () => {
+  console.log('🌐 Back online');
+  updateConnectionStatus();
+  // Show toast/notification
+  const statusEl = document.getElementById('dataStatus');
+  if(statusEl){
+    statusEl.textContent = '🌐 تم استعادة الاتصال — يمكنك التحديث الآن';
+    statusEl.className = 'status-badge status-ok';
+  }
+});
+
+window.addEventListener('offline', () => {
+  console.log('📵 Gone offline');
+  updateConnectionStatus();
+  const statusEl = document.getElementById('dataStatus');
+  if(statusEl){
+    statusEl.textContent = '📵 لا يوجد إنترنت — تعمل بالبيانات المحفوظة';
+    statusEl.className = 'status-badge status-loading';
+  }
+});
+
+
+
+// =====================
+// SESSION MANAGEMENT (Remember Login)
+// =====================
+function logout(){
+  try {
+    localStorage.removeItem(SESSION_KEY);
+  } catch(e) {}
+  currentUser = null;
+  // Reload page to show login screen
+  window.location.reload();
+}
+
+function restoreSession(){
+  try {
+    const saved = localStorage.getItem(SESSION_KEY);
+    if(!saved) return false;
+    const session = JSON.parse(saved);
+    if(!session || !session.userType) return false;
+
+    // Optional: check if session is too old (e.g., 30 days)
+    const loginTime = new Date(session.loginTime);
+    const daysOld = (Date.now() - loginTime.getTime()) / (1000 * 60 * 60 * 24);
+    if(daysOld > 30){
+      localStorage.removeItem(SESSION_KEY);
+      return false;
+    }
+
+    currentUser = session.userType;
+
+    // Skip login screen and enter dashboard directly
+    document.body.classList.remove('locked');
+    document.getElementById('passwordOverlay').style.display = 'none';
+
+    if(currentUser === 'viewer'){
+      document.body.classList.add('readonly');
+      document.getElementById('readOnlyBanner').classList.add('show');
+      document.querySelector('.data-source-bar').style.display = 'none';
+      document.getElementById('viewerMessage').style.display = 'block';
+    }
+
+    // Show last updated panel if data exists
+    updateLastUpdatedDisplay();
+
+    return true;
+  } catch(e) {
+    console.warn('Failed to restore session:', e);
+    return false;
+  }
 }
 
 // =====================
 // INIT
 // =====================
-function init(){
-  loadSavedPasswords();
-
-  // Check for existing session
-  const session = localStorage.getItem(SESSION_KEY);
-  if(session){
-    try {
-      const parsed = JSON.parse(session);
-      if(parsed.userType){
-        currentUser = parsed.userType;
-        enterDashboard();
-        return;
-      }
-    } catch(e) {}
-  }
-
-  // Otherwise show login
-  document.body.classList.add('locked');
-
+window.addEventListener('DOMContentLoaded', () => {
+  loadSavedPasswords(); // Load saved passwords from localStorage
   setupGovFilter();
   setupMonthFilter();
 
-  // Load inline data by default
-  processCSVData(INLINE_CSV_DATA);
-
-  // Setup connection status
-  window.addEventListener('online', showOnlineToast);
-  window.addEventListener('offline', showOfflineToast);
-
-  // Check initial connection
-  if(!navigator.onLine){
-    showOfflineToast();
+  // Try to restore saved session (skip login if valid)
+  const restored = restoreSession();
+  if(restored){
+    console.log('✅ Session restored for user:', currentUser);
+    // Auto-load data for returning user
+    setTimeout(() => { autoLoadOnStartup(); }, 300);
+    setTimeout(() => { initMapOnDemand(); }, 1000);
+    setTimeout(() => { updateConnectionStatus(); }, 100);
   }
-}
-
-init();
-</script>
+  // If not restored, login screen remains visible (default locked state)
+});</script>
 </body>
 </html>
