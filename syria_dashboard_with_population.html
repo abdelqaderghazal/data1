@@ -238,10 +238,18 @@
   .monthly-report-card .report-text{white-space:pre-wrap;line-height:2;color:var(--ink-soft);font-size:13.5px;}
 
   /* ===== OFFLINE & LAST UPDATED STYLES ===== */
-  .connection-bar{position:fixed;top:0;left:0;right:0;z-index:998;padding:6px 20px;text-align:center;font-size:12.5px;font-weight:600;font-family:'Cairo';display:none;box-shadow:0 2px 8px rgba(0,0,0,0.15);transition:.3s ease;}
-  .connection-bar.offline{background:linear-gradient(90deg,#c62828,#e53935);color:white;display:flex;align-items:center;justify-content:center;gap:8px;}
-  .connection-bar.online{background:linear-gradient(90deg,#2e7d32,#43a047);color:white;display:none;}
-  .connection-bar.show{display:flex !important;}
+    /* ===== TOAST NOTIFICATION (Bottom-Right) ===== */
+  .connection-bar{position:fixed;bottom:24px;right:24px;z-index:998;padding:14px 20px;font-size:13px;font-weight:600;font-family:'Cairo';display:none;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.25);transition:all .4s cubic-bezier(0.175,0.885,0.32,1.275);max-width:380px;min-width:280px;transform:translateY(20px) scale(0.95);opacity:0;direction:rtl;text-align:right;align-items:center;gap:10px;backdrop-filter:blur(8px);}
+  .connection-bar.show{display:flex !important;transform:translateY(0) scale(1);opacity:1;}
+  .connection-bar.offline{background:linear-gradient(135deg,#c62828,#e53935);color:white;border:1px solid rgba(255,255,255,0.15);}
+  .connection-bar.online{background:linear-gradient(135deg,#2e7d32,#43a047);color:white;border:1px solid rgba(255,255,255,0.15);}
+  .connection-bar .toast-icon{font-size:20px;flex-shrink:0;}
+  .connection-bar .toast-text{flex:1;line-height:1.6;}
+  .connection-bar .toast-close{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;flex-shrink:0;transition:.15s;margin-inline-start:8px;}
+  .connection-bar .toast-close:hover{background:rgba(255,255,255,0.35);transform:scale(1.1);}
+  .connection-bar .toast-action{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 14px;border-radius:100px;font-family:Cairo;font-size:12px;font-weight:600;cursor:pointer;transition:.15s;flex-shrink:0;margin-top:8px;display:inline-block;}
+  .connection-bar .toast-action:hover{background:rgba(255,255,255,0.35);}
+  @media(max-width:640px){.connection-bar{bottom:16px;right:16px;left:16px;max-width:none;min-width:auto;}}
   .last-updated-badge{display:inline-flex;align-items:center;gap:6px;background:var(--sand);border:1px solid var(--line);padding:5px 12px;border-radius:100px;font-family:'IBM Plex Mono';font-size:11.5px;color:var(--ink-soft);font-weight:600;white-space:nowrap;}
   .last-updated-badge .dot{width:6px;height:6px;border-radius:50%;background:#4F7A63;animation:pulse 2s infinite;}
   @keyframes pulse{0%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.8);}100%{opacity:1;transform:scale(1);}}
@@ -378,12 +386,27 @@
 <base target="_blank">
 <base target="_blank">
 <base target="_blank">
+<base target="_blank">
 </head>
 <body class="locked">
 
-<!-- Connection Status Bar -->
-<div class="connection-bar offline" id="offlineBar">📵 لا يوجد اتصال بالإنترنت — تعمل ببيانات محفوظة محلياً</div>
-<div class="connection-bar online" id="onlineBar">🌐 تم استعادة الاتصال — <button onclick="loadFromSheet()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.5);color:white;padding:3px 12px;border-radius:100px;font-family:Cairo;font-size:11px;font-weight:600;cursor:pointer;margin-inline-start:8px;">تحديث الآن</button></div>
+<!-- Connection Status Toast (Bottom-Right) -->
+<div class="connection-bar offline" id="offlineBar">
+  <span class="toast-icon">📵</span>
+  <div class="toast-text">
+    <div style="font-weight:700;margin-bottom:2px;">لا يوجد اتصال بالإنترنت</div>
+    <div style="font-size:11.5px;opacity:0.9;font-weight:400;">تعمل ببيانات محفوظة محلياً</div>
+  </div>
+  <button class="toast-close" onclick="hideConnectionToast()">×</button>
+</div>
+<div class="connection-bar online" id="onlineBar">
+  <span class="toast-icon">🌐</span>
+  <div class="toast-text">
+    <div style="font-weight:700;margin-bottom:2px;">تم استعادة الاتصال</div>
+    <button class="toast-action" onclick="loadFromSheet();hideConnectionToast();">تحديث الآن</button>
+  </div>
+  <button class="toast-close" onclick="hideConnectionToast()">×</button>
+</div>
 
 
 <!-- ═══════════════════════════════════════
@@ -1119,6 +1142,24 @@ function sum(field, arr, fallback){
 
 const fmt = n => n.toLocaleString('en-US');
 const PALETTE = ['#123C44','#B08D57','#4F7A63','#B5533C','#6E8FA3','#8C7A5B','#3f5a5f','#C99A62','#5f8a70','#a15a4a','#2E6B7E','#8B6914','#5D4E37','#4A6741'];
+
+// =====================
+// TOAST HELPERS
+// =====================
+function hideConnectionToast(){
+  document.getElementById('offlineBar').classList.remove('show');
+  document.getElementById('onlineBar').classList.remove('show');
+}
+function showOfflineToast(){
+  document.getElementById('onlineBar').classList.remove('show');
+  document.getElementById('offlineBar').classList.add('show');
+}
+function showOnlineToast(){
+  document.getElementById('offlineBar').classList.remove('show');
+  document.getElementById('onlineBar').classList.add('show');
+  // Auto-hide after 8 seconds
+  setTimeout(() => { hideConnectionToast(); }, 8000);
+}
 
 // =====================
 // CSV PARSING - Auto detect delimiter
@@ -3254,18 +3295,13 @@ function handleCSVPaste(){
   closeUploadModal();
 }
 
-// Helper: fetch with timeout to avoid hanging requests
-async function fetchWithTimeout(url, options = {}, timeout = 8000) {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-  try {
-    const response = await fetch(url, { ...options, signal: controller.signal });
-    clearTimeout(id);
-    return response;
-  } catch (error) {
-    clearTimeout(id);
-    throw error;
-  }
+// Helper: fetch with timeout — uses Promise.race to avoid AbortSignal cloning issues
+function fetchWithTimeout(url, options = {}, timeout = 8000) {
+  const fetchPromise = fetch(url, options);
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('timeout after ' + timeout + 'ms')), timeout)
+  );
+  return Promise.race([fetchPromise, timeoutPromise]);
 }
 
 async function loadFromSheet(){
@@ -3450,6 +3486,11 @@ function getIntensityColor(intensity){
 
 function initMap(){
   if(map !== null) return;
+  if(typeof L === 'undefined'){
+    const mapEl = document.getElementById('govMap');
+    if(mapEl) mapEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#666;font-family:Cairo;font-size:14px;flex-direction:column;gap:10px;"><div style="font-size:36px;">🗺️</div><div>تعذّر تحميل الخريطة — تأكد من الاتصال بالإنترنت لتحميل مكتبة Leaflet</div></div>';
+    return;
+  }
 
   map = L.map('govMap').setView([35.0, 38.0], 6);
 
@@ -3463,6 +3504,7 @@ function initMap(){
 
 function updateMapMarkers(){
   if(!map) return;
+  if(typeof L === 'undefined') return;
 
   // Clear existing markers
   Object.values(mapMarkers).forEach(m => map.removeLayer(m));
@@ -3699,6 +3741,13 @@ function updateMapMarkers(){
 
 // Initialize map when the map section is opened
 function initMapOnDemand(){
+  if(typeof L === 'undefined'){
+    const mapEl = document.getElementById('govMap');
+    if(mapEl && !mapEl.querySelector('.map-unavailable')) {
+      mapEl.innerHTML = '<div class="map-unavailable" style="display:flex;align-items:center;justify-content:center;height:100%;color:#666;font-family:Cairo;font-size:14px;flex-direction:column;gap:10px;background:#f9f9f9;border-radius:0 0 18px 18px;"><div style="font-size:36px;">🗺️</div><div>تعذّر تحميل الخريطة — تأكد من الاتصال بالإنترنت</div></div>';
+    }
+    return;
+  }
   if(!map){
     setTimeout(() => {
       initMap();
@@ -4225,84 +4274,58 @@ loadFromSheet = async function(){
 
   // Online: proceed with original function
   hideDiagnostic();
+  // Try localStorage before hitting the network
+  const localLoaded = loadDataFromLocalStorage();
+  if(localLoaded){
+    if(statusEl){
+      statusEl.textContent = '✅ تم التحميل من الذاكرة المحلية';
+      statusEl.className = 'status-badge status-ok';
+    }
+    return;
+  }
+  // No local data — now try the network (user-initiated refresh)
   await originalLoadFromSheet();
   // Original function calls processCSVData which now auto-saves
 };
 
 // Auto-load on startup (after login)
 function autoLoadOnStartup(){
-  // Check file:// protocol first
-  if(isFileProtocol()){
-    console.log('File protocol detected on startup');
-    // Try localStorage first (user may have uploaded CSV before)
-    const loaded = loadDataFromLocalStorage();
-    if(loaded){
-      const statusEl = document.getElementById('dataStatus');
-      if(statusEl){
-        statusEl.textContent = '✅ تم التحميل من الذاكرة المحلية';
-        statusEl.className = 'status-badge status-ok';
-      }
-      return;
-    }
-    // No localStorage data — load inline CSV data (built-in)
-    console.log('Loading inline CSV data for file:// protocol');
-    const statusEl = document.getElementById('dataStatus');
-    if(statusEl){
-      statusEl.textContent = '⏳ جاري تحميل البيانات المضمنة...';
-      statusEl.className = 'status-badge status-loading';
-    }
-    const success = processCSVData(INLINE_CSV_DATA);
-    if(success){
-      saveDataToLocalStorage();
-      if(statusEl){
-        statusEl.textContent = '✅ تم تحميل البيانات المضمنة — يمكنك رفع CSV خاص لاحقاً';
-        statusEl.className = 'status-badge status-ok';
-      }
-      showDiagnostic(
-        'ℹ️ <strong>تعمل في وضع الملف المحلي</strong> — تم تحميل بيانات افتراضية مضمنة.<br>لتحديث البيانات: ارفع ملف CSV يدوياً أو انقل الملف لخادم ويب.',
-        '<button class="btn-fallback" onclick="showUploadModal()">📁 رفع ملف CSV خاص</button>'
-      );
-    }
-    return;
-  }
-
-  if(!navigator.onLine){
-    console.log('Offline detected on startup, loading from localStorage...');
-    const loaded = loadDataFromLocalStorage();
-    if(!loaded){
-      const statusEl = document.getElementById('dataStatus');
-      if(statusEl){
-        statusEl.textContent = '⚠️ offline — لا توجد بيانات محفوظة';
-        statusEl.className = 'status-badge status-error';
-      }
-      showDiagnostic(
-        '❌ لا يوجد إنترنت ولا توجد بيانات محفوظة.<br>يرجى الاتصال بالإنترنت أو رفع ملف CSV يدوياً.',
-        '<button class="btn-fallback" onclick="showUploadModal()">📁 رفع ملف CSV</button>'
-      );
-    }
-    return;
-  }
-
-  // Online: try to load fresh data, but if it fails quickly, fallback to local
   const statusEl = document.getElementById('dataStatus');
+
+  // 1. Always try localStorage first — fastest and most reliable
+  const loaded = loadDataFromLocalStorage();
+  if(loaded){
+    if(statusEl){
+      statusEl.textContent = '✅ تم التحميل من الذاكرة المحلية';
+      statusEl.className = 'status-badge status-ok';
+    }
+    return;
+  }
+
+  // 2. Fall back to inline CSV data built into the file
   if(statusEl){
-    statusEl.textContent = '⏳ جاري التحقق من الإنترنت...';
+    statusEl.textContent = '⏳ جاري تحميل البيانات المضمنة...';
     statusEl.className = 'status-badge status-loading';
   }
-
-  // Try loading from sheet with a shorter timeout for startup
-  loadFromSheet().catch(err => {
-    console.warn('Auto-load from sheet failed, trying localStorage:', err);
-    const loaded = loadDataFromLocalStorage();
-    if(!loaded && statusEl){
-      statusEl.textContent = '❌ فشل التحميل — لا توجد بيانات محفوظة';
-      statusEl.className = 'status-badge status-error';
-      showDiagnostic(
-        '❌ فشل الاتصال بالخادم ولا توجد بيانات محفوظة.<br>قد تكون المشكلة: حظر CORS، رابط غير صحيح، أو مشكلة شبكية.',
-        '<button class="btn-fallback" onclick="showUploadModal()">📁 رفع ملف CSV</button> <button class="btn-fallback" onclick="loadSampleData()" style="background:linear-gradient(135deg,#1565c0,#0d47a1);margin-inline-start:8px;">🔬 بيانات تجريبية</button>'
-      );
+  const success = processCSVData(INLINE_CSV_DATA);
+  if(success){
+    saveDataToLocalStorage();
+    if(statusEl){
+      statusEl.textContent = '✅ تم تحميل البيانات المضمنة';
+      statusEl.className = 'status-badge status-ok';
     }
-  });
+    return;
+  }
+
+  // 3. Nothing worked — prompt user to upload
+  if(statusEl){
+    statusEl.textContent = '⚠️ لا توجد بيانات — ارفع ملف CSV';
+    statusEl.className = 'status-badge status-error';
+  }
+  showDiagnostic(
+    'ℹ️ لم يتم العثور على بيانات. ارفع ملف CSV أو اضغط زر التحديث لجلب البيانات من الرابط.',
+    '<button class="btn-fallback" onclick="showUploadModal()">📁 رفع ملف CSV</button> <button class="btn-fallback" onclick="loadSampleData()" style="background:linear-gradient(135deg,#1565c0,#0d47a1);margin-inline-start:8px;">🔬 بيانات تجريبية</button>'
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════
