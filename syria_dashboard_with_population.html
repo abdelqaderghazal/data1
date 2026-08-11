@@ -390,6 +390,7 @@
 <base target="_blank">
 <base target="_blank">
 <base target="_blank">
+<base target="_blank">
 </head>
 <body class="locked">
 
@@ -534,10 +535,17 @@
 <div class="data-panel">
   <div class="data-source-bar">
     <span class="label">📁 مصدر البيانات:</span>
-    <input type="text" class="gsheet-input" id="gsheetUrl" placeholder="رابط Google Sheet" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vSYw2t1DGme6GL7bFv8FDnl3cYMbHYpm2LRjjvHsXyE2TB5Tbkum28ObIMc1jop-AQMJCWThzX9q3vL/pub?output=csv" readonly style="background:#f0ebe0;color:var(--ink-soft);">
+    <input type="text" class="gsheet-input" id="gsheetUrl" placeholder="رابط Google Sheet المنشور (pub?output=csv)" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vSYw2t1DGme6GL7bFv8FDnl3cYMbHYpm2LRjjvHsXyE2TB5Tbkum28ObIMc1jop-AQMJCWThzX9q3vL/pub?output=csv">
     <button class="btn btn-primary" onclick="loadFromSheet()" id="refreshBtn">🔄 تحديث من الرابط</button>
     <button class="btn btn-success" onclick="showUploadModal()">📁 رفع ملف CSV يدوياً</button>
-    <span class="status-badge status-loading" id="dataStatus">جاري التحميل التلقائي...</span>
+    <span class="status-badge status-loading" id="dataStatus">⏳ جاري التحميل عبر Google Sheets API...</span>
+  </div>
+  <div class="data-source-bar" style="margin-top:8px;background:linear-gradient(90deg,#fff8e1,#ffffff);border-color:#f0a500;">
+    <span class="label">🔐 مفتاح API (اختياري):</span>
+    <input type="password" class="gsheet-input" id="apiKeyInput" placeholder="مفتاح API مدمج — يمكنك إدخال مفتاح آخر" value="●●●●●●●●●●●●" style="font-family:'IBM Plex Mono',monospace;letter-spacing:1px;" onchange="saveApiKey()">
+    <button class="btn" onclick="toggleApiKeyVisibility()" style="background:#f0a500;color:white;font-size:12px;" title="إظهار/إخفاء">👁️</button>
+    <button class="btn" onclick="showApiHelp()" style="background:#1565c0;color:white;font-size:12px;">❓ كيف أحصل عليه؟</button>
+    <span id="apiKeyStatus" style="font-size:11px;color:var(--ink-soft);font-family:'IBM Plex Mono';"></span>
   </div>
 </div>
 
@@ -3268,105 +3276,263 @@ function handleCSVPaste(){
 
 // Helper: fetch with timeout — uses Promise.race to avoid AbortSignal cloning issues
 function fetchWithTimeout(url, options = {}, timeout = 8000) {
-  const fetchPromise = fetch(url, options);
+  const ctrl = new AbortController();
+  const fetchPromise = fetch(url, { ...options, signal: ctrl.signal });
   const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error('timeout after ' + timeout + 'ms')), timeout)
+    setTimeout(() => { ctrl.abort(); reject(new Error('timeout after ' + timeout + 'ms')); }, timeout)
   );
   return Promise.race([fetchPromise, timeoutPromise]);
 }
 
+// ═══════════════════════════════════════
+// EMBEDDED GOOGLE SHEETS API KEY
+// ═══════════════════════════════════════
+const DEFAULT_API_KEY = '116080a2040b5e7b88d85cd94d89d26d19207e10fd102f2659a61d2a54aad3ec';
+
 async function loadFromSheet(){
-  const url = document.getElementById('gsheetUrl').value.trim();
-  if(!url){ 
-    alert('الرجاء إدخال رابط Google Sheet أو استخدام زر رفع الملف'); 
+  const urlInput = document.getElementById('gsheetUrl').value.trim();
+  if(!urlInput){ 
+    alert('الرجاء إدخال رابط Google Sheet'); 
     return; 
   }
 
   const statusEl = document.getElementById('dataStatus');
   const refreshBtn = document.getElementById('refreshBtn');
-
   statusEl.textContent = '⏳ جاري التحديث...'; 
   statusEl.className = 'status-badge status-loading';
   if(refreshBtn) refreshBtn.disabled = true;
 
-  // Add cache-buster to force fresh data
-  const cacheBuster = '&_cb=' + Date.now();
-  const fetchUrl = url + (url.includes('?') ? cacheBuster : '?' + cacheBuster);
-
-  // 1. Try direct fetch first (fastest if CORS is enabled by the sheet owner)
-  try {
-    const response = await fetchWithTimeout(fetchUrl, {}, 5000);
-    if(response.ok){ 
-      const csvText = await response.text(); 
-      if(csvText && csvText.length > 50 && (csvText.includes(',') || csvText.includes(';'))) {
-        if(processCSVData(csvText)) {
-          statusEl.textContent = '✅ تم التحديث بنجاح — ' + new Date().toLocaleTimeString('ar-SY');
-          statusEl.className = 'status-badge status-ok';
-          if(refreshBtn) refreshBtn.disabled = false;
-          return; 
-        }
-      }
-    }
-  } catch(e) { 
-    console.log('Direct fetch failed:', e.message); 
+  // ─── استخراج Spreadsheet ID ───
+  function extractSheetId(url) {
+    let m = url.match(/\/d\/e\/([a-zA-Z0-9_-]+)/);
+    if(m) return {id: m[1], type: 'published'};
+    m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if(m) return {id: m[1], type: 'direct'};
+    return null;
   }
 
-  // 2. Proxy list — ordered by reliability & speed (corsproxy.io first as it's usually fastest)
-  const proxies = [
-    { 
-      name: 'corsproxy.io',
-      url: (target) => `https://corsproxy.io/?${encodeURIComponent(target)}`,
-      extract: async (r) => r.text()
-    },
-    { 
-      name: 'allorigins (raw)',
-      url: (target) => `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`,
-      extract: async (r) => r.text()
-    },
-    { 
-      name: 'allorigins (json)',
-      url: (target) => `https://api.allorigins.win/get?url=${encodeURIComponent(target)}`,
-      extract: async (r) => {
-        const json = await r.json();
-        return json.contents;
+  const sheetInfo = extractSheetId(urlInput);
+  if(!sheetInfo){
+    statusEl.textContent = '❌ رابط غير صالح — يجب أن يحتوي على معرف الجدول';
+    statusEl.className = 'status-badge status-error';
+    if(refreshBtn) refreshBtn.disabled = false;
+    return;
+  }
+
+  const apiKey = document.getElementById('apiKeyInput').value.trim() || DEFAULT_API_KEY;
+  const cacheBuster = '&_cb=' + Date.now();
+
+  // ═══════════════════════════════════════
+  // المرحلة 0: Google Sheets API v4 (الأقوى والأكثر استقراراً)
+  // ═══════════════════════════════════════
+  if(apiKey && apiKey.startsWith('AIza')){
+    try {
+      statusEl.textContent = '⏳ جاري الاتصال عبر Google Sheets API v4...';
+      const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetInfo.id}/values/Sheet1?key=${apiKey}${cacheBuster}`;
+
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 10000);
+      const response = await fetch(apiUrl, { signal: ctrl.signal });
+      clearTimeout(t);
+
+      if(response.ok){
+        const json = await response.json();
+        if(json.values && json.values.length > 1){
+          // Convert Google API JSON to CSV
+          const csvText = convertApiToCSV(json.values);
+          if(processCSVData(csvText)){
+            statusEl.textContent = '✅ تم التحديث عبر Google Sheets API — ' + new Date().toLocaleTimeString('ar-SY');
+            statusEl.className = 'status-badge status-ok';
+            if(refreshBtn) refreshBtn.disabled = false;
+            return;
+          }
+        }
+      } else {
+        const errJson = await response.json().catch(() => ({}));
+        if(errJson.error && errJson.error.message){
+          console.warn('API Error:', errJson.error.message);
+          if(errJson.error.status === 'PERMISSION_DENIED'){
+            statusEl.textContent = '⚠️ المفتاح صحيح لكن الجدول غير مشارك — شارك الجدول مع "Anyone" أو فعّل Google Sheets API';
+            statusEl.className = 'status-badge status-error';
+          }
+        }
       }
+    } catch(e) {
+      console.log('API v4 failed:', e.message);
     }
+  }
+
+  // ═══════════════════════════════════════
+  // المرحلة 1: جلب مباشر من Google (بدون proxy)
+  // ═══════════════════════════════════════
+  const endpoints = [];
+  if(sheetInfo.type === 'published'){
+    endpoints.push({name: 'Google Published CSV', url: urlInput + (urlInput.includes('?') ? '&' : '?') + cacheBuster});
+  } else {
+    const id = sheetInfo.id;
+    endpoints.push({name: 'Google Viz API', url: `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=Sheet1${cacheBuster}`});
+    endpoints.push({name: 'Google Export', url: `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&id=${id}&gid=0${cacheBuster}`});
+    endpoints.push({name: 'Google Published', url: `https://docs.google.com/spreadsheets/d/e/${id}/pub?output=csv${cacheBuster}`});
+  }
+
+  for(const ep of endpoints){
+    try {
+      statusEl.textContent = `⏳ جاري الاتصال: ${ep.name}...`;
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 8000);
+      const response = await fetch(ep.url, { signal: ctrl.signal, mode: 'cors' });
+      clearTimeout(t);
+
+      if(response.ok){ 
+        const csvText = await response.text(); 
+        if(csvText.length > 100 && !csvText.trim().startsWith('<') && (csvText.includes(',') || csvText.includes(';'))) {
+          if(processCSVData(csvText)) {
+            statusEl.textContent = '✅ تم التحديث من المصدر — ' + new Date().toLocaleTimeString('ar-SY');
+            statusEl.className = 'status-badge status-ok';
+            if(refreshBtn) refreshBtn.disabled = false;
+            return; 
+          }
+        }
+      }
+    } catch(e) { 
+      console.log(`${ep.name} failed:`, e.message); 
+    }
+  }
+
+  // ═══════════════════════════════════════
+  // المرحلة 2: Proxies
+  // ═══════════════════════════════════════
+  const targetUrl = endpoints[0].url;
+  const proxies = [
+    { name: 'corsproxy.io', url: `https://corsproxy.io/?${encodeURIComponent(targetUrl)}` },
+    { name: 'allorigins.win', url: `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}` },
+    { name: 'codetabs', url: `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}` },
+    { name: 'thingproxy', url: `https://thingproxy.freeboard.io/fetch/${targetUrl}` }
   ];
 
-  // Try proxies sequentially with timeout and content validation
   for(const proxy of proxies){
     try {
       statusEl.textContent = `⏳ جاري المحاولة عبر ${proxy.name}...`;
-      const proxyUrl = proxy.url(fetchUrl);
-      const response = await fetchWithTimeout(proxyUrl, {}, 10000);
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 12000);
+      const response = await fetch(proxy.url, { signal: ctrl.signal });
+      clearTimeout(t);
 
-      if(!response.ok) {
-        console.warn(`Proxy ${proxy.name} returned HTTP ${response.status}`);
-        continue;
-      }
+      if(!response.ok) continue;
+      const csvText = await response.text();
 
-      const csvText = await proxy.extract(response);
-
-      // Validate response actually looks like CSV (not an error page)
-      if(csvText && csvText.length > 50 && (csvText.includes(',') || csvText.includes(';'))) {
+      if(csvText.trim().startsWith('<') || csvText.length < 50) continue;
+      if(csvText.includes(',') || csvText.includes(';') || csvText.includes('\t')) {
         if(processCSVData(csvText)) {
-          statusEl.textContent = '✅ تم التحديث بنجاح — ' + new Date().toLocaleTimeString('ar-SY');
+          statusEl.textContent = `✅ تم التحديث عبر ${proxy.name} — ` + new Date().toLocaleTimeString('ar-SY');
           statusEl.className = 'status-badge status-ok';
           if(refreshBtn) refreshBtn.disabled = false;
           return;
         }
-      } else {
-        console.warn(`Proxy ${proxy.name} returned invalid/non-CSV content`);
       }
     } catch(err) { 
       console.warn(`Proxy ${proxy.name} failed:`, err.message); 
     }
   }
 
-  statusEl.textContent = '❌ فشل التحديث — جرب رفع الملف يدوياً';
+  // ═══════════════════════════════════════
+  // المرحلة 3: Fallback إلى البيانات المدمجة
+  // ═══════════════════════════════════════
+  if(typeof INLINE_CSV_DATA !== 'undefined' && INLINE_CSV_DATA.length > 100){
+    statusEl.textContent = '⚠️ فشل الاتصال — جاري تحميل البيانات المدمجة...';
+    try {
+      if(processCSVData(INLINE_CSV_DATA)){
+        statusEl.innerHTML = '⚠️ وضع عدم الاتصال — البيانات المدمجة محملة — <a href="#" onclick="showConnectionHelp();return false;" style="color:#0D8BA8;text-decoration:underline;">لماذا؟</a>';
+        statusEl.className = 'status-badge status-loading';
+        if(refreshBtn) refreshBtn.disabled = false;
+        return;
+      }
+    } catch(e) {
+      console.warn('Inline fallback failed:', e);
+    }
+  }
+
+  statusEl.innerHTML = '❌ تعذّر الاتصال — <a href="#" onclick="showConnectionHelp();return false;" style="color:#c62828;text-decoration:underline;">كيفية الإصلاح</a>';
   statusEl.className = 'status-badge status-error';
   if(refreshBtn) refreshBtn.disabled = false;
-  showUploadModal();
+}
+
+// ─── Google Sheets API JSON → CSV Converter ───
+function convertApiToCSV(values){
+  if(!values || values.length < 2) return '';
+  return values.map(row => {
+    return row.map(cell => {
+      let val = (cell === null || cell === undefined) ? '' : String(cell);
+      if(val.includes(',') || val.includes('"') || val.includes('\n')){
+        val = '"' + val.replace(/"/g, '""') + '"';
+      }
+      return val;
+    }).join(',');
+  }).join('\n');
+}
+
+// ─── API Key Helpers ───
+function saveApiKey(){
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if(key){
+    try { localStorage.setItem('syria_dashboard_api_key', key); } catch(e){}
+    document.getElementById('apiKeyStatus').textContent = '✅ تم الحفظ';
+    setTimeout(() => document.getElementById('apiKeyStatus').textContent = '', 2000);
+  }
+}
+
+function loadApiKey(){
+  try {
+    const savedKey = localStorage.getItem('syria_dashboard_api_key');
+    if(savedKey){
+      document.getElementById('apiKeyInput').value = savedKey;
+      document.getElementById('apiKeyStatus').textContent = '🔐 مفتاح محفوظ محلياً';
+    } else {
+      document.getElementById('apiKeyInput').value = DEFAULT_API_KEY;
+      document.getElementById('apiKeyStatus').textContent = '🔐 مفتاح API مدمج في النظام';
+    }
+  } catch(e){
+    document.getElementById('apiKeyInput').value = DEFAULT_API_KEY;
+  }
+}
+
+function toggleApiKeyVisibility(){
+  const input = document.getElementById('apiKeyInput');
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+function showApiHelp(){
+  const helpHtml = `
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)this.remove()">
+      <div style="background:white;border-radius:18px;max-width:560px;width:100%;padding:28px;direction:rtl;text-align:right;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:2px solid #1565c0;max-height:85vh;overflow-y:auto;">
+        <h3 style="margin:0 0 16px;font-family:Tajawal;color:#1565c0;font-size:20px;">🔐 كيفية الحصول على مفتاح Google Sheets API</h3>
+        <div style="font-size:13px;line-height:2;color:var(--ink-soft);">
+          <p style="background:#e3f2fd;border-radius:8px;padding:12px;border-inline-start:3px solid #1565c0;margin-bottom:12px;">
+            <strong>لماذا المفتاح؟</strong><br>
+            المفتاح يتيح جلب البيانات مباشرة من Google Sheets API v4 بدون proxies. هذا هو <strong>الحل الأكثر استقراراً وسرعة</strong>.
+          </p>
+          <ol style="padding-right:20px;margin:0;">
+            <li style="margin-bottom:8px;">افتح <a href="https://console.cloud.google.com/" target="_blank" style="color:#1565c0;font-weight:700;">Google Cloud Console</a> (مجاني)</li>
+            <li style="margin-bottom:8px;">أنشئ مشروعاً جديداً (أو استخدم مشروع موجود)</li>
+            <li style="margin-bottom:8px;">اذهب إلى <strong>APIs & Services → Library</strong></li>
+            <li style="margin-bottom:8px;">ابحث عن <strong>Google Sheets API</strong> وفعّله (Enable)</li>
+            <li style="margin-bottom:8px;">اذهب إلى <strong>Credentials → Create Credentials → API Key</strong></li>
+            <li style="margin-bottom:8px;">انسخ المفتاح (يبدأ بـ <code style="background:#f5f5f5;padding:2px 6px;border-radius:4px;">AIza...</code>) والصقه في الحقل أعلاه</li>
+            <li style="margin-bottom:8px;">في Google Sheet الخاص بك: اضغط <strong>Share</strong> واجعله <strong>"Anyone with the link" → Viewer</strong></li>
+          </ol>
+          <p style="background:#fff3e0;border-radius:8px;padding:12px;border-inline-start:3px solid #f0a500;margin-top:12px;">
+            <strong>⚠️ ملاحظة أمان:</strong> المفتاح يُحفظ محلياً في متصفحك فقط (localStorage) ولا يُرسل لأي خادم خارجي.
+          </p>
+        </div>
+        <button onclick="this.closest('.modal-overlay').remove()" style="margin-top:16px;width:100%;background:#1565c0;color:white;border:none;border-radius:10px;padding:12px;font-family:Cairo;font-size:14px;font-weight:700;cursor:pointer;">حسناً، فهمت</button>
+      </div>
+    </div>
+  `;
+  const div = document.createElement('div');
+  div.innerHTML = helpHtml;
+  div.className = 'modal-overlay';
+  div.style.display = 'flex';
+  document.body.appendChild(div);
 }
 
 // =====================
@@ -4780,6 +4946,10 @@ function restoreSession(){
 // =====================
 // INIT
 // =====================
+// Load saved API key on startup
+document.addEventListener('DOMContentLoaded', function(){
+  loadApiKey();
+});
 window.addEventListener('DOMContentLoaded', () => {
   loadSavedPasswords(); // Load saved passwords from localStorage
   setupGovFilter();
