@@ -369,25 +369,12 @@
   .csb-status.warning{background:#fff3cd;color:#856404;}
   .csb-status.off-track{background:#ffebee;color:#c62828;}
   .csb-status.no-data{background:#f5f5f5;color:#999;}
-
-  /* Hide monthly report tab */
-  section[data-cat="monthly_report"],
-  .category[data-cat="monthly_report"] {
-    display: none !important;
-  }
-
-  /* Hide offline/online connection bars */
-  #offlineBar, #onlineBar {
-    display: none !important;
-  }
 </style>
 <base target="_blank">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<base target="_blank">
-<base target="_blank">
 <base target="_blank">
 <base target="_blank">
 <base target="_blank">
@@ -1536,21 +1523,6 @@ function renderSingleGovChart(canvasId, arr, categoryField){
       {key:'disability_benef', label:'عدد الطلاب المسجلين في المعاهد الخاصة بذوي الاعاقة'},
       {key:'mobility_aids', label:'معينات حركية'},
       {key:'disability_cash', label:'معونة نقدية'}
-    ],
-    'insp_total': [
-      {key:'insp_total', label:'إجمالي الزيارات التفتيشية (صناعي+زراعي)'},
-      {key:'insp_industrial', label:'زيارات تفتيشية على المنشآت (صناعي)', fallback:'insp_total'},
-      {key:'insp_agricultural', label:'زيارات تفتيشية على المنشآت (زراعي)'},
-      {key:'violations', label:'مخالفات'},
-      {key:'new_workers_insp', label:'عمال جدد'},
-      {key:'work_permits_new', label:'تراخيص جديدة'},
-      {key:'work_permits_renew', label:'تجديد تراخيص'},
-      {key:'recruitment_offices', label:'مكاتب استقدام'},
-      {key:'domestic_permits_new', label:'تراخيص منزليات'},
-      {key:'domestic_offices_syrian', label:'مكاتب تشغيل سوريين'},
-      {key:'private_offices_syrian', label:'مكاتب خاصة سوريين'},
-      {key:'legal_docs_new', label:'صكوك جديدة'},
-      {key:'legal_docs_review', label:'صكوك قيد المراجعة'}
     ],
     'elderly_benef': [
       {key:'elderly_homes', label:'دور مسنين'},
@@ -3471,11 +3443,6 @@ function getIntensityColor(intensity){
   return '#6E8FA3'; // Low - blue
 }
 
-function initMapOnDemand(){
-  if(map !== null) return;
-  initMap();
-}
-
 function initMap(){
   if(map !== null) return;
   if(typeof L === 'undefined'){
@@ -3732,11 +3699,6 @@ function updateMapMarkers(){
 }
 
 // Initialize map when the map section is opened
-function initMapOnDemand(){
-  if(map !== null) return;
-  initMap();
-}
-
 function initMapOnDemand(){
   if(typeof L === 'undefined'){
     const mapEl = document.getElementById('govMap');
@@ -4527,12 +4489,7 @@ function getStratStatusLabel(status){
 }
 
 // Main render function for the strategic compass
-function toggleStrategicCompass(){
-  document.getElementById('strategicCompass').classList.toggle('open');
-}
-
 function renderStrategicCompass(){
-  try {
   const targets = loadStrategicTargets();
   const data = filtered();
 
@@ -4665,10 +4622,6 @@ function renderStrategicCompass(){
 
   // Update category strategic badges
   renderCategoryStrategicBadges(targets, actuals);
-  } catch(e) {
-    console.error("خطأ في renderStrategicCompass:", e);
-    document.getElementById('stratAxesGrid').innerHTML = '<div style="text-align:center;padding:40px;color:#999;">⚠️ تعذّر تحميل مؤشرات الخطة الاستراتيجية</div>';
-  }
 }
 
 // Inject a small strategic badge into each category section
@@ -4678,13 +4631,13 @@ function renderCategoryStrategicBadges(targets, actuals){
     social: ['elderly', 'orphans'],
     aid: ['food_aid', 'cash_aid'],
     rural: ['rural_dev', 'rural_ind'],
-    labor: ['inspection', 'insurance_new'],
+    labor: ['inspection'],
     insurance: ['insurance_new'],
     platform: ['platform', 'platform_jobs'],
     ngo: ['ngo_licensed'],
     juvenile: [],
     camps: [],
-    labor_market: ['vocational'],
+    labor_market: [],
     demographics: []
   };
 
@@ -4830,57 +4783,6 @@ window.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => { updateConnectionStatus(); }, 100);
   }
   // If not restored, login screen remains visible (default locked state)
-});
-
-// Auto-load on startup
-function autoLoadOnStartup(){
-  // Try to load from inline data first
-  if(typeof INLINE_CSV_DATA !== 'undefined' && INLINE_CSV_DATA && INLINE_CSV_DATA.length > 100){
-    try {
-      processCSVData(INLINE_CSV_DATA);
-      document.getElementById('dataStatus').textContent = '✅ تم التحميل من البيانات المدمجة';
-      document.getElementById('dataStatus').className = 'status-badge status-ok';
-      updateLastUpdatedDisplay(new Date().toISOString());
-      return;
-    } catch(e) {
-      console.warn('Inline data failed:', e);
-    }
-  }
-  // Try URL if available
-  const url = document.getElementById('gsheetUrl').value.trim();
-  if(url && url.startsWith('http')){
-    loadFromSheet();
-  }
-}
-
-function updateLastUpdatedDisplay(timestamp){
-  const panel = document.getElementById('lastUpdatedPanel');
-  const display = document.getElementById('lastUpdatedDisplay');
-  const label = document.getElementById('lastUpdatedLabel');
-  const dot = document.getElementById('lastUpdatedDot');
-  if(!panel || !display) return;
-
-  panel.style.display = 'block';
-  if(timestamp){
-    const date = new Date(timestamp);
-    display.textContent = date.toLocaleString('ar-SY');
-    label.textContent = 'بيانات محدّثة';
-    dot.style.background = '#4F7A63';
-  } else {
-    display.textContent = '—';
-    label.textContent = 'بيانات محلية';
-    dot.style.background = '#999';
-  }
-}
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function(){
-  setupGovFilter();
-  setupMonthFilter();
-  restoreSession();
-  autoLoadOnStartup();
-});
-
-</script>
+});</script>
 </body>
 </html>
