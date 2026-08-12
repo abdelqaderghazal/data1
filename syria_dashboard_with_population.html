@@ -2,16 +2,18 @@
 'use strict';
 
 /* ═══════════════════════════════════════════
-   1) الإعدادات العامة
+   ⚙️ إعداد Google Sheets — المصدر الوحيد للبيانات
 ═══════════════════════════════════════════ */
+const SHEET = {
+  CSV_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYw2t1DGme6GL7bFv8FDnl3cYMbHYpm2LRjjvHsXyE2TB5Tbkum28ObIMc1jop-AQMJCWThzX9q3vL/pub?gid=1033203405&single=true&output=csv',
+  AUTO_REFRESH_MINUTES: 5
+};
+
 const CONFIG = {
-  // ضع رابط ملف CSV الفعلي هنا (Google Sheets مُصدَّر أو رابط مباشر)
-  CSV_URL: 'https://raw.githubusercontent.com/YOUR_REPO/data.csv',
-  STORAGE_KEY: 'syria_dash_data_v2',
-  TARGETS_KEY: 'syria_dash_targets_v2',
-  USERS_KEY:   'syria_dash_users_v2',
-  SESSION_KEY: 'syria_dash_session_v2',
-  DEMO_MODE: true  // بيانات تجريبية عند فشل الجلب (يحل مشكلة file://)
+  STORAGE_KEY: 'syria_dash_cache_v3',   // cache احتياطي فقط عند انقطاع الإنترنت
+  USERS_KEY:   'syria_dash_users_v3',
+  SESSION_KEY: 'syria_dash_session_v3',
+  TARGETS_KEY: 'syria_dash_targets_v3'
 };
 
 const GOVERNORATES = ['دمشق','ريف دمشق','حلب','حمص','حماه','اللاذقية',
@@ -21,7 +23,37 @@ const MONTHS = ['كانون الثاني','شباط','آذار','نيسان','أ
   'تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
 
 /* ═══════════════════════════════════════════
-   2) نظام الإشعارات الموحّد (بديل التكرار)
+   🎨 CSS مدمج للعناصر الجديدة
+═══════════════════════════════════════════ */
+(function injectCSS(){
+  if (document.getElementById('core-dashboard-css')) return;
+  const s = document.createElement('style');
+  s.id = 'core-dashboard-css';
+  s.textContent = `
+    .toast{padding:14px 22px;border-radius:12px;color:#fff;font-family:inherit;
+      font-size:15px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;
+      gap:12px;animation:toastIn .3s ease;max-width:90vw}
+    .toast.success{background:#0d7a4f}.toast.error{background:#c0392b}
+    .toast.info{background:#1f6fb2}.toast.warning{background:#b7791f}
+    .toast button{background:none;border:none;color:#fff;font-size:18px;cursor:pointer}
+    .toast.fade-out{opacity:0;transition:opacity .3s}
+    @keyframes toastIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+    .empty-state{text-align:center;padding:22px;color:#666;font-size:15px;background:#f7f7f7;border-radius:10px;margin:10px 0}
+    .metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-top:12px}
+    .metric-card{background:linear-gradient(135deg,#f0f6ff,#fff);border:1px solid #dce8f7;border-radius:12px;padding:14px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+    .metric-value{font-size:24px;font-weight:bold;color:#1f6fb2;margin-bottom:4px}
+    .metric-label{font-size:13px;color:#555}
+    .global-banner{background:#fff3cd;border:1px solid #ffe69c;color:#856404;padding:14px 18px;border-radius:10px;margin:14px 0;display:none}
+    .status-bar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f4f7fb;border-radius:10px;font-size:13px;margin:10px 0;flex-wrap:wrap;gap:8px}
+    .goal-row{display:grid;grid-template-columns:1fr 2fr 60px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #eee}
+    .progress{background:#e8e8e8;border-radius:10px;height:10px;overflow:hidden}
+    .progress-fill{background:linear-gradient(90deg,#1f6fb2,#0d7a4f);height:100%;transition:width .5s}
+  `;
+  document.head.appendChild(s);
+})();
+
+/* ═══════════════════════════════════════════
+   🔔 نظام الإشعارات الموحّد
 ═══════════════════════════════════════════ */
 function ensureToastContainer() {
   let c = document.getElementById('toast-container');
@@ -30,17 +62,6 @@ function ensureToastContainer() {
     c.id = 'toast-container';
     c.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:99999;display:flex;flex-direction:column;gap:10px;';
     document.body.appendChild(c);
-    const style = document.createElement('style');
-    style.textContent = `
-      .toast{padding:14px 22px;border-radius:12px;color:#fff;font-family:inherit;
-        font-size:15px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;
-        gap:12px;animation:toastIn .3s ease;max-width:90vw}
-      .toast.success{background:#0d7a4f}.toast.error{background:#c0392b}
-      .toast.info{background:#1f6fb2}.toast.warning{background:#b7791f}
-      .toast button{background:none;border:none;color:#fff;font-size:18px;cursor:pointer}
-      .toast.fade-out{opacity:0;transition:opacity .3s}
-      @keyframes toastIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}`;
-    document.head.appendChild(style);
   }
   return c;
 }
@@ -56,123 +77,95 @@ function showToast(msg, type = 'info', duration = 3500) {
 }
 
 /* ═══════════════════════════════════════════
-   3) التخزين الدائم (localStorage)
+   💾 Cache احتياطي (لحالة انقطاع الإنترنت فقط)
 ═══════════════════════════════════════════ */
-const Store = {
+const Cache = {
   save(rows) {
-    try {
-      localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify({ rows, ts: Date.now() }));
-      return true;
-    } catch (e) { console.error('فشل الحفظ:', e); showToast('⚠️ فشل الحفظ المحلي', 'warning'); return false; }
+    try { localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify({ rows, ts: Date.now() })); } catch(e){}
   },
   load() {
-    try {
-      const raw = localStorage.getItem(CONFIG.STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
-  },
-  lastUpdate() {
-    const d = this.load();
-    return d ? new Date(d.ts).toLocaleString('ar-SY') : null;
+    try { const r = localStorage.getItem(CONFIG.STORAGE_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
   }
 };
 
 /* ═══════════════════════════════════════════
-   4) محلّل CSV الآمن (فاصلة عربية/إنجليزية/تاب)
+   📊 محلّل CSV الآمن (يدعم فاصلة عربية/إنجليزية/تاب)
 ═══════════════════════════════════════════ */
 function detectDelimiter(line) {
-  const candidates = { '،': (line.match(/،/g)||[]).length, ',': (line.match(/,/g)||[]).length, '\t': (line.match(/\t/g)||[]).length, ';': (line.match(/;/g)||[]).length };
-  return Object.entries(candidates).sort((a,b) => b[1]-a[1])[0][0];
+  const cands = {
+    '،': (line.match(/،/g)||[]).length,
+    ',':  (line.match(/,/g)||[]).length,
+    '\t': (line.match(/\t/g)||[]).length,
+    ';':  (line.match(/;/g)||[]).length
+  };
+  return Object.entries(cands).sort((a,b) => b[1]-a[1])[0][0];
 }
 
 function parseCSV(text) {
   const clean = text.replace(/\r/g, '').trim();
   if (!clean) return { ok:false, error:'الملف فارغ' };
-
   const lines = clean.split('\n').filter(l => l.trim());
-  if (lines.length < 2) return { ok:false, error:'يجب أن يحتوي الملف على صف عناوين وصف بيانات واحد على الأقل' };
+  if (lines.length < 2) return { ok:false, error:'لا توجد صفوف بيانات كافية' };
 
   const delim = detectDelimiter(lines[0]);
   const headers = lines[0].split(delim).map(h => h.trim().replace(/^"|"$/g,''));
-
   const rows = lines.slice(1).map(line => {
     const cells = line.split(delim).map(c => c.trim().replace(/^"|"$/g,''));
     const obj = {};
     headers.forEach((h, i) => obj[h] = cells[i] ?? '');
     return obj;
   });
-
   return { ok:true, headers, rows };
 }
 
-/* التحقق من الأعمدة المطلوبة */
-function validateRows(rows) {
-  if (!rows.length) return { ok:false, error:'لا توجد صفوف بيانات' };
-  const required = ['المحافظة', 'الشهر'];
-  const sample = Object.keys(rows[0]);
-  const missing = required.filter(r => !sample.some(k => k.includes(r)));
-  if (missing.length) return { ok:false, error:`أعمدة مفقودة: ${missing.join(' ، ')}` };
-  return { ok:true };
-}
-
-/* توحيد القيم */
 function normalizeRow(r) {
   const get = key => {
     const k = Object.keys(r).find(k => k.includes(key));
     return k ? String(r[k]).trim() : '';
   };
-  const num = key => {
-    const v = parseFloat(get(key).replace(/[,٬\s]/g,''));
-    return isNaN(v) ? 0 : v;
-  };
-  return {
-    gov:   get('المحافظة'),
-    month: get('الشهر'),
-    values: Object.fromEntries(Object.keys(r).map(k => [k, isNaN(parseFloat(String(r[k]).replace(/[,٬]/g,''))) ? String(r[k]) : parseFloat(String(r[k]).replace(/[,٬]/g,''))]))
-  };
+  const values = {};
+  Object.keys(r).forEach(k => {
+    const raw = String(r[k]).replace(/[,٬\s]/g,'');
+    const n = parseFloat(raw);
+    values[k] = isNaN(n) ? String(r[k]).trim() : n;
+  });
+  return { gov: get('المحافظة'), month: get('الشهر'), values };
 }
 
 /* ═══════════════════════════════════════════
-   5) المصادقة الآمنة (تجزئة SHA-256)
+   🔐 مصادقة (SHA-256)
 ═══════════════════════════════════════════ */
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
-
 async function initUsers() {
   if (localStorage.getItem(CONFIG.USERS_KEY)) return;
-  const users = {
-    admin:  await sha256('admin123'),   // ← غيّرها فوراً بعد أول دخول
-    viewer: await sha256('viewer123')
-  };
+  const users = { admin: await sha256('admin123'), viewer: await sha256('viewer123') };
   localStorage.setItem(CONFIG.USERS_KEY, JSON.stringify(users));
 }
-
 async function login(role, password) {
   const users = JSON.parse(localStorage.getItem(CONFIG.USERS_KEY) || '{}');
-  const hash = await sha256(password);
-  if (users[role] === hash) {
+  if (users[role] === await sha256(password)) {
     sessionStorage.setItem(CONFIG.SESSION_KEY, role);
     return true;
   }
   return false;
 }
-
 function currentRole() { return sessionStorage.getItem(CONFIG.SESSION_KEY); }
 function logout() { sessionStorage.removeItem(CONFIG.SESSION_KEY); location.reload(); }
 
 /* ═══════════════════════════════════════════
-   6) تعريف الأقسام (Registry) — حل مشكلة التكرار
+   📋 تعريف الأقسام (Registry)
 ═══════════════════════════════════════════ */
 const SECTIONS = [
-  { id:'sec-disability', title:'رعاية ذوي الإعاقة', keys:['إعاقة','بطاقات الإعاقة','تأهيل'] },
+  { id:'sec-disability', title:'رعاية ذوي الإعاقة', keys:['إعاقة','بطاقات الإعاقة','تأهيل','طلاب'] },
   { id:'sec-social',     title:'الرعاية الاجتماعية', keys:['مسنون','أيتام','كفالة','متسولون'] },
   { id:'sec-ngo',        title:'المنظمات غير الحكومية', keys:['منظمة','مشهرة','ندوة'] },
   { id:'sec-juvenile',   title:'معاهد إصلاح الأحداث', keys:['أحداث','نزيل','معهد'] },
   { id:'sec-rural',      title:'التنمية الريفية', keys:['ريفية','مركز','وحدة'] },
   { id:'sec-inspection', title:'التفتيش العمالي', keys:['تفتيش','مخالفة','زيارة'] },
-  { id:'sec-labor',      title:'سوق العمل والبطالة', keys:['عامل','بطالة','مشتغل','متعطل'] },
+  { id:'sec-labor',      title:'سوق العمل والبطالة', keys:['عامل','بطالة','مشتغل','متعطل','قوى'] },
   { id:'sec-insurance',  title:'التأمينات الاجتماعية', keys:['تأمين','متقاعد','مسجّل'] },
   { id:'sec-relief',     title:'المساعدات الإنسانية', keys:['سلة','مساعد','إعان'] },
   { id:'sec-camps',      title:'المخيمات والنازحون', keys:['مخيم','نازح','أسر'] },
@@ -180,24 +173,22 @@ const SECTIONS = [
   { id:'sec-demo',       title:'المؤشرات الديموغرافية', keys:['سكان','ذكر','إناث'] }
 ];
 
-/* الحالة العامة */
 const STATE = { rows: [], filterGov:'الكل', filterMonth:'الكل' };
 
 /* ═══════════════════════════════════════════
-   7) محرك العرض الموحّد
+   🎯 محرك العرض
 ═══════════════════════════════════════════ */
 function getFiltered() {
   return STATE.rows.filter(r =>
-    (STATE.filterGov === 'الكل' || r.gov === STATE.filterGov) &&
+    (STATE.filterGov   === 'الكل' || r.gov   === STATE.filterGov)   &&
     (STATE.filterMonth === 'الكل' || r.month === STATE.filterMonth)
   );
 }
 
-function findSectionRows(rows, keys) {
+function findSectionMetrics(rows, keys) {
   if (!rows.length) return [];
   const cols = Object.keys(rows[0].values);
   const matched = cols.filter(c => keys.some(k => c.includes(k)));
-  if (!matched.length) return [];
   return matched.map(col => ({
     label: col,
     total: rows.reduce((s,r) => s + (typeof r.values[col]==='number' ? r.values[col] : 0), 0)
@@ -208,17 +199,15 @@ function renderSection(sec, rows) {
   const el = document.getElementById(sec.id);
   if (!el) return;
   const body = el.querySelector('.section-body') || el;
-
-  const metrics = findSectionRows(rows, sec.keys);
+  const metrics = findSectionMetrics(rows, sec.keys);
   if (!metrics.length) {
-    body.innerHTML = `<div class="empty-state">📭 لا توجد بيانات متعلقة بهذا القسم في الملف الحالي</div>`;
+    body.innerHTML = `<div class="empty-state">📭 لا توجد بيانات لهذا القسم في الشيت</div>`;
     return;
   }
-
   body.innerHTML = `<div class="metrics-grid">${
     metrics.map(m => `
       <div class="metric-card">
-        <div class="metric-value">${m.total.toLocaleString('ar-SY')}</div>
+        <div class="metric-value">${Math.round(m.total).toLocaleString('ar-SY')}</div>
         <div class="metric-label">${m.label}</div>
       </div>`).join('')
   }</div>`;
@@ -227,10 +216,10 @@ function renderSection(sec, rows) {
 function renderCompass(rows) {
   const el = document.getElementById('compass-body');
   if (!el) return;
-  if (!rows.length) { el.innerHTML = '<div class="empty-state">📭 لا توجد بيانات للخطة الاستراتيجية</div>'; return; }
-  // مقارنة إجمالي أول مؤشرين بهدف افتراضي (يمكن ربطها بأهداف محفوظة)
+  if (!rows.length) { el.innerHTML = '<div class="empty-state">📭 بانتظار بيانات من Google Sheets</div>'; return; }
   const targets = JSON.parse(localStorage.getItem(CONFIG.TARGETS_KEY) || '{}');
-  const metrics = findSectionRows(rows, Object.keys(targets).length ? Object.keys(targets) : ['إجمالي']);
+  const keys = Object.keys(targets).length ? Object.keys(targets) : ['إجمالي','بطاقات','مشتغل','متقاعد','أسر'];
+  const metrics = findSectionMetrics(rows, keys);
   el.innerHTML = metrics.map(m => {
     const target = targets[m.label] || 0;
     const pct = target ? Math.min(100, Math.round(m.total/target*100)) : 0;
@@ -248,78 +237,102 @@ function renderAll() {
   SECTIONS.forEach(sec => renderSection(sec, rows));
   renderCompass(rows);
 
-  // رسالة واحدة عامة بدلاً من 11 رسالة
   const banner = document.getElementById('global-data-banner');
   if (banner) {
-    banner.style.display = rows.length ? 'none' : 'block';
-    if (!rows.length) banner.innerHTML = '📁 لا توجد بيانات — ارفع ملف CSV أو استخدم الرابط الخارجي';
-  }
-
-  const lu = document.getElementById('lastUpdate');
-  if (lu) lu.textContent = `آخر تحديث: ${Store.lastUpdate() || '—'}`;
-}
-
-/* ═══════════════════════════════════════════
-   8) معالجة رفع / لصق / جلب البيانات
-═══════════════════════════════════════════ */
-function loadData(text, source = 'يدوي') {
-  const parsed = parseCSV(text);
-  if (!parsed.ok) { showToast(`❌ ${parsed.error}`, 'error'); return false; }
-
-  const valid = validateRows(parsed.rows);
-  if (!valid.ok) { showToast(`❌ ${valid.error}`, 'error'); return false; }
-
-  STATE.rows = parsed.rows.map(normalizeRow).filter(r => r.gov);
-  Store.save(STATE.rows);
-  renderAll();
-  showToast(`✅ تم تحميل ${STATE.rows.length} سجلاً (${source})`, 'success');
-  return true;
-}
-
-async function autoFetch() {
-  try {
-    const res = await fetch(CONFIG.CSV_URL, { cache:'no-store' });
-    if (!res.ok) throw new Error(res.status);
-    loadData(await res.text(), 'الرابط الخارجي');
-  } catch {
-    const saved = Store.load();
-    if (saved?.rows?.length) {
-      STATE.rows = saved.rows;
-      renderAll();
-      showToast('📵 لا يوجد اتصال — تم تحميل البيانات المحفوظة محلياً', 'warning');
-    } else if (CONFIG.DEMO_MODE) {
-      STATE.rows = demoData();
-      renderAll();
-      showToast('🧪 يتم عرض بيانات تجريبية — ارفع ملفك الفعلي', 'info', 5000);
+    if (!rows.length) {
+      banner.style.display = 'block';
+      banner.innerHTML = '📭 بانتظار جلب البيانات من Google Sheets…';
+    } else {
+      banner.style.display = 'none';
     }
   }
 }
 
-/* بيانات تجريبية (تُحل مشكلة file:// فوراً) */
-function demoData() {
-  const out = [];
-  GOVERNORATES.slice(0,5).forEach((g,gi) => MONTHS.slice(0,3).forEach((m,mi) => {
-    out.push(normalizeRow({
-      'المحافظة': g, 'الشهر': m,
-      'بطاقات الإعاقة': 120 + gi*30 + mi*10,
-      'المسنون المستفيدون': 80 + gi*15,
-      'المنظمات المشهرة': 12 + gi*2,
-      'نزلاء الأحداث': 25 + gi*5,
-      'مراكز التنمية الريفية': 8 + gi,
-      'زيارات التفتيش': 200 + gi*40 + mi*20,
-      'عدد المشتغلين': 5000 + gi*800,
-      'المسجلون في التأمينات': 3000 + gi*500,
-      'السلل الغذائية': 900 + gi*150,
-      'أسر المخيمات': 400 + gi*90,
-      'المسجلون في المنصة': 600 + gi*120,
-      'عدد السكان': 500000 + gi*100000
-    }));
-  }));
-  return out;
+/* ═══════════════════════════════════════════
+   🔄 الجلب من Google Sheets (المصدر الأساسي)
+═══════════════════════════════════════════ */
+function setStatus(text, ok = true) {
+  const el = document.getElementById('dataStatus');
+  if (el) el.textContent = text;
+  if (ok) {
+    const lu = document.getElementById('lastUpdate');
+    if (lu) lu.textContent = `آخر تحديث: ${new Date().toLocaleString('ar-SY')}`;
+    const updated = document.querySelector('[data-updated-until]');
+    if (updated) updated.textContent = new Date().toLocaleDateString('ar-SY');
+  }
+}
+
+let isFetching = false;
+let lastFetchAt = 0;
+
+function loadRows(text, source) {
+  const parsed = parseCSV(text);
+  if (!parsed.ok) { showToast(`❌ ${parsed.error}`, 'error'); return false; }
+  STATE.rows = parsed.rows.map(normalizeRow).filter(r => r.gov);
+  if (!STATE.rows.length) { showToast('⚠️ لا صفوف صالحة في الشيت', 'warning'); return false; }
+  Cache.save(STATE.rows);
+  renderAll();
+  showToast(`✅ ${STATE.rows.length} سجلاً من ${source}`, 'success');
+  return true;
+}
+
+async function fetchFromSheet() {
+  if (isFetching || !SHEET.CSV_URL) return;
+  isFetching = true;
+  setStatus('🔄 جارٍ التحديث من Google Sheets…');
+
+  try {
+    // كسر الكاش لضمان أحدث نسخة
+    const url = SHEET.CSV_URL + (SHEET.CSV_URL.includes('?') ? '&' : '?') + '_cb=' + Date.now();
+    const res = await fetch(url, { cache:'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+
+    const head = text.slice(0, 300).toLowerCase();
+    if (head.includes('<!doctype') || head.includes('<html') || head.includes('accounts.google.com'))
+      throw new Error('NOT_PUBLIC');
+
+    if (loadRows(text, 'Google Sheets')) {
+      setStatus('🟢 متصل — المصدر: Google Sheets');
+      lastFetchAt = Date.now();
+    }
+  } catch (err) {
+    console.error('خطأ الجلب:', err);
+    if (err.message === 'NOT_PUBLIC') {
+      setStatus('🔴 الشيت غير مشارك عامة');
+      showToast('❌ الشيت خاص! فعّل "النشر إلى الويب"', 'error', 6000);
+    } else {
+      setStatus('🔴 تعذّر التحديث');
+      // محاولة من الـ cache
+      const cached = Cache.load();
+      if (cached?.rows?.length) {
+        STATE.rows = cached.rows;
+        renderAll();
+        showToast('📵 تعذّر الاتصال — تم تحميل النسخة الاحتياطية', 'warning');
+      } else {
+        showToast('❌ فشل جلب البيانات', 'error');
+      }
+    }
+  } finally {
+    isFetching = false;
+  }
+}
+
+function startAutoRefresh() {
+  const ms = Math.max(1, SHEET.AUTO_REFRESH_MINUTES) * 60 * 1000;
+  setInterval(() => { if (document.visibilityState === 'visible') fetchFromSheet(); }, ms);
+
+  window.addEventListener('online',  () => { showToast('🌐 عاد الاتصال', 'success'); fetchFromSheet(); });
+  window.addEventListener('offline', () => showToast('📵 انقطع الاتصال', 'warning'));
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && Date.now() - lastFetchAt > 60000)
+      fetchFromSheet();
+  });
 }
 
 /* ═══════════════════════════════════════════
-   9) ربط الأحداث
+   🎯 ربط الأحداث
 ═══════════════════════════════════════════ */
 function bindEvents() {
   // تسجيل الدخول
@@ -327,74 +340,70 @@ function bindEvents() {
     const role = document.getElementById('roleSelect')?.value || 'viewer';
     const pass = document.getElementById('passwordInput')?.value || '';
     if (await login(role, pass)) {
-      showToast('✅ تم الدخول بنجاح', 'success');
+      showToast('✅ تم الدخول', 'success');
       document.getElementById('loginScreen')?.classList.add('hidden');
       document.getElementById('dashboard')?.classList.remove('hidden');
-      if (role === 'viewer') showToast('👁️ أنت في وضع القراءة فقط', 'info');
-      renderAll();
+      if (role === 'viewer') showToast('👁️ وضع القراءة فقط', 'info');
+      fetchFromSheet();
     } else {
       showToast('❌ كلمة المرور غير صحيحة', 'error');
     }
   });
 
-  // تسجيل الخروج
   document.querySelectorAll('[data-logout]').forEach(b => b.addEventListener('click', logout));
 
-  // رفع الملف
-  const fileInput = document.getElementById('csvFileInput');
-  fileInput?.addEventListener('change', e => {
-    const f = e.target.files[0];
-    if (!f) return;
+  // رفع ملف يدوي (عرض مؤقت فقط)
+  document.getElementById('csvFileInput')?.addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return;
     const reader = new FileReader();
-    reader.onload = ev => loadData(ev.target.result, `ملف ${f.name}`);
-    reader.onerror = () => showToast('❌ تعذّرت قراءة الملف', 'error');
+    reader.onload = ev => loadRows(ev.target.result, `ملف ${f.name}`);
     reader.readAsText(f, 'utf-8');
   });
 
-  // السحب والإفلات
+  // سحب وإفلات
   const dz = document.getElementById('dropZone');
   if (dz) {
     ['dragover','dragenter'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('drag-over'); }));
     ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('drag-over'); }));
     dz.addEventListener('drop', e => {
-      const f = e.dataTransfer.files[0];
-      if (!f) return;
+      const f = e.dataTransfer.files[0]; if (!f) return;
       const reader = new FileReader();
-      reader.onload = ev => loadData(ev.target.result, `ملف ${f.name}`);
+      reader.onload = ev => loadRows(ev.target.result, `ملف ${f.name}`);
       reader.readAsText(f, 'utf-8');
     });
   }
 
-  // اللصق المباشر
+  // اللصق
   document.getElementById('parsePasteBtn')?.addEventListener('click', () => {
     const txt = document.getElementById('pasteArea')?.value;
     if (!txt?.trim()) { showToast('⚠️ الصق البيانات أولاً', 'warning'); return; }
-    loadData(txt, 'بيانات ملصقة');
+    loadRows(txt, 'بيانات ملصقة');
   });
 
-  // التحديث من الرابط
+  // زر التحديث اليدوي
   document.getElementById('refreshBtn')?.addEventListener('click', () => {
-    showToast('🔄 جاري التحديث...', 'info', 1500);
-    autoFetch();
+    showToast('🔄 جارٍ التحديث من Google Sheets…', 'info', 1500);
+    fetchFromSheet();
   });
 
   // التصفية
-  document.getElementById('govFilter')?.addEventListener('change', e => { STATE.filterGov = e.target.value; renderAll(); });
+  document.getElementById('govFilter')?.addEventListener('change',   e => { STATE.filterGov   = e.target.value; renderAll(); });
   document.getElementById('monthFilter')?.addEventListener('change', e => { STATE.filterMonth = e.target.value; renderAll(); });
 }
 
 /* ═══════════════════════════════════════════
-   10) التهيئة عند فتح الصفحة
+   🚀 التهيئة
 ═══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', async () => {
   await initUsers();
   bindEvents();
 
-  // جلسة محفوظة؟
   if (currentRole()) {
     document.getElementById('loginScreen')?.classList.add('hidden');
     document.getElementById('dashboard')?.classList.remove('hidden');
   }
-  autoFetch();
+
+  fetchFromSheet();
+  startAutoRefresh();
 });
 </script>
