@@ -404,6 +404,7 @@
 <base target="_blank">
 <base target="_blank">
 <base target="_blank">
+<base target="_blank">
 </head>
 <body class="locked">
 
@@ -548,7 +549,7 @@
 <div class="data-panel">
   <div class="data-source-bar">
     <span class="label">📁 مصدر البيانات:</span>
-    <input type="text" class="gsheet-input" id="gsheetUrl" placeholder="رابط Google Sheet" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vSYw2t1DGme6GL7bFv8FDnl3cYMbHYpm2LRjjvHsXyE2TB5Tbkum28ObIMc1jop-AQMJCWThzX9q3vL/pub?output=csv" readonly style="background:#f0ebe0;color:var(--ink-soft);">
+    <input type="text" class="gsheet-input" id="gsheetUrl" value="متصل بـ Google Sheets API" readonly style="background:#e8f5e9;color:#0B5A7A;font-weight:600;text-align:center;">
     <button class="btn btn-primary" onclick="loadFromSheet()" id="refreshBtn">🔄 تحديث من الرابط</button>
     <button class="btn btn-success" onclick="showUploadModal()">📁 رفع ملف CSV يدوياً</button>
     <span class="status-badge status-loading" id="dataStatus">جاري التحميل التلقائي...</span>
@@ -982,9 +983,19 @@ const INLINE_CSV_DATA = `المحافظة,الشهر,السنة,عدد السك�
 دير الزور,كانون الثاني,2025,1400000,715000,685000,490000,770000,140000,0.7,560000,140000,20.0,15.5,27.5,24.2,68.0,21.0,37.5,10.5,6.5,81.0,19.8,38.0,25.5,36.5,4,220,6,160,42,65,560,3,140,75,22,2,85,1,1,22,60,2,2,42,4200,60,160,130,2,1,2,1,220,130,42,6,12,1400,420,220,3,5,1,65,220000,150000,370000,6500,56000,2200,420,160,22,60,3,2,6,3,220,130,85,42,12,6,تطوير مراكز التأهيل المهني للشباب,توسيع برامج المساعدات الإنسانية للمجتمعات المتضررة,دعم مشاريع الزراعة المروية والتنمية الريفية,https://docs.google.com/document/d/example13
 الحسكة,كانون الثاني,2025,1500000,765000,735000,525000,825000,150000,0.75,600000,150000,20.0,15.5,27.5,24.2,68.0,21.0,37.5,10.5,6.5,81.0,19.8,38.0,25.5,36.5,4,240,6,170,45,70,600,3,150,80,24,2,90,1,1,24,65,2,2,45,4500,65,170,140,2,1,2,1,240,140,45,6,12,1500,450,240,3,5,1,70,240000,160000,400000,7000,60000,2400,450,170,24,65,3,2,6,3,240,140,90,45,12,6,تطوير مراكز التنمية الريفية في المناطق الحدودية,تعزيز برامج التوعية بالحقوق الاجتماعية,دعم مشاريع الزراعة المروية والاستزراع السمكي,https://docs.google.com/document/d/example14`;
 
+// =====================
+// GOOGLE SHEETS API CONFIG
+// =====================
+const SHEETS_CONFIG = {
+  apiKey: 'AIzaSyCJ1xkZxmF0UnWMdQYjLElklIPYgCkHM2A',
+  spreadsheetId: '1gbP938zd_pO3qfYRG4Yd7LmH7MOSbeyvuwjq0Tnnnds',
+  range: 'سوريا!A1:AZ1000'
+};
+
 const COLUMN_MAP = {
   // === Core identifiers ===
   "المحافظة": "gov",
+  "المحافظة ": "gov",
   "الشهر": "month",
   "السنة": "year",
 
@@ -1024,7 +1035,7 @@ const COLUMN_MAP = {
   "تقديرات الفقر - الأمن الغذائي (الاسر المعدومة) %": "food_insecure_pct",
 
   // === Elderly Care ===
-  "دور رعاية المسنين": "elderly_homes",
+  "دور رعاية كبار السن": "elderly_homes",
   "عدد المستفيدين من خدمات دور رعاية المسنين": "elderly_benef",
   "النزلاء المستفيدين من الخدمات": "elderly_benef",
 
@@ -1134,6 +1145,36 @@ const COLUMN_MAP = {
   "إناث": "females",
 
   "التقرير الشهرية": "monthly_report",
+
+  // === ADDITIONAL MAPPINGS for user's Google Sheet columns ===
+  "عدد الطلاب المسجلين في المعاهد  الخاصة بذوي الاعاقة": "disability_benef",
+  "دور رعاية المسنين": "elderly_homes",
+  "عدد معاهد الاحداث": "juvenile_inst",
+  "عدد المسجلين  الجدد من العاملين خلال الزيارات التفتيشية لهذا الشهر": "new_workers_insp",
+  "عدد الزيارات التفتيشية على المنشآت (صناعي)": "insp_industrial",
+  "عدد الزيارات التفتيشية على المنشآت (زراعي)": "insp_agricultural",
+  "عدد المخالفات الناتجة عن الزيارات": "violations",
+  "عدد المنظمات غير الحكومية المشهرة في العام  2025": "ngo_new_pct",
+  "مشاريع الصكوك القانونية قيد المراجعة والتحديث": "legal_docs_review",
+  "طابع زمني": "timestamp",
+  "عنوان البريد الإلكتروني": "email",
+  "عدد المستفيدين من برامج مراكز التأهيل والتدريب المهني (مراكز تمكين الشباب ان وجدت)": "vocational_benef_youth",
+  "عدد الندوات الحوارية والدورات حول قضايا الصحة والسلامة المهنية": "safety_workshops",
+  "نسبة الانفاق الاستثماري": "investment_spending_pct",
+  "عدد الاتفاقيات الموقعة بخصوص الحماية الاجتماعية": "social_protection_agreements",
+  "عدد معاهد الاحداث ضمن الخدمة": "juvenile_inst_active",
+  "عدد مراكز التنمية الريفية ضمن الخدمة": "rural_dev_active",
+  "عدد وحدات الصناعات الريفية ضمن الخدمة": "rural_ind_active",
+  "عدد المستفيدين من مراكز التنمية الريفية": "rural_dev_benef",
+  "عدد المستفيدين من  وحدات الصناعات الريفية": "rural_ind_benef",
+  "عدد   تراخيص العمل الممنوحة  للعاملين غير السوريين": "work_permits_new",
+  "عدد تراخيص العمل المجدد  للعاملين غير السوريين": "work_permits_renew",
+  "عدد تراخيص العمل  للعاملات المنزليات غير السوريات": "domestic_permits_new",
+  "عدد تراحيص العمل  للعاملات المنزليات غير السوريات": "domestic_permits_issued",
+  "عدد تراخيص العمل المجدد  للعاملات المنزليات غير السوريات": "domestic_permits_renew",
+  "عدد المكاتب الخاصة  المرخصة لمزاولة مهنة تشغيل  للعمال السوريين": "private_offices_syrian",
+  "عدد المستفيدين من برامج مراكز التأهيل والتدريب المهني (مراكز تنمية ريفية)": "vocational_benef_rural",
+  "عدد المساعدات عينية ( ادوية - عمليات- منظفات)": "in_kind_aid",
   // === Qualitative ===
   "اهم ثلاث انجازات": "achievements",
   "اهم ثلال توصيات": "recommendations",
@@ -1469,7 +1510,8 @@ function kpiDefs(arr){
     {em:"👶",lbl:"دور رعاية الأيتام",val:sum("orphan_homes",arr)},
     {em:"💞",lbl:"كفالة داخلية",val:sum("sponsor_internal",arr)},
     {em:"🌍",lbl:"كفالة خارجية",val:sum("sponsor_external",arr)},
-    {em:"🤝",lbl:"منظمات مشهرة 2025",val:sum("ngo_active",arr)},
+    {em:"🤝",lbl:"عدد المنظمات غير الحكومية المسحوب ترخيصها",val:sum("ngo_active",arr)},
+    {em:"📜",lbl:"عدد المنظمات غير الحكومية المشهرة 2025",val:sum("ngo_new_pct",arr)},
     {em:"🏗️",lbl:"المنشآت المسجلة",val:sum("platform_establishments",arr)},
     {em:"📋",lbl:"فرص العمل",val:sum("platform_jobs",arr)},
     {em:"🎓",lbl:"فرص التدريب",val:sum("platform_training",arr)},
@@ -1592,7 +1634,6 @@ function renderSingleGovChart(canvasId, arr, categoryField){
       if (typeof val === 'number') {
         agg[key] = (agg[key] || 0) + val;
       } else if (typeof val === 'string' && val.trim()) {
-        // Keep text fields as-is (take first non-empty)
         if (!agg[key]) agg[key] = val;
       }
     });
@@ -1603,16 +1644,16 @@ function renderSingleGovChart(canvasId, arr, categoryField){
     'disabled_cards': [
       {key:'disabled_cards', label:'بطاقات إعاقة'},
       {key:'disability_centers', label:'معاهد الإعاقة'},
-      {key:'disability_benef', label:'عدد الطلاب المسجلين في المعاهد الخاصة بذوي الاعاقة'},
+      {key:'disability_benef', label:'طلاب معاهد الإعاقة'},
       {key:'mobility_aids', label:'معينات حركية'},
       {key:'disability_cash', label:'معونة نقدية'}
     ],
     'elderly_benef': [
       {key:'elderly_homes', label:'دور مسنين'},
-      {key:'elderly_benef', label:'عدد المستفيدين من خدمات دور رعاية المسنين'},
-      {key:'beggar_centers_total', label:'عدد مراكز رعاية المتسولين'},
+      {key:'elderly_benef', label:'مستفيدو دور المسنين'},
+      {key:'beggar_centers_total', label:'مراكز تسول (إجمالي)'},
       {key:'beggar_centers_active', label:'مراكز تسول نشطة'},
-      {key:'beggar_inmates', label:'عدد النزلاء في مراكز التسول'},
+      {key:'beggar_inmates', label:'نزلاء مراكز التسول'},
       {key:'orphan_homes', label:'دور أيتام'},
       {key:'sponsor_internal', label:'كفالة داخلية'},
       {key:'sponsor_external', label:'كفالة خارجية'},
@@ -1629,20 +1670,20 @@ function renderSingleGovChart(canvasId, arr, categoryField){
       {key:'juvenile_inmates', label:'نزلاء أحداث'}
     ],
     'rural_dev_benef': [
-      {key:'rural_dev_total', label:'عدد مراكز التنمية الريفية خارج الخدمة'},
-      {key:'rural_dev_active', label:'مراكز التنمية في الخدمة'},
-      {key:'rural_ind_total', label:'وحدات الصناعات الريفية خارج الخدمة'},
-      {key:'rural_ind_active', label:'عدد وحدات الصناعة في الخدمة'},
-      {key:'rural_dev_benef', label:'مستفيدو مراكز التنمية الريفية'},
-      {key:'rural_ind_benef', label:'مستفيدو صناعة'}
+      {key:'rural_dev_total', label:'مراكز تنمية (خارج الخدمة)'},
+      {key:'rural_dev_active', label:'مراكز تنمية نشطة'},
+      {key:'rural_ind_total', label:'وحدات صناعية (خارج الخدمة)'},
+      {key:'rural_ind_active', label:'وحدات صناعية نشطة'},
+      {key:'rural_dev_benef', label:'مستفيدو التنمية الريفية'},
+      {key:'rural_ind_benef', label:'مستفيدو الصناعات الريفية'}
     ],
     'insp_industrial': [
-      {key:'insp_industrial', label:'زيارات تفتيشية على المنشآت (صناعي)', fallback:'insp_total'},
-      {key:'insp_agricultural', label:'زيارات تفتيشية على المنشآت (زراعي)'},
-      {key:'insp_total', label:'إجمالي الزيارات التفتيشية (صناعي+زراعي)'},
+      {key:'insp_industrial', label:'زيارات صناعية', fallback:'insp_total'},
+      {key:'insp_agricultural', label:'زيارات زراعية'},
+      {key:'insp_total', label:'إجمالي الزيارات'},
       {key:'violations', label:'مخالفات'},
       {key:'new_workers_insp', label:'عمال جدد'},
-      {key:'work_permits_new', label:'تراخيص جديدة'},
+      {key:'work_permits_new', label:'تراخيص عمل جديدة'},
       {key:'work_permits_renew', label:'تجديد تراخيص'},
       {key:'recruitment_offices', label:'مكاتب استقدام'},
       {key:'domestic_permits_new', label:'تراخيص منزليات'},
@@ -1652,7 +1693,7 @@ function renderSingleGovChart(canvasId, arr, categoryField){
       {key:'legal_docs_review', label:'صكوك قيد المراجعة'}
     ],
     'insp_total': [
-      {key:'insp_total', label:'إجمالي الزيارات التفتيشية (صناعي+زراعي)'},
+      {key:'insp_total', label:'إجمالي الزيارات'},
       {key:'violations', label:'مخالفات'},
       {key:'new_workers_insp', label:'عمال جدد'},
       {key:'work_permits_new', label:'تراخيص جديدة'},
@@ -1668,9 +1709,9 @@ function renderSingleGovChart(canvasId, arr, categoryField){
       {key:'population', label:'السكان'},
       {key:'males', label:'الذكور'},
       {key:'females', label:'الإناث'},
-      {key:'pop_under15', label:'دون 15'},
-      {key:'pop_15_60', label:'15-60'},
-      {key:'pop_over60', label:'60+'}
+      {key:'pop_under15', label:'دون 15 سنة'},
+      {key:'pop_15_60', label:'15-60 سنة'},
+      {key:'pop_over60', label:'60+ سنة'}
     ],
     'food_baskets': [
       {key:'food_baskets', label:'سلل غذائية'},
@@ -1680,38 +1721,38 @@ function renderSingleGovChart(canvasId, arr, categoryField){
       {key:'unfpa_safe_spaces', label:'مساحات آمنة'}
     ],
     'platform_registered': [
-      {key:'platform_registered', label:'مسجّلون'},
-      {key:'platform_establishments', label:'منشآت'},
+      {key:'platform_registered', label:'مسجّلون على المنصة'},
+      {key:'platform_establishments', label:'منشآت مسجّلة'},
       {key:'platform_jobs', label:'فرص عمل'},
       {key:'platform_training', label:'فرص تدريب'}
     ],
     'insurance_total': [
       {key:'insurance_public', label:'قطاع عام'},
       {key:'insurance_private', label:'قطاع خاص'},
-      {key:'insurance_total', label:'اجمالي المستفيدين القائمين على راس عملهم'},
+      {key:'insurance_total', label:'إجمالي المسجّلين'},
       {key:'pensioners', label:'متقاعدون'},
-      {key:'work_injury_comp', label:'تعويضات'},
+      {key:'work_injury_comp', label:'تعويضات إصابات'},
       {key:'service_merge_decisions', label:'ضم خدمة'},
       {key:'injury_beneficiaries', label:'مستفيدو إصابات'},
       {key:'insurance_establishments', label:'منشآت مشمولة'}
     ],
     'employed': [
-      {key:'labor_force', label:'قوة العمل'},
-      {key:'employed', label:'مشتغلون'},
-      {key:'unemployed', label:'متعطلون'},
-      {key:'unemployment_rate', label:'بطالة %'},
-      {key:'male_unemployment', label:'بطالة ذكور %'},
-      {key:'female_unemployment', label:'بطالة إناث %'},
-      {key:'youth_unemployment', label:'بطالة شباب %'},
-      {key:'male_participation', label:'مشاركة ذكور %'},
-      {key:'female_participation', label:'مشاركة إناث %'},
-      {key:'unorganized_workers', label:'غير منظم %'},
-      {key:'vocational_centers', label:'مراكز تأهيل'},
-      {key:'vocational_benef', label:'مستفيدو تأهيل'}
+      {key:'labor_force', label:'حجم قوة العمل (مليون)'},
+      {key:'employed', label:'المشتغلون'},
+      {key:'unemployed', label:'المتعطلون'},
+      {key:'unemployment_rate', label:'معدل البطالة %'},
+      {key:'male_unemployment', label:'بطالة الذكور %'},
+      {key:'female_unemployment', label:'بطالة الإناث %'},
+      {key:'youth_unemployment', label:'بطالة الشباب %'},
+      {key:'male_participation', label:'مشاركة الذكور %'},
+      {key:'female_participation', label:'مشاركة الإناث %'},
+      {key:'unorganized_workers', label:'عمال غير منظم %'},
+      {key:'vocational_centers', label:'مراكز تأهيل مهني'},
+      {key:'vocational_benef', label:'مستفيدو التأهيل'}
     ],
     'camps_count': [
       {key:'camps_count', label:'المخيمات'},
-      {key:'camp_families', label:'الأسر'}
+      {key:'camp_families', label:'الأسر المقيمة'}
     ]
   };
 
@@ -1728,20 +1769,29 @@ function renderSingleGovChart(canvasId, arr, categoryField){
     }
   }
 
-  // Ultimate fallback: show all numeric fields with values > 0
+  // Ultimate fallback: show all numeric fields with values >= 0
   if(!indicators || indicators.length === 0){
     indicators = Object.keys(agg)
-      .filter(k => typeof agg[k] === 'number' && agg[k] > 0)
-      .slice(0, 10)
+      .filter(k => typeof agg[k] === 'number')
+      .slice(0, 12)
       .map(k => ({key:k, label: COLUMN_MAP_INV[k] || k}));
   }
 
   // Filter out indicators with zero values for cleaner display
-  // Support fallback: if key not in agg but fallback exists, use fallback
-  const activeIndicators = indicators.filter(i => {
+  // BUT always keep the primary indicator (categoryField itself) if it exists
+  const primaryKey = categoryField;
+  let activeIndicators = indicators.filter(i => {
     const val = agg[i.key] !== undefined ? agg[i.key] : (i.fallback ? agg[i.fallback] : 0);
     return (val || 0) > 0;
   });
+
+  // Ensure primary indicator is always shown if it has any value (even 0)
+  const primaryInActive = activeIndicators.some(i => i.key === primaryKey);
+  const primaryInList = indicators.some(i => i.key === primaryKey);
+  if(!primaryInActive && primaryInList){
+    const primaryItem = indicators.find(i => i.key === primaryKey);
+    if(primaryItem) activeIndicators.unshift(primaryItem);
+  }
 
   // If ALL zeros, show them anyway so user sees something
   const finalIndicators = activeIndicators.length > 0 ? activeIndicators : indicators;
@@ -1784,7 +1834,8 @@ function renderSingleGovChart(canvasId, arr, categoryField){
           bodyFont: { family: 'Cairo' },
           callbacks: {
             label: function(context) {
-              return context.parsed.x.toLocaleString('en-US') + ' ' + context.dataset.label;
+              const val = context.parsed.x;
+              return (val ? val.toLocaleString('en-US') : '0') + ' — ' + context.dataset.label;
             }
           }
         } 
@@ -1792,7 +1843,13 @@ function renderSingleGovChart(canvasId, arr, categoryField){
       scales: { 
         x: { 
           grid: { color: '#e2d8c2' }, 
-          ticks: { font: { family: 'IBM Plex Mono', size: 11 } },
+          ticks: { 
+            font: { family: 'IBM Plex Mono', size: 11 },
+            callback: function(value) {
+              return value >= 1000000 ? (value/1000000).toFixed(1) + 'M' : 
+                     value >= 1000 ? (value/1000).toFixed(0) + 'k' : value;
+            }
+          },
           beginAtZero: true
         }, 
         y: { 
@@ -1893,9 +1950,9 @@ function renderCategory(cat){
   if(cat === 'ngo'){
     barChart('chart-ngo', 'ngo_active');
     renderCards('cards-ngo', [
-      {em:'🤝',n:sum('ngo_active',arr),t:'منظمات غير حكومية مشهرة في 2025'},
-      {em:'📊',n:sum('ngo_total',arr),t:'إجمالي عدد المنظمات غير الحكومية'},
-      {em:'📈',n:sum('ngo_new_pct',arr),t:'عدد المنظمات الجديدة المشهرة'}
+      {em:'📜',n:sum('ngo_new_pct',arr),t:'عدد المنظمات غير الحكومية المشهرة 2025'},
+      {em:'🤝',n:sum('ngo_active',arr),t:'عدد المنظمات غير الحكومية المسحوب ترخيصها'},
+      {em:'📊',n:sum('ngo_total',arr),t:'إجمالي عدد المنظمات غير الحكومية'}
     ]);
     document.getElementById('note-ngo').textContent = 
       `💡 ${sum('ngo_active',arr)} منظمة مشهرة في 2025 من إجمالي ${sum('ngo_total',arr)} منظمة — عدد المنظمات الجديدة المشهرة: ${sum('ngo_new_pct',arr)}.`;
@@ -3475,98 +3532,77 @@ function looksLikeCsv(text){
 }
 
 async function loadFromSheet(){
-  const rawUrl = document.getElementById('gsheetUrl').value.trim();
-  const url = normalizeGoogleSheetUrl(rawUrl);
-  if(!url){ 
-    alert('الرجاء إدخال رابط Google Sheet أو استخدام زر رفع الملف'); 
-    return; 
-  }
-
   const statusEl = document.getElementById('dataStatus');
   const refreshBtn = document.getElementById('refreshBtn');
 
-  statusEl.textContent = '⏳ جاري التحديث...'; 
+  statusEl.textContent = '⏳ جاري الاتصال بـ Google Sheets...';
   statusEl.className = 'status-badge status-loading';
   if(refreshBtn) refreshBtn.disabled = true;
 
-  // Add a cache-buster without corrupting the existing query string.
-  const separator = url.includes('?') ? '&' : '?';
-  const fetchUrl = url + separator + '_cb=' + Date.now();
-
-  // 1. Try direct fetch first (fastest if CORS is enabled by the sheet owner)
   try {
-    const response = await fetchWithTimeout(fetchUrl, {}, 5000);
-    if(response.ok){ 
-      const csvText = await response.text(); 
-      if(looksLikeCsv(csvText)) {
-        if(processCSVData(csvText)) {
-          statusEl.textContent = '✅ تم التحديث بنجاح — ' + new Date().toLocaleTimeString('ar-SY');
-          statusEl.className = 'status-badge status-ok';
-          if(refreshBtn) refreshBtn.disabled = false;
-          return; 
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEETS_CONFIG.spreadsheetId}/values/${encodeURIComponent(SHEETS_CONFIG.range)}?key=${SHEETS_CONFIG.apiKey}&valueRenderOption=UNFORMATTED_VALUE`;
+
+    const response = await fetch(url, { cache: 'no-store' });
+
+    if(!response.ok){
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || `خطأ HTTP: ${response.status}`);
+    }
+
+    const json = await response.json();
+
+    if(!json.values || json.values.length < 2){
+      throw new Error('الورقة فارغة أو لا تحتوي على بيانات كافية');
+    }
+
+    // Convert Google Sheets array to CSV text
+    const csvText = json.values.map(row => 
+      row.map(cell => {
+        if(cell === null || cell === undefined) return '';
+        const str = String(cell).replace(/\r?\n/g, ' ');
+        if(str.includes(',') || str.includes('"')){
+          return `"${str.replace(/"/g, '""')}"`;
         }
+        return str;
+      }).join(',')
+    ).join('\n');
+
+    if(processCSVData(csvText)){
+      statusEl.textContent = '✅ تم التحديث من Google Sheets — ' + new Date().toLocaleTimeString('ar-SY');
+      statusEl.className = 'status-badge status-ok';
+
+      const urlInput = document.getElementById('gsheetUrl');
+      if(urlInput){
+        urlInput.value = `متصل بـ Google Sheets: ${SHEETS_CONFIG.spreadsheetId}`;
+        urlInput.style.background = '#e8f5e9';
+        urlInput.style.color = '#0B5A7A';
       }
     }
-  } catch(e) { 
-    console.log('Direct fetch failed:', e.message); 
+
+  } catch(err){
+    console.error('Google Sheets Error:', err);
+
+    let msg = '❌ فشل الاتصال: ';
+    if(err.message.includes('API key not valid')) msg += 'مفتاح API غير صالح';
+    else if(err.message.includes('not found')) msg += 'لم يتم العثور على الورقة';
+    else if(err.message.includes('Permission')) msg += 'الورقة غير عامة (تحقق من إعدادات المشاركة)';
+    else msg += err.message;
+
+    statusEl.textContent = msg;
+    statusEl.className = 'status-badge status-error';
+
+    // fallback to inline data
+    if(typeof INLINE_CSV_DATA !== 'undefined' && INLINE_CSV_DATA){
+      console.log('استخدام البيانات المحلية كاحتياط...');
+      setTimeout(() => {
+        processCSVData(INLINE_CSV_DATA);
+        statusEl.textContent = '⚠️ تم التحميل من البيانات المحلية (فشل الاتصال)';
+        statusEl.className = 'status-badge status-loading';
+      }, 800);
+    }
+  } finally {
+    if(refreshBtn) refreshBtn.disabled = false;
   }
-
-  // 2. Proxy list — ordered by reliability & speed (corsproxy.io first as it's usually fastest)
-  const proxies = [
-    { 
-      name: 'corsproxy.io',
-      url: (target) => `https://corsproxy.io/?${encodeURIComponent(target)}`,
-      extract: async (r) => r.text()
-    },
-    { 
-      name: 'allorigins (raw)',
-      url: (target) => `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`,
-      extract: async (r) => r.text()
-    },
-    { 
-      name: 'allorigins (json)',
-      url: (target) => `https://api.allorigins.win/get?url=${encodeURIComponent(target)}`,
-      extract: async (r) => {
-        const json = await r.json();
-        return json.contents;
-      }
-    }
-  ];
-
-  // Try proxies sequentially with timeout and content validation
-  for(const proxy of proxies){
-    try {
-      statusEl.textContent = `⏳ جاري المحاولة عبر ${proxy.name}...`;
-      const proxyUrl = proxy.url(fetchUrl);
-      const response = await fetchWithTimeout(proxyUrl, {}, 10000);
-
-      if(!response.ok) {
-        console.warn(`Proxy ${proxy.name} returned HTTP ${response.status}`);
-        continue;
-      }
-
-      const csvText = await proxy.extract(response);
-
-      // Validate response actually looks like CSV (not an error page)
-      if(looksLikeCsv(csvText)) {
-        if(processCSVData(csvText)) {
-          statusEl.textContent = '✅ تم التحديث بنجاح — ' + new Date().toLocaleTimeString('ar-SY');
-          statusEl.className = 'status-badge status-ok';
-          if(refreshBtn) refreshBtn.disabled = false;
-          return;
-        }
-      } else {
-        console.warn(`Proxy ${proxy.name} returned invalid/non-CSV content`);
-      }
-    } catch(err) { 
-      console.warn(`Proxy ${proxy.name} failed:`, err.message); 
-    }
-  }
-
-  statusEl.textContent = '❌ فشل التحديث — جرب رفع الملف يدوياً';
-  statusEl.className = 'status-badge status-error';
-  if(refreshBtn) refreshBtn.disabled = false;
-  showUploadModal();
 }
 
 // =====================
@@ -4949,6 +4985,13 @@ window.addEventListener('DOMContentLoaded', () => {
   loadSavedPasswords(); // Load saved passwords from localStorage
   setupGovFilter();
   setupMonthFilter();
+
+  // Auto-load from Google Sheets on startup (after brief delay for login)
+  setTimeout(() => {
+    if(SHEETS_CONFIG.apiKey && !SHEETS_CONFIG.apiKey.includes('ضع_')){
+      loadFromSheet();
+    }
+  }, 1200);
 
   // Try to restore saved session (skip login if valid)
   const restored = restoreSession();
