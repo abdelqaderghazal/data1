@@ -1153,6 +1153,29 @@ let selectedMonthChips = new Set();
 let charts = {};
 let currentRankingMode = 'absolute'; // 'absolute' | 'perCapita' | 'coverage' | 'activityCount'
 const MONTHS_LIST = ["كانون الثاني","شباط","آذار","نيسان","أيار","حزيران","تموز","آب","أيلول","تشرين الأول","تشرين الثاني","كانون الأول"];
+const MONTH_ALIASES = {
+  "كانون الثاني":"كانون الثاني", "يناير":"كانون الثاني", "يناير":"كانون الثاني", "january":"كانون الثاني", "jan":"كانون الثاني",
+  "شباط":"شباط", "فبراير":"شباط", "فبرابر":"شباط", "february":"شباط", "feb":"شباط",
+  "آذار":"آذار", "اذار":"آذار", "مارس":"آذار", "march":"آذار", "mar":"آذار",
+  "نيسان":"نيسان", "ابريل":"نيسان", "أبريل":"نيسان", "april":"نيسان", "apr":"نيسان",
+  "أيار":"أيار", "ايار":"أيار", "مايو":"أيار", "may":"أيار",
+  "حزيران":"حزيران", "يونيو":"حزيران", "يونيه":"حزيران", "june":"حزيران", "jun":"حزيران",
+  "تموز":"تموز", "يوليو":"تموز", "july":"تموز", "jul":"تموز",
+  "آب":"آب", "اب":"آب", "أغسطس":"آب", "اغسطس":"آب", "august":"آب", "aug":"آب",
+  "أيلول":"أيلول", "ايلول":"أيلول", "سبتمبر":"أيلول", "september":"أيلول", "sep":"أيلول", "sept":"أيلول",
+  "تشرين الأول":"تشرين الأول", "تشرين الاول":"تشرين الأول", "أكتوبر":"تشرين الأول", "اكتوبر":"تشرين الأول", "october":"تشرين الأول", "oct":"تشرين الأول",
+  "تشرين الثاني":"تشرين الثاني", "تشرين الثاني":"تشرين الثاني", "نوفمبر":"تشرين الثاني", "november":"تشرين الثاني", "nov":"تشرين الثاني",
+  "كانون الأول":"كانون الأول", "كانون الاول":"كانون الأول", "ديسمبر":"كانون الأول", "december":"كانون الأول", "dec":"كانون الأول"
+};
+function normalizeMonth(value){
+  const key = String(value ?? '').replace(/[ًٌٍَُِّْـ]/g, '').replace(/[أإآ]/g, 'ا').replace(/\s+/g, ' ').trim().toLowerCase();
+  const normalizedAliases = Object.keys(MONTH_ALIASES).reduce((acc, alias) => {
+    const normalizedKey = alias.replace(/[أإآ]/g, 'ا').toLowerCase();
+    acc[normalizedKey] = MONTH_ALIASES[alias];
+    return acc;
+  }, {});
+  return normalizedAliases[key] || String(value ?? '').replace(/\s+/g, ' ').trim();
+}
 const ALL_GOVS = ["دمشق","ريف دمشق","حلب","حمص","حماه","اللاذقية","طرطوس","السويداء","درعا","القنيطرة","ادلب","الرقة","دير الزور","الحسكة"];
 
 function filtered(){
@@ -1293,6 +1316,7 @@ function parseCSVWithDelimiter(csvText, delimiter){
     const obj = {};
     headers.forEach((h, idx) => {
       let val = values[idx] !== undefined ? values[idx].trim() : '';
+      if(h === 'month' && val) val = normalizeMonth(val);
       if(val && val !== ''){
         // Strip % sign and commas for percentage/numeric fields
         const cleanVal = val.replace(/%/g, '').replace(/,/g, '').trim();
@@ -1356,7 +1380,7 @@ function processCSVData(csvText){
 // MONTH FILTER
 // =====================
 function filterByMonth(chipEl){
-  const month = chipEl.getAttribute('data-month');
+  const month = normalizeMonth(chipEl.getAttribute('data-month'));
   const allMonthChips = document.querySelectorAll('#monthToolbar .chip');
 
   if(month === 'all'){
@@ -1388,7 +1412,7 @@ function filterByMonth(chipEl){
 }
 
 function syncMonthChipsWithData(){
-  const availableMonths = new Set(ALL_DATA.map(d => d.month));
+  const availableMonths = new Set(ALL_DATA.map(d => normalizeMonth(d.month)));
   document.querySelectorAll('#monthToolbar .chip').forEach(chip => {
     const m = chip.getAttribute('data-month');
     if(m !== 'all'){
