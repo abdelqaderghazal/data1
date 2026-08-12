@@ -11,6 +11,13 @@
   :root{--ink:#0B5A7A;--ink-2:#084a66;--sand:#F0F7FA;--sand-2:#E0F0F5;--paper:#ffffff;--brass:#0D8BA8;--brass-light:#5BA3C0;--alert:#e74c3c;--good:#0B5A7A;--line:#c0d8e0;--ink-soft:#4a6a7a;--accent-blue:#0B5A7A;--accent-green:#0D8BA8;--syria-green:#0B5A7A;--syria-white:#ffffff;--syria-black:#052a3a;--syria-red:#0D8BA8;}
   *{box-sizing:border-box;}body{margin:0;background:var(--sand);color:var(--ink);font-family:'Cairo',sans-serif;}
   ::selection{background:#b8dce8;color:#052a3a;}
+  /* EWS Early Warning System Styles */
+  .ews-panel { background: #fff5f5; border: 2px solid #e74c3c; border-radius: 12px; padding: 18px; margin-bottom: 20px; position: relative; }
+  .ews-panel::before { content: '🚨 نظام الإنذار المبكر (EWS)'; position: absolute; top: -12px; right: 20px; background: #e74c3c; color: white; padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .ews-alert-item { display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid #f5c6cb; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; font-size: 13px; }
+  .ews-badge-critical { background: #e74c3c; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+  .ews-badge-warning { background: #f39c12; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+
   .masthead{background:linear-gradient(135deg,#0B5A7A 0%,#084a66 50%,#052a3a 100%);color:var(--syria-white);padding:28px 28px 24px;position:relative;overflow:hidden;border-bottom:4px solid #0D8BA8;}
   .masthead::after{content:"";position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,0.025) 0 2px,transparent 2px 26px);pointer-events:none;}
   .masthead-inner{max-width:1180px;margin:0 auto;position:relative;padding:0;border-radius:0;box-shadow:none;background:transparent;display:flex;align-items:center;gap:24px;}
@@ -242,7 +249,6 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<base target="_blank">
 <base target="_blank">
 </head>
 <body class="locked">
@@ -1597,7 +1603,7 @@ function renderCategory(cat){
     renderCards('cards-insurance', [
       {em:'🏛️',n:sum('insurance_public',arr),t:'مسجّلون تأمينات — قطاع عام'},
       {em:'🏭',n:sum('insurance_private',arr),t:'مسجّلون تأمينات — قطاع خاص'},
-      {em:'📊',n:sum('insurance_total',arr),t:'اجمالي المستفيدين القائمين على راس عملهم'},
+      {em:'📊',n:sum('insurance_total',arr),t:'اجمالي المستفيدين القائمين على راس عملهم', key:'insurance_total'},
       {em:'👴',n:sum('pensioners',arr),t:'المتقاعدون المستفيدون'},
       {em:'💰',n:sum('work_injury_comp',arr),t:'تعويضات إصابات العمل'},
       {em:'📋',n:sum('service_merge_decisions',arr),t:'قرارات ضم الخدمة'},
@@ -1615,7 +1621,7 @@ function renderCategory(cat){
   if(cat === 'aid'){
     barChart('chart-aid', 'food_baskets');
     renderCards('cards-aid', [
-      {em:'🍞',n:sum('food_baskets',arr),t:'سلل غذائية موزّعة'},
+      {em:'🍞',n:sum('food_baskets',arr),t:'سلل غذائية موزّعة', key:'food_baskets'},
       {em:'💊',n:sum('in_kind_aid',arr),t:'مساعدات عينية (أدوية/عمليات)'},
       {em:'💵',n:sum('cash_assistance',arr),t:'إعانات مالية'},
       {em:'🏠',n:sum('unhcr_centers',arr),t:'المراكز المجتمعية (UNHCR)'},
@@ -1644,7 +1650,7 @@ function renderCategory(cat){
   if(cat === 'platform'){
     barChart('chart-platform', 'platform_registered');
     renderCards('cards-platform', [
-      {em:'👤',n:sum('platform_registered',arr),t:'مسجّلون على المنصة'},
+      {em:'👤',n:sum('platform_registered',arr),t:'مسجّلون على المنصة', key:'platform_registered'},
       {em:'🏢',n:sum('platform_establishments',arr),t:'المنشآت المسجّلة'},
       {em:'💼',n:sum('platform_jobs',arr),t:'فرص العمل المتاحة'},
       {em:'🎓',n:sum('platform_training',arr),t:'فرص التدريب'}
@@ -2040,6 +2046,9 @@ function renderInsights(){
 
   let html = '';
 
+  // EWS Early Warning Panel
+  html += renderEarlyWarningSystem(arr);
+
   // 1. GOVERNORATE RANKING COMPARISON
   html += renderGovComparison(arr);
 
@@ -2061,6 +2070,52 @@ function renderInsights(){
   const govCount = new Set(arr.map(d => d.gov)).size;
   const totalPop = sum('population', arr);
   summary.innerHTML = `تم تحليل <strong>${arr.length}</strong> سجل من <strong>${govCount}</strong> محافظة | إجمالي السكان المسجّلين: <strong>${fmt(totalPop)}</strong> نسمة`;
+}
+
+function renderEarlyWarningSystem(arr) {
+  let alertsHtml = '';
+  let criticalCount = 0;
+  
+  ALL_GOVS.forEach(gov => {
+    const govData = arr.filter(d => d.gov === gov);
+    if(govData.length === 0) return;
+    
+    const disabledCards = govData.reduce((a,d) => a + (d.disabled_cards||0), 0);
+    const govPop = govData.reduce((a,d) => a + (d.population||0), 0);
+    
+    if(govPop > 500000 && disabledCards < 150) {
+      criticalCount++;
+      alertsHtml += `
+        <div class="ews-alert-item">
+          <div><strong>محافظة ${gov}:</strong> تراجع حاد في إصدار بطاقات الإعاقة بالنسبة للكثافة السكانية (${disabledCards} بطاقة).</div>
+          <span class="ews-badge-critical">حرج جداً</span>
+        </div>
+      `;
+    }
+    
+    const inspTotal = govData.reduce((a,d) => a + (d.insp_total||0), 0);
+    if(govPop > 800000 && inspTotal < 50) {
+      criticalCount++;
+      alertsHtml += `
+        <div class="ews-alert-item">
+          <div><strong>محافظة ${gov}:</strong> ضعف في جولات التفتيش الميداني مقارنة بحجم النشاط (${inspTotal} زيارة).</div>
+          <span class="ews-badge-warning">تنبيه مبكر</span>
+        </div>
+      `;
+    }
+  });
+
+  if(criticalCount === 0) {
+    alertsHtml = `<div style="color: #27ae60; font-size: 13.5px; text-align: center; padding: 10px;">✅ لا توجد تنبيهات حرجة مسجلة حالياً. الأداء في جميع المحافظات المحددة ضمن النطاق المقبول.</div>`;
+  }
+
+  return `
+    <div class="ews-panel">
+      <h3 style="font-family:Tajawal; font-size:16px; color:#c0392b; margin:0 0 10px;">⚠️ نظام الإنذار المبكر ومراقبة الانحرافات (EWS)</h3>
+      <p style="font-size:13px; color:#666; margin-bottom:14px;">يقوم هذا النظام بفحص البيانات تلقائياً ومقارنة الإنجازات بالكثافة السكانية والمستهدفات التناسبية، وإطلاق تنبيهات فورية للمحافظات التي تسجل تباطؤاً حاداً.</p>
+      <div>${alertsHtml}</div>
+    </div>
+  `;
 }
 
 function getRankingModeLabel(mode){
