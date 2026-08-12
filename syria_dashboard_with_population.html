@@ -390,7 +390,6 @@
 <base target="_blank">
 <base target="_blank">
 <base target="_blank">
-<base target="_blank">
 </head>
 <body class="locked">
 
@@ -539,7 +538,6 @@
     <button class="btn btn-primary" onclick="loadFromSheet()" id="refreshBtn">🔄 تحديث من الرابط</button>
     <button class="btn btn-success" onclick="showUploadModal()">📁 رفع ملف CSV يدوياً</button>
     <span class="status-badge status-loading" id="dataStatus">جاري التحميل التلقائي...</span>
-    <span class="status-badge status-ok" id="lastUpdatedBadge" style="display:none;">آخر تحديث: <span id="lastUpdatedText">—</span></span>
   </div>
 </div>
 
@@ -3270,190 +3268,105 @@ function handleCSVPaste(){
 
 // Helper: fetch with timeout — uses Promise.race to avoid AbortSignal cloning issues
 function fetchWithTimeout(url, options = {}, timeout = 8000) {
-  const ctrl = new AbortController();
-  const fetchPromise = fetch(url, { ...options, signal: ctrl.signal });
+  const fetchPromise = fetch(url, options);
   const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => { ctrl.abort(); reject(new Error('timeout after ' + timeout + 'ms')); }, timeout)
+    setTimeout(() => reject(new Error('timeout after ' + timeout + 'ms')), timeout)
   );
   return Promise.race([fetchPromise, timeoutPromise]);
 }
 
 async function loadFromSheet(){
-  const urlInput = document.getElementById('gsheetUrl').value.trim();
-  if(!urlInput){ 
-    alert('الرجاء إدخال رابط Google Sheet'); 
+  const url = document.getElementById('gsheetUrl').value.trim();
+  if(!url){ 
+    alert('الرجاء إدخال رابط Google Sheet أو استخدام زر رفع الملف'); 
     return; 
   }
 
   const statusEl = document.getElementById('dataStatus');
   const refreshBtn = document.getElementById('refreshBtn');
+
   statusEl.textContent = '⏳ جاري التحديث...'; 
   statusEl.className = 'status-badge status-loading';
   if(refreshBtn) refreshBtn.disabled = true;
 
-  // ═══════════════════════════════════════════
-  // FIX: file:// protocol — load inline data directly, skip network
-  // ═══════════════════════════════════════════
-  if(window.location.protocol === 'file:'){
-    console.log('📁 File protocol detected — loading inline CSV data');
-    if(typeof INLINE_CSV_DATA !== 'undefined' && INLINE_CSV_DATA.length > 100){
-      processCSVData(INLINE_CSV_DATA);
-      statusEl.textContent = '✅ بيانات محلية محملة (وضع عدم الاتصال)';
-      statusEl.className = 'status-badge status-ok';
-    } else {
-      statusEl.textContent = '⚠️ لا توجد بيانات مدمجة — ارفع ملف CSV يدوياً';
-      statusEl.className = 'status-badge status-error';
-    }
-    if(refreshBtn) refreshBtn.disabled = false;
-    return;
-  }
-
-  // ─── استخراج Spreadsheet ID من أي صيغة رابط ───
-  function extractSheetId(url) {
-    // صيغة /d/e/ID/pub (published)
-    let m = url.match(/\/d\/e\/([a-zA-Z0-9_-]+)/);
-    if(m) return {id: m[1], type: 'published'};
-    // صيغة /d/ID/edit أو /d/ID/export
-    m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    if(m) return {id: m[1], type: 'direct'};
-    return null;
-  }
-
-  const sheetInfo = extractSheetId(urlInput);
-  if(!sheetInfo){
-    statusEl.textContent = '❌ رابط غير صالح';
-    statusEl.className = 'status-badge status-error';
-    if(refreshBtn) refreshBtn.disabled = false;
-    return;
-  }
-
+  // Add cache-buster to force fresh data
   const cacheBuster = '&_cb=' + Date.now();
-  const endpoints = [];
+  const fetchUrl = url + (url.includes('?') ? cacheBuster : '?' + cacheBuster);
 
-  if(sheetInfo.type === 'published'){
-    // الرابط المنشور مباشرة
-    endpoints.push({name: 'Google Published CSV', url: urlInput + (urlInput.includes('?') ? '&' : '?') + cacheBuster});
-  } else {
-    // إنشاء روابط بديلة من ID
-    const id = sheetInfo.id;
-    endpoints.push({name: 'Google Viz API (CSV)', url: `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=Sheet1${cacheBuster}`});
-    endpoints.push({name: 'Google Export CSV', url: `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&id=${id}&gid=0${cacheBuster}`});
-    endpoints.push({name: 'Google Published', url: `https://docs.google.com/spreadsheets/d/e/${id}/pub?output=csv${cacheBuster}`});
-  }
-
-  // ─── المرحلة 1: جلب مباشر من Google (بدون proxy) ───
-  for(const ep of endpoints){
-    try {
-      statusEl.textContent = `⏳ جاري الاتصال: ${ep.name}...`;
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 8000);
-      const response = await fetch(ep.url, { signal: ctrl.signal, mode: 'cors' });
-      clearTimeout(t);
-
-      if(response.ok){ 
-        const csvText = await response.text(); 
-        if(csvText.length > 100 && !csvText.trim().startsWith('<') && (csvText.includes(',') || csvText.includes(';'))) {
-          if(processCSVData(csvText)) {
-            statusEl.textContent = '✅ تم التحديث من المصدر — ' + new Date().toLocaleTimeString('ar-SY');
-            statusEl.className = 'status-badge status-ok';
-            if(refreshBtn) refreshBtn.disabled = false;
-            return; 
-          }
+  // 1. Try direct fetch first (fastest if CORS is enabled by the sheet owner)
+  try {
+    const response = await fetchWithTimeout(fetchUrl, {}, 5000);
+    if(response.ok){ 
+      const csvText = await response.text(); 
+      if(csvText && csvText.length > 50 && (csvText.includes(',') || csvText.includes(';'))) {
+        if(processCSVData(csvText)) {
+          statusEl.textContent = '✅ تم التحديث بنجاح — ' + new Date().toLocaleTimeString('ar-SY');
+          statusEl.className = 'status-badge status-ok';
+          if(refreshBtn) refreshBtn.disabled = false;
+          return; 
         }
       }
-    } catch(e) { 
-      console.log(`${ep.name} failed:`, e.message); 
     }
+  } catch(e) { 
+    console.log('Direct fetch failed:', e.message); 
   }
 
-  // ─── المرحلة 2: Proxies محدّثة وموثوقة ───
-  const targetUrl = endpoints[0].url;
+  // 2. Proxy list — ordered by reliability & speed (corsproxy.io first as it's usually fastest)
   const proxies = [
-    { name: 'corsproxy.io', url: `https://corsproxy.io/?${encodeURIComponent(targetUrl)}` },
-    { name: 'allorigins.win', url: `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}` },
-    { name: 'codetabs', url: `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}` },
-    { name: 'thingproxy', url: `https://thingproxy.freeboard.io/fetch/${targetUrl}` }
+    { 
+      name: 'corsproxy.io',
+      url: (target) => `https://corsproxy.io/?${encodeURIComponent(target)}`,
+      extract: async (r) => r.text()
+    },
+    { 
+      name: 'allorigins (raw)',
+      url: (target) => `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`,
+      extract: async (r) => r.text()
+    },
+    { 
+      name: 'allorigins (json)',
+      url: (target) => `https://api.allorigins.win/get?url=${encodeURIComponent(target)}`,
+      extract: async (r) => {
+        const json = await r.json();
+        return json.contents;
+      }
+    }
   ];
 
+  // Try proxies sequentially with timeout and content validation
   for(const proxy of proxies){
     try {
       statusEl.textContent = `⏳ جاري المحاولة عبر ${proxy.name}...`;
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 12000);
-      const response = await fetch(proxy.url, { signal: ctrl.signal });
-      clearTimeout(t);
+      const proxyUrl = proxy.url(fetchUrl);
+      const response = await fetchWithTimeout(proxyUrl, {}, 10000);
 
-      if(!response.ok) continue;
-      const csvText = await response.text();
+      if(!response.ok) {
+        console.warn(`Proxy ${proxy.name} returned HTTP ${response.status}`);
+        continue;
+      }
 
-      if(csvText.trim().startsWith('<') || csvText.length < 50) continue;
-      if(csvText.includes(',') || csvText.includes(';') || csvText.includes('\t')) {
+      const csvText = await proxy.extract(response);
+
+      // Validate response actually looks like CSV (not an error page)
+      if(csvText && csvText.length > 50 && (csvText.includes(',') || csvText.includes(';'))) {
         if(processCSVData(csvText)) {
-          statusEl.textContent = `✅ تم التحديث عبر ${proxy.name} — ` + new Date().toLocaleTimeString('ar-SY');
+          statusEl.textContent = '✅ تم التحديث بنجاح — ' + new Date().toLocaleTimeString('ar-SY');
           statusEl.className = 'status-badge status-ok';
           if(refreshBtn) refreshBtn.disabled = false;
           return;
         }
+      } else {
+        console.warn(`Proxy ${proxy.name} returned invalid/non-CSV content`);
       }
     } catch(err) { 
       console.warn(`Proxy ${proxy.name} failed:`, err.message); 
     }
   }
 
-  // ─── المرحلة 3: Fallback إلى البيانات المدمجة + رسالة توضيحية ───
-  if(typeof INLINE_CSV_DATA !== 'undefined' && INLINE_CSV_DATA.length > 100){
-    statusEl.textContent = '⚠️ فشل الاتصال — جاري تحميل البيانات المدمجة...';
-    try {
-      if(processCSVData(INLINE_CSV_DATA)){
-        statusEl.innerHTML = '⚠️ تم تحميل البيانات المدمجة (وضع عدم الاتصال) — <a href="#" onclick="showConnectionHelp();return false;" style="color:#0D8BA8;text-decoration:underline;">لماذا؟</a>';
-        statusEl.className = 'status-badge status-loading';
-        if(refreshBtn) refreshBtn.disabled = false;
-        return;
-      }
-    } catch(e) {
-      console.warn('Inline fallback failed:', e);
-    }
-  }
-
-  statusEl.innerHTML = '❌ تعذّر الاتصال — <a href="#" onclick="showConnectionHelp();return false;" style="color:#c62828;text-decoration:underline;">كيفية الإصلاح</a>';
+  statusEl.textContent = '❌ فشل التحديث — جرب رفع الملف يدوياً';
   statusEl.className = 'status-badge status-error';
   if(refreshBtn) refreshBtn.disabled = false;
-}
-
-function showConnectionHelp(){
-  const helpHtml = `
-    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)this.remove()">
-      <div style="background:white;border-radius:18px;max-width:520px;width:100%;padding:28px;direction:rtl;text-align:right;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:2px solid #0B5A7A;">
-        <h3 style="margin:0 0 16px;font-family:Tajawal;color:#0B5A7A;font-size:20px;">🔧 كيفية إصلاح مشكلة الاتصال</h3>
-        <div style="font-size:13.5px;line-height:2;color:var(--ink-soft);">
-          <p><strong>السبب:</strong> المتصفح يحظر جلب البيانات من Google Sheets بسبب إعدادات الأمان (CORS).</p>
-          <p style="background:#e3f2fd;border-radius:8px;padding:12px;border-inline-start:3px solid #1565c0;">
-            <strong>الحل الأسرع والأفضل:</strong><br>
-            1️⃣ افتح Google Sheets → File → Share → Publish to web<br>
-            2️⃣ اختر "Entire Document" + "Comma-separated values (.csv)"<br>
-            3️⃣ انسخ الرابط الجديد والصقه في الحقل أعلاه<br>
-            4️⃣ تأكد أن الرابط يبدأ بـ <code>https://docs.google.com/spreadsheets/d/e/...</code>
-          </p>
-          <p style="background:#fff3e0;border-radius:8px;padding:12px;border-inline-start:3px solid #e65100;">
-            <strong>الحل الدائم (موصى به):</strong><br>
-            استخدم <strong>Google Sheets API</strong> بمفتاح API من Google Cloud Console. هذا يضمن استقراراً تاماً ولا يحتاج proxies.
-          </p>
-          <p style="background:#e8f5e9;border-radius:8px;padding:12px;border-inline-start:3px solid #2e7d32;">
-            <strong>الحل البديل:</strong><br>
-            شغّل الملف عبر خادم محلي:<br>
-            <code style="background:#f5f5f5;padding:4px 8px;border-radius:4px;font-family:monospace;font-size:12px;">python -m http.server 8000</code><br>
-            ثم افتح: <code style="background:#f5f5f5;padding:4px 8px;border-radius:4px;font-family:monospace;font-size:12px;">http://localhost:8000</code>
-          </p>
-        </div>
-        <button onclick="this.closest('.modal-overlay').remove()" style="margin-top:16px;width:100%;background:#0B5A7A;color:white;border:none;border-radius:10px;padding:12px;font-family:Cairo;font-size:14px;font-weight:700;cursor:pointer;">حسناً، فهمت</button>
-      </div>
-    </div>
-  `;
-  const div = document.createElement('div');
-  div.innerHTML = helpHtml;
-  div.className = 'modal-overlay';
-  div.style.display = 'flex';
-  document.body.appendChild(div);
+  showUploadModal();
 }
 
 // =====================
@@ -3898,13 +3811,6 @@ function enterDashboard(){
     document.getElementById('viewerMessage').style.display = 'block';
   }
 
-  // ═══════════════════════════════════════════
-  // FIX: file:// protocol — auto-load inline data after login
-  // ═══════════════════════════════════════════
-  if(window.location.protocol === 'file:' && typeof INLINE_CSV_DATA !== 'undefined'){
-    setTimeout(() => { autoLoadOnStartup(); }, 300);
-  }
-
   // Save session state
   try {
     localStorage.setItem(SESSION_KEY, JSON.stringify({
@@ -4133,15 +4039,6 @@ function updateConnectionStatus(){
   const refreshBtn = document.getElementById('refreshBtn');
   const lastBadge = document.getElementById('lastUpdatedBadge');
 
-  // ═══════════════════════════════════════════
-  // FIX: file:// protocol — skip network status UI entirely
-  // ═══════════════════════════════════════════
-  if(window.location.protocol === 'file:'){
-    if(offlineBar) offlineBar.style.display = 'none';
-    if(onlineBar) onlineBar.style.display = 'none';
-    return;
-  }
-
   if(navigator.onLine){
     if(offlineBar) offlineBar.classList.remove('show');
     // Only flash online bar briefly if we were offline
@@ -4365,33 +4262,6 @@ loadFromSheet = async function(){
 // Auto-load on startup (after login)
 function autoLoadOnStartup(){
   const statusEl = document.getElementById('dataStatus');
-
-  // ═══════════════════════════════════════════
-  // FIX: file:// protocol — skip localStorage, load inline data directly
-  // ═══════════════════════════════════════════
-  if(window.location.protocol === 'file:'){
-    console.log('📁 File protocol detected — loading inline CSV data');
-    if(statusEl){
-      statusEl.textContent = '⏳ جاري تحميل البيانات المضمنة...';
-      statusEl.className = 'status-badge status-loading';
-    }
-    const success = processCSVData(INLINE_CSV_DATA);
-    if(success){
-      if(statusEl){
-        statusEl.textContent = '✅ بيانات محلية محملة (وضع عدم الاتصال)';
-        statusEl.className = 'status-badge status-ok';
-      }
-      // Hide file protocol warning box
-      const fpw = document.getElementById('fileProtocolWarning');
-      if(fpw) fpw.style.display = 'none';
-    } else {
-      if(statusEl){
-        statusEl.textContent = '⚠️ فشل تحميل البيانات المدمجة';
-        statusEl.className = 'status-badge status-error';
-      }
-    }
-    return;
-  }
 
   // 1. Always try localStorage first — fastest and most reliable
   const loaded = loadDataFromLocalStorage();
@@ -4911,12 +4781,6 @@ function restoreSession(){
 // INIT
 // =====================
 window.addEventListener('DOMContentLoaded', () => {
-  // ═══════════════════════════════════════════
-  // FIX: Hide file protocol warning — works on all protocols
-  // ═══════════════════════════════════════════
-  const fpw = document.getElementById('fileProtocolWarning');
-  if(fpw) fpw.style.display = 'none';
-
   loadSavedPasswords(); // Load saved passwords from localStorage
   setupGovFilter();
   setupMonthFilter();
