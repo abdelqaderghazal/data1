@@ -369,6 +369,31 @@
   .csb-status.warning{background:#fff3cd;color:#856404;}
   .csb-status.off-track{background:#ffebee;color:#c62828;}
   .csb-status.no-data{background:#f5f5f5;color:#999;}
+  .analytics-section{background:var(--paper);border:1px solid var(--line);border-radius:18px;margin-bottom:24px;overflow:hidden;}
+  .analytics-head{display:flex;align-items:center;gap:14px;padding:20px 24px;border-bottom:1px solid var(--sand-2);cursor:pointer;background:linear-gradient(90deg,var(--sand) 0%,transparent 100%);}
+  .analytics-head .icon{width:44px;height:44px;border-radius:50%;background:var(--syria-green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;border:2px solid #0D8BA8;}
+  .analytics-head h2{font-family:'Tajawal',sans-serif;font-weight:700;font-size:18px;margin:0;color:var(--ink);}
+  .analytics-head p{margin:3px 0 0;font-size:13px;color:var(--ink-soft);}
+  .analytics-head .chev{margin-inline-start:auto;font-size:18px;color:#0D8BA8;transition:transform .2s;}
+  .analytics-section.open .chev{transform:rotate(180deg);}
+  .analytics-body{padding:22px 24px 26px;display:none;}
+  .analytics-section.open .analytics-body{display:block;}
+  .analytics-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--sand);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:16px;}
+  .analytics-controls label{font-family:'Tajawal',sans-serif;font-weight:700;color:var(--ink);font-size:13px;}
+  .analytics-controls select{border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);padding:8px 12px;font-family:'Cairo',sans-serif;font-size:13px;min-width:230px;}
+  .analytics-note{font-size:12px;color:var(--ink-soft);}
+  .analytics-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px;}
+  .analytics-kpi{border:1px solid var(--line);border-radius:10px;background:#fff;padding:12px;text-align:center;}
+  .analytics-kpi .ak-value{font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:700;color:var(--ink);}
+  .analytics-kpi .ak-label{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
+  .analytics-kpi .ak-change{font-size:11px;margin-top:6px;font-weight:700;}
+  .analytics-kpi .positive{color:#2e7d32;}.analytics-kpi .negative{color:#c62828;}.analytics-kpi .neutral{color:#777;}
+  .analytics-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px;}
+  .analytics-card{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;}
+  .analytics-card h3{font-family:'Tajawal',sans-serif;font-size:15px;color:var(--ink);margin:0 0 8px;}
+  .analytics-card .chart-wrap{margin:0;min-height:260px;background:var(--sand);}
+  .analytics-narrative{font-size:13px;color:var(--ink-soft);line-height:1.9;background:var(--sand);border-inline-start:3px solid #0D8BA8;padding:12px 14px;border-radius:6px;}
+  @media(max-width:760px){.analytics-grid{grid-template-columns:1fr;}.analytics-body{padding:16px;}.analytics-head{padding:16px;}.analytics-controls{align-items:stretch;flex-direction:column;}.analytics-controls select{width:100%;}}
 </style>
 <base target="_blank">
 
@@ -841,6 +866,37 @@
     </div>
   </section>
 
+  <!-- ADVANCED ANALYTICS SECTION -->
+  <section class="analytics-section open" data-cat="analytics" id="advancedAnalyticsSection">
+    <div class="analytics-head" onclick="toggleAdvancedAnalytics(this)">
+      <div class="icon">📈</div>
+      <div><h2>التحليلات التفاعلية المتقدمة</h2><p>اتجاهات زمنية، مقارنة المحافظات، ومؤشرات التغير بناءً على البيانات المحددة</p></div>
+      <div class="chev">⌄</div>
+    </div>
+    <div class="analytics-body" id="advancedAnalyticsBody">
+      <div class="analytics-controls">
+        <label for="analyticsMetric">المؤشر التحليلي</label>
+        <select id="analyticsMetric" onchange="renderAdvancedAnalytics()">
+          <option value="population">إجمالي السكان</option>
+          <option value="employed">المشتغلون</option>
+          <option value="disabled_cards">بطاقات الإعاقة الجديدة</option>
+          <option value="food_baskets">السلال الغذائية</option>
+          <option value="platform_jobs">فرص العمل على المنصة</option>
+          <option value="insurance_total">المسجلون القائمون على رأس عملهم</option>
+          <option value="camps_count">عدد المخيمات</option>
+          <option value="ngo_active">المنظمات المشهرة</option>
+        </select>
+        <span class="analytics-note">تتبع الرسوم فلاتر المحافظة والشهر المحددة في أعلى اللوحة.</span>
+      </div>
+      <div class="analytics-kpis" id="analyticsKpis"></div>
+      <div class="analytics-grid">
+        <div class="analytics-card"><h3>📊 ترتيب المحافظات</h3><div class="chart-wrap"><canvas id="analyticsRankingChart"></canvas></div></div>
+        <div class="analytics-card"><h3>📈 الاتجاه الشهري</h3><div class="chart-wrap"><canvas id="analyticsTrendChart"></canvas></div></div>
+      </div>
+      <div class="analytics-card"><h3>🔎 ملخص التحليل</h3><div id="analyticsNarrative" class="analytics-narrative">جاري تحليل البيانات...</div></div>
+    </div>
+  </section>
+
   <section class="category open" data-cat="details">
     <div class="cat-head" onclick="toggleCat(this)">
       <div class="icon">📖</div>
@@ -979,6 +1035,8 @@ const COLUMN_MAP = {
   "عدد المستفيدين من توزيع المعينات الحركية": "mobility_aids",
   "المستفيدين  من المعونة النقدية لأسر الأشخاص من ذوي  الإعاقة": "disability_cash",
   "عدد الحاصلين الجدد على بطاقة الاشخاص ذوي الاعاقة": "disabled_cards",
+  "عدد الأشخاص  ذوي الإعاقة الحاصلين على بطاقة الإعاقة": "disabled_cards",
+  "عدد الأشخاص ذوي الإعاقة الحاصلين على بطاقة الإعاقة": "disabled_cards",
 
   // === Orphans ===
   "عدد دور رعاية الايتام": "orphan_homes",
@@ -2352,6 +2410,100 @@ function renderAll(){
   }
   // ← Render strategic plan compass
   renderStrategicCompass();
+  if(document.getElementById('advancedAnalyticsSection')?.classList.contains('open')){
+    renderAdvancedAnalytics();
+  }
+}
+
+function toggleAdvancedAnalytics(headEl){
+  const section = headEl.parentElement;
+  section.classList.toggle('open');
+  if(section.classList.contains('open')) renderAdvancedAnalytics();
+}
+
+const ANALYTICS_METRICS = {
+  population: {label:'إجمالي السكان', unit:'نسمة'},
+  employed: {label:'المشتغلون', unit:'مشتغل'},
+  disabled_cards: {label:'بطاقات الإعاقة الجديدة', unit:'بطاقة'},
+  food_baskets: {label:'السلال الغذائية', unit:'سلة'},
+  platform_jobs: {label:'فرص العمل على المنصة', unit:'فرصة'},
+  insurance_total: {label:'المسجلون القائمون على رأس عملهم', unit:'مسجل'},
+  camps_count: {label:'عدد المخيمات', unit:'مخيم'},
+  ngo_active: {label:'المنظمات المشهرة', unit:'منظمة'}
+};
+
+function analyticsNumber(value){
+  return Number(value || 0).toLocaleString('en-US', {maximumFractionDigits:1});
+}
+
+function analyticsMonthOrder(month){
+  const index = MONTHS_LIST.indexOf(month);
+  return index < 0 ? 99 : index;
+}
+
+function renderAdvancedAnalytics(){
+  const section = document.getElementById('advancedAnalyticsSection');
+  if(!section || !section.classList.contains('open')) return;
+  const arr = filtered();
+  const metricEl = document.getElementById('analyticsMetric');
+  const metric = metricEl?.value || 'population';
+  const meta = ANALYTICS_METRICS[metric] || ANALYTICS_METRICS.population;
+  const kpis = document.getElementById('analyticsKpis');
+  const narrative = document.getElementById('analyticsNarrative');
+  if(!arr.length){
+    if(kpis) kpis.innerHTML = '<div class="analytics-kpi"><div class="ak-value">—</div><div class="ak-label">لا توجد بيانات للتحليل</div></div>';
+    if(narrative) narrative.textContent = 'لا توجد سجلات مطابقة للفلاتر الحالية.';
+    return;
+  }
+
+  const govTotals = {};
+  const monthTotals = {};
+  arr.forEach(row => {
+    const value = Number(row[metric]) || 0;
+    govTotals[row.gov] = (govTotals[row.gov] || 0) + value;
+    monthTotals[row.month] = (monthTotals[row.month] || 0) + value;
+  });
+  const ranking = Object.entries(govTotals).sort((a,b) => b[1] - a[1]);
+  const months = Object.keys(monthTotals).sort((a,b) => analyticsMonthOrder(a) - analyticsMonthOrder(b));
+  const values = months.map(m => monthTotals[m]);
+  const total = values.reduce((a,b) => a+b, 0);
+  const average = values.length ? total / values.length : 0;
+  const first = values[0] || 0;
+  const last = values[values.length - 1] || 0;
+  const change = first ? ((last - first) / first) * 100 : 0;
+  const highest = ranking[0] || ['—', 0];
+  const lowest = ranking[ranking.length - 1] || ['—', 0];
+  const changeClass = change > 0.05 ? 'positive' : change < -0.05 ? 'negative' : 'neutral';
+  const changeText = `${change >= 0 ? '▲' : '▼'} ${Math.abs(change).toFixed(1)}%`;
+
+  if(kpis){
+    kpis.innerHTML = [
+      ['الإجمالي', analyticsNumber(total), meta.unit, 'neutral'],
+      ['المتوسط الشهري', analyticsNumber(average), meta.unit, 'neutral'],
+      ['أعلى محافظة', `${highest[0]} — ${analyticsNumber(highest[1])}`, '', 'neutral'],
+      ['التغير بين أول وآخر شهر', changeText, '', changeClass]
+    ].map(([label,value,unit,klass]) => `<div class="analytics-kpi"><div class="ak-value">${value}</div><div class="ak-label">${label}${unit ? ` (${unit})` : ''}</div><div class="ak-change ${klass}">${label === 'التغير بين أول وآخر شهر' ? (change >= 0 ? 'تحسن' : 'انخفاض') : 'حسب الفلاتر الحالية'}</div></div>`).join('');
+  }
+
+  if(narrative){
+    narrative.innerHTML = `يبلغ إجمالي <strong>${meta.label}</strong> ضمن الفلاتر الحالية <strong>${analyticsNumber(total)}</strong> ${meta.unit}. تسجل <strong>${highest[0]}</strong> أعلى قيمة بإجمالي ${analyticsNumber(highest[1])}، بينما تسجل <strong>${lowest[0]}</strong> أدنى قيمة بإجمالي ${analyticsNumber(lowest[1])}. وقد تغير المؤشر بنسبة <strong class="${changeClass}">${changeText}</strong> بين أول وآخر شهر متاح.`;
+  }
+
+  const rankingCanvas = document.getElementById('analyticsRankingChart');
+  const trendCanvas = document.getElementById('analyticsTrendChart');
+  if(typeof Chart === 'undefined' || !rankingCanvas || !trendCanvas) return;
+  if(charts.analyticsRanking) charts.analyticsRanking.destroy();
+  if(charts.analyticsTrend) charts.analyticsTrend.destroy();
+  charts.analyticsRanking = new Chart(rankingCanvas.getContext('2d'), {
+    type:'bar',
+    data:{labels:ranking.map(x=>x[0]), datasets:[{label:meta.label, data:ranking.map(x=>x[1]), backgroundColor:ranking.map((_,i)=>PALETTE[i % PALETTE.length]), borderRadius:6}]},
+    options:{responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>`${analyticsNumber(ctx.raw)} ${meta.unit}`}}}, scales:{x:{beginAtZero:true,ticks:{callback:v=>analyticsNumber(v)}},y:{ticks:{font:{family:'Cairo'}}}}}
+  });
+  charts.analyticsTrend = new Chart(trendCanvas.getContext('2d'), {
+    type:'line',
+    data:{labels:months, datasets:[{label:meta.label, data:values, borderColor:'#0B5A7A', backgroundColor:'rgba(13,139,168,.16)', fill:true, tension:.3, pointRadius:4, pointBackgroundColor:'#0D8BA8'}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>`${analyticsNumber(ctx.raw)} ${meta.unit}`}}}, scales:{y:{beginAtZero:true,ticks:{callback:v=>analyticsNumber(v)}},x:{ticks:{font:{family:'Cairo'}}}}}
+  });
 }
 
 function updateMastheadBadge(){
@@ -3255,17 +3407,52 @@ function handleCSVPaste(){
   closeUploadModal();
 }
 
-// Helper: fetch with timeout — uses Promise.race to avoid AbortSignal cloning issues
-function fetchWithTimeout(url, options = {}, timeout = 8000) {
-  const fetchPromise = fetch(url, options);
-  const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error('timeout after ' + timeout + 'ms')), timeout)
-  );
-  return Promise.race([fetchPromise, timeoutPromise]);
+// Google Sheets helpers
+function normalizeGoogleSheetUrl(rawUrl){
+  const value = String(rawUrl || '').trim();
+  if(!value) return '';
+
+  // Keep already-published CSV URLs intact, while removing stale query params.
+  if(/docs\.google\.com\/spreadsheets\/d\/e\//i.test(value)){
+    const publishedId = value.match(/\/spreadsheets\/d\/e\/([^/]+)/i);
+    if(publishedId){
+      const gid = new URL(value, window.location.href).searchParams.get('gid');
+      return `https://docs.google.com/spreadsheets/d/e/${publishedId[1]}/pub?output=csv${gid ? `&gid=${encodeURIComponent(gid)}` : ''}`;
+    }
+  }
+
+  // Accept the normal /edit or /view link and convert it to the CSV endpoint.
+  const idMatch = value.match(/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/i);
+  if(idMatch){
+    const parsed = new URL(value, window.location.href);
+    const gid = parsed.searchParams.get('gid');
+    return `https://docs.google.com/spreadsheets/d/${idMatch[1]}/export?format=csv${gid ? `&gid=${encodeURIComponent(gid)}` : ''}`;
+  }
+
+  return value;
+}
+
+async function fetchWithTimeout(url, options = {}, timeout = 10000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  try {
+    return await fetch(url, {...options, signal: controller.signal, cache: 'no-store'});
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function looksLikeCsv(text){
+  if(typeof text !== 'string') return false;
+  const sample = text.replace(/^\uFEFF/, '').trim();
+  if(sample.length < 20) return false;
+  if(/<html[\s>]/i.test(sample) || /<!doctype/i.test(sample)) return false;
+  return sample.includes(',') || sample.includes(';') || sample.includes('\n');
 }
 
 async function loadFromSheet(){
-  const url = document.getElementById('gsheetUrl').value.trim();
+  const rawUrl = document.getElementById('gsheetUrl').value.trim();
+  const url = normalizeGoogleSheetUrl(rawUrl);
   if(!url){ 
     alert('الرجاء إدخال رابط Google Sheet أو استخدام زر رفع الملف'); 
     return; 
@@ -3278,16 +3465,16 @@ async function loadFromSheet(){
   statusEl.className = 'status-badge status-loading';
   if(refreshBtn) refreshBtn.disabled = true;
 
-  // Add cache-buster to force fresh data
-  const cacheBuster = '&_cb=' + Date.now();
-  const fetchUrl = url + (url.includes('?') ? cacheBuster : '?' + cacheBuster);
+  // Add a cache-buster without corrupting the existing query string.
+  const separator = url.includes('?') ? '&' : '?';
+  const fetchUrl = url + separator + '_cb=' + Date.now();
 
   // 1. Try direct fetch first (fastest if CORS is enabled by the sheet owner)
   try {
     const response = await fetchWithTimeout(fetchUrl, {}, 5000);
     if(response.ok){ 
       const csvText = await response.text(); 
-      if(csvText && csvText.length > 50 && (csvText.includes(',') || csvText.includes(';'))) {
+      if(looksLikeCsv(csvText)) {
         if(processCSVData(csvText)) {
           statusEl.textContent = '✅ تم التحديث بنجاح — ' + new Date().toLocaleTimeString('ar-SY');
           statusEl.className = 'status-badge status-ok';
@@ -3337,7 +3524,7 @@ async function loadFromSheet(){
       const csvText = await proxy.extract(response);
 
       // Validate response actually looks like CSV (not an error page)
-      if(csvText && csvText.length > 50 && (csvText.includes(',') || csvText.includes(';'))) {
+      if(looksLikeCsv(csvText)) {
         if(processCSVData(csvText)) {
           statusEl.textContent = '✅ تم التحديث بنجاح — ' + new Date().toLocaleTimeString('ar-SY');
           statusEl.className = 'status-badge status-ok';
@@ -4186,33 +4373,8 @@ const originalLoadFromSheet = loadFromSheet;
 loadFromSheet = async function(){
   const statusEl = document.getElementById('dataStatus');
 
-  // Check file:// protocol FIRST
-  if(isFileProtocol()){
-    if(statusEl){
-      statusEl.textContent = '⏳ جاري تحميل البيانات المضمنة...';
-      statusEl.className = 'status-badge status-loading';
-    }
-    // Try localStorage first
-    const loaded = loadDataFromLocalStorage();
-    if(loaded){
-      if(statusEl){
-        statusEl.textContent = '✅ تم التحميل من الذاكرة المحلية';
-        statusEl.className = 'status-badge status-ok';
-      }
-      return;
-    }
-    // Load inline CSV data
-    const success = processCSVData(INLINE_CSV_DATA);
-    if(success){
-      saveDataToLocalStorage();
-      if(statusEl){
-        statusEl.textContent = '✅ تم تحميل البيانات المضمنة';
-        statusEl.className = 'status-badge status-ok';
-      }
-    }
-    return;
-  }
-
+  // file:// does not necessarily block a published Google Sheet CSV request.
+  // Use local data only as a fallback; still allow the user to refresh from the sheet.
   if(!navigator.onLine){
     if(statusEl){
       statusEl.textContent = '⚠️ لا يوجد إنترنت — جاري تحميل البيانات المحفوظة...';
@@ -4232,18 +4394,8 @@ loadFromSheet = async function(){
     return;
   }
 
-  // Online: proceed with original function
+  // Online: this is a user-initiated refresh, so always request the latest sheet data.
   hideDiagnostic();
-  // Try localStorage before hitting the network
-  const localLoaded = loadDataFromLocalStorage();
-  if(localLoaded){
-    if(statusEl){
-      statusEl.textContent = '✅ تم التحميل من الذاكرة المحلية';
-      statusEl.className = 'status-badge status-ok';
-    }
-    return;
-  }
-  // No local data — now try the network (user-initiated refresh)
   await originalLoadFromSheet();
   // Original function calls processCSVData which now auto-saves
 };
