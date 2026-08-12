@@ -17,6 +17,18 @@
   .ews-alert-item { display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid #f5c6cb; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; font-size: 13px; }
   .ews-badge-critical { background: #e74c3c; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
   .ews-badge-warning { background: #f39c12; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+  
+  /* Progress Bar & AI Styles */
+  .progress-container { width: 100%; background-color: rgba(0,0,0,0.05); border-radius: 100px; margin-top: 8px; height: 6px; overflow: hidden; }
+  .progress-bar { height: 100%; border-radius: 100px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+  .achievement-text { font-size: 10px; color: var(--ink-soft); margin-top: 4px; display: block; text-align: left; font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+  .target-val { font-size: 10px; color: #888; margin-inline-start: 4px; }
+  .ai-insight-card { background: #f8fcff; border: 1px solid #d0e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px; position: relative; }
+  .ai-insight-card::before { content: '✨ AI Insight'; position: absolute; top: -10px; right: 20px; background: #0B5A7A; color: white; padding: 2px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+  .recommendation-item { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px dashed #c0d8e0; }
+  .recommendation-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .rec-icon { font-size: 18px; flex-shrink: 0; }
+  .rec-text { font-size: 13px; line-height: 1.6; color: var(--ink); }
 
   .masthead{background:linear-gradient(135deg,#0B5A7A 0%,#084a66 50%,#052a3a 100%);color:var(--syria-white);padding:28px 28px 24px;position:relative;overflow:hidden;border-bottom:4px solid #0D8BA8;}
   .masthead::after{content:"";position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,0.025) 0 2px,transparent 2px 26px);pointer-events:none;}
@@ -821,6 +833,69 @@ let currentRankingMode = 'absolute'; // 'absolute' | 'perCapita' | 'coverage' | 
 const MONTHS_LIST = ["كانون الثاني","شباط","آذار","نيسان","أيار","حزيران","تموز","آب","أيلول","تشرين الأول","تشرين الثاني","كانون الأول"];
 const ALL_GOVS = ["دمشق","ريف دمشق","حلب","حمص","حماه","اللاذقية","طرطوس","السويداء","درعا","القنيطرة","ادلب","الرقة","دير الزور","الحسكة"];
 
+// =====================
+// TARGETS CONFIGURATION (Annual Targets)
+// =====================
+const TARGETS_CONFIG = {
+  // === Disability & Care ===
+  'disabled_cards': 20000,
+  'disability_centers': 50,
+  'disability_benef': 10000,
+  'mobility_aids': 5000,
+  'disability_cash': 15000,
+  
+  // === Social & Elderly ===
+  'elderly_homes': 30,
+  'elderly_benef': 6000,
+  'orphan_homes': 40,
+  'sponsor_internal': 12000,
+  'sponsor_external': 8000,
+  'beggar_inmates': 1500,
+  'dar_lahn_benef': 500,
+  
+  // === NGOs & Juvenile ===
+  'ngo_total': 2500,
+  'ngo_active': 300,
+  'ngo_new_pct': 150,
+  'juvenile_inst': 15,
+  'juvenile_inmates': 1200,
+  
+  // === Labor Market & Platform ===
+  'platform_registered': 75000,
+  'platform_establishments': 5000,
+  'platform_jobs': 10000,
+  'platform_training': 3000,
+  'vocational_benef': 12000,
+  'new_workers_insp': 10000,
+  
+  // === Rural Development ===
+  'rural_dev_active': 120,
+  'rural_ind_active': 80,
+  'rural_dev_benef': 15000,
+  'rural_ind_benef': 5000,
+  
+  // === Inspection & Insurance ===
+  'insp_total': 15000,
+  'violations': 3000,
+  'insurance_total': 1200000,
+  'insurance_establishments': 25000,
+  
+  // === Aid & Relief ===
+  'food_baskets': 800000,
+  'in_kind_aid': 100000,
+  'cash_assistance': 50000,
+  
+  // === Legal & Work Permits ===
+  'legal_docs_new': 50,
+  'work_permits_new': 2000,
+  'work_permits_renew': 5000,
+  'camps_count': 100,
+  'camp_families': 50000,
+  'pensioners': 500000,
+  'work_injury_comp': 1000,
+  'domestic_permits_new': 3000
+};
+
 function filtered(){
   let data = ALL_DATA;
   if(activeGov !== "all"){
@@ -1423,7 +1498,34 @@ function renderSingleGovChart(canvasId, arr, categoryField){
 function renderCards(containerId, items){
   document.getElementById(containerId).innerHTML = items.map(it => {
     const displayN = it.raw ? it.n : fmt(it.n);
-    return `<div class="ind-card"><span class="em">${it.em}</span><div><div class="n">${displayN}</div><div class="t">${it.t}</div></div></div>`;
+    let extraHtml = '';
+    
+    // Achievement Logic
+    if(it.key && TARGETS_CONFIG[it.key]){
+      const target = TARGETS_CONFIG[it.key];
+      const val = typeof it.n === 'number' ? it.n : parseFloat(it.n) || 0;
+      const pct = Math.min(100, (val / target) * 100);
+      const color = pct >= 90 ? '#27ae60' : (pct >= 70 ? '#f1c40f' : '#e74c3c');
+      
+      extraHtml = `
+        <div class="progress-container">
+          <div class="progress-bar" style="width: ${pct}%; background-color: ${color};"></div>
+        </div>
+        <div class="achievement-text">
+          <span>${pct.toFixed(1)}% من المستهدف</span>
+          <span class="target-val">(هدف: ${fmt(target)})</span>
+        </div>
+      `;
+    }
+    
+    return `<div class="ind-card">
+      <span class="em">${it.em}</span>
+      <div style="flex:1;">
+        <div class="n">${displayN}</div>
+        <div class="t">${it.t}</div>
+        ${extraHtml}
+      </div>
+    </div>`;
   }).join('');
 }
 
@@ -1471,11 +1573,11 @@ function renderCategory(cat){
   if(cat === 'disability'){
     barChart('chart-disability', 'disabled_cards');
     renderCards('cards-disability', [
-      {em:'🦽',n:sum('disabled_cards',arr),t:'إجمالي بطاقات الإعاقة الصادرة'},
-      {em:'🏛️',n:sum('disability_centers',arr),t:'معاهد رعاية وتأهيل الأشخاص ذوي الإعاقة'},
-      {em:'👨‍🎓',n:sum('disability_benef',arr),t:'عدد الطلاب المسجلين في المعاهد الخاصة بذوي الاعاقة'},
-      {em:'🦽',n:sum('mobility_aids',arr),t:'المستفيدين من توزيع المعينات الحركية'},
-      {em:'💰',n:sum('disability_cash',arr),t:'المعونة النقدية لأسر ذوي الإعاقة'}
+      {em:'🦽',n:sum('disabled_cards',arr),t:'إجمالي بطاقات الإعاقة الصادرة', key:'disabled_cards'},
+      {em:'🏛️',n:sum('disability_centers',arr),t:'معاهد رعاية وتأهيل الأشخاص ذوي الإعاقة', key:'disability_centers'},
+      {em:'👨‍🎓',n:sum('disability_benef',arr),t:'عدد الطلاب المسجلين في المعاهد الخاصة بذوي الاعاقة', key:'disability_benef'},
+      {em:'🦽',n:sum('mobility_aids',arr),t:'المستفيدين من توزيع المعينات الحركية', key:'mobility_aids'},
+      {em:'💰',n:sum('disability_cash',arr),t:'المعونة النقدية لأسر ذوي الإعاقة', key:'disability_cash'}
     ]);
     const zeroGovs = arr.filter(d => (d.disabled_cards||0) === 0).map(d => d.gov);
     document.getElementById('note-disability').textContent = zeroGovs.length > 0 
@@ -1486,15 +1588,15 @@ function renderCategory(cat){
   if(cat === 'social'){
     barChart('chart-social', 'elderly_benef');
     renderCards('cards-social', [
-      {em:'👵',n:sum('elderly_homes',arr),t:'دور رعاية كبار السن'},
-      {em:'🧓',n:sum('elderly_benef',arr),t:'عدد المستفيدين من خدمات دور رعاية المسنين'},
+      {em:'👵',n:sum('elderly_homes',arr),t:'دور رعاية كبار السن', key:'elderly_homes'},
+      {em:'🧓',n:sum('elderly_benef',arr),t:'عدد المستفيدين من خدمات دور رعاية المسنين', key:'elderly_benef'},
       {em:'🏚️',n:sum('beggar_centers_total',arr),t:'عدد مراكز رعاية المتسولين'},
       {em:'🏠',n:sum('beggar_centers_active',arr),t:'دور رعاية المتسولين (النشطة)'},
-      {em:'🚶',n:sum('beggar_inmates',arr),t:'عدد النزلاء في مراكز التسول'},
-      {em:'👶',n:sum('orphan_homes',arr),t:'دور رعاية الأيتام'},
-      {em:'💞',n:sum('sponsor_internal',arr),t:'مستفيدو الكفالة الداخلية'},
-      {em:'🌍',n:sum('sponsor_external',arr),t:'مستفيدو الكفالة الخارجية'},
-      {em:'🎵',n:sum('dar_lahn_benef',arr),t:'مستفيدو دار لحن الحياة'}
+      {em:'🚶',n:sum('beggar_inmates',arr),t:'عدد النزلاء في مراكز التسول', key:'beggar_inmates'},
+      {em:'👶',n:sum('orphan_homes',arr),t:'دور رعاية الأيتام', key:'orphan_homes'},
+      {em:'💞',n:sum('sponsor_internal',arr),t:'مستفيدو الكفالة الداخلية', key:'sponsor_internal'},
+      {em:'🌍',n:sum('sponsor_external',arr),t:'مستفيدو الكفالة الخارجية', key:'sponsor_external'},
+      {em:'🎵',n:sum('dar_lahn_benef',arr),t:'مستفيدو دار لحن الحياة', key:'dar_lahn_benef'}
     ]);
     const extTotal = sum('sponsor_external', arr);
     const idlibExt = arr.filter(d => d.gov === 'ادلب').reduce((a,d) => a + (d.sponsor_external||0), 0);
@@ -1507,9 +1609,9 @@ function renderCategory(cat){
   if(cat === 'ngo'){
     barChart('chart-ngo', 'ngo_active');
     renderCards('cards-ngo', [
-      {em:'🤝',n:sum('ngo_active',arr),t:'منظمات غير حكومية مشهرة في 2025'},
-      {em:'📊',n:sum('ngo_total',arr),t:'إجمالي عدد المنظمات غير الحكومية'},
-      {em:'📈',n:sum('ngo_new_pct',arr),t:'عدد المنظمات الجديدة المشهرة'}
+      {em:'🤝',n:sum('ngo_active',arr),t:'منظمات غير حكومية مشهرة في 2025', key:'ngo_active'},
+      {em:'📊',n:sum('ngo_total',arr),t:'إجمالي عدد المنظمات غير الحكومية', key:'ngo_total'},
+      {em:'📈',n:sum('ngo_new_pct',arr),t:'عدد المنظمات الجديدة المشهرة', key:'ngo_new_pct'}
     ]);
     document.getElementById('note-ngo').textContent = 
       `💡 ${sum('ngo_active',arr)} منظمة مشهرة في 2025 من إجمالي ${sum('ngo_total',arr)} منظمة — عدد المنظمات الجديدة المشهرة: ${sum('ngo_new_pct',arr)}.`;
@@ -1518,9 +1620,9 @@ function renderCategory(cat){
   if(cat === 'juvenile'){
     barChart('chart-juvenile', 'juvenile_inmates');
     renderCards('cards-juvenile', [
-      {em:'🏛️',n:sum('juvenile_inst',arr),t:'معاهد إصلاح الأحداث (الكلي)'},
+      {em:'🏛️',n:sum('juvenile_inst',arr),t:'معاهد إصلاح الأحداث (الكلي)', key:'juvenile_inst'},
       {em:'✅',n:sum('juvenile_inst_active',arr),t:'معاهد الأحداث في الخدمة'},
-      {em:'⚖️',n:sum('juvenile_inmates',arr),t:'نزلاء معاهد الأحداث'}
+      {em:'⚖️',n:sum('juvenile_inmates',arr),t:'نزلاء معاهد الأحداث', key:'juvenile_inmates'}
     ]);
     const total = sum('juvenile_inmates', arr);
     const top2 = arr.filter(d => d.gov === 'ريف دمشق' || d.gov === 'حلب').reduce((a,d) => a + (d.juvenile_inmates||0), 0);
@@ -1533,11 +1635,11 @@ function renderCategory(cat){
     barChart('chart-rural', 'rural_dev_benef');
     renderCards('cards-rural', [
       {em:'🌾',n:sum('rural_dev_total',arr),t:'عدد مراكز التنمية الريفية خارج الخدمة'},
-      {em:'🏘️',n:sum('rural_dev_active',arr),t:'مراكز التنمية في الخدمة'},
+      {em:'🏘️',n:sum('rural_dev_active',arr),t:'مراكز التنمية في الخدمة', key:'rural_dev_active'},
       {em:'🏭',n:sum('rural_ind_total',arr),t:'وحدات الصناعات الريفية خارج الخدمة'},
-      {em:'🏗️',n:sum('rural_ind_active',arr),t:'عدد وحدات الصناعة في الخدمة'},
-      {em:'👥',n:sum('rural_dev_benef',arr),t:'مستفيدو مراكز التنمية الريفية'},
-      {em:'👷',n:sum('rural_ind_benef',arr),t:'مستفيدو وحدات الصناعات الريفية'}
+      {em:'🏗️',n:sum('rural_ind_active',arr),t:'عدد وحدات الصناعة في الخدمة', key:'rural_ind_active'},
+      {em:'👥',n:sum('rural_dev_benef',arr),t:'مستفيدو مراكز التنمية الريفية', key:'rural_dev_benef'},
+      {em:'👷',n:sum('rural_ind_benef',arr),t:'مستفيدو وحدات الصناعات الريفية', key:'rural_ind_benef'}
     ]);
     const topDev = arr.reduce((a,d) => (d.rural_dev_benef||0) > (a.val||0) ? {gov:d.gov, val:d.rural_dev_benef||0} : a, {gov:'', val:0});
     const topInd = arr.reduce((a,d) => (d.rural_ind_benef||0) > (a.val||0) ? {gov:d.gov, val:d.rural_ind_benef||0} : a, {gov:'', val:0});
@@ -1548,13 +1650,13 @@ function renderCategory(cat){
   if(cat === 'labor'){
     barChart('chart-labor', 'insp_total');
     renderCards('cards-labor', [
-      {em:'👷',n:sum('new_workers_insp',arr),t:'عمال مسجّلون حديثاً بالتفتيش'},
-      {em:'🏗️',n:sum('insp_total',arr),t:'زيارات تفتيش (صناعي+زراعي)'},
-      {em:'⚠️',n:sum('violations',arr),t:'مخالفات مسجّلة'},
-      {em:'📜',n:sum('legal_docs_new',arr),t:'صكوك قانونية جديدة'},
+      {em:'👷',n:sum('new_workers_insp',arr),t:'عمال مسجّلون حديثاً بالتفتيش', key:'new_workers_insp'},
+      {em:'🏗️',n:sum('insp_total',arr),t:'زيارات تفتيش (صناعي+زراعي)', key:'insp_total'},
+      {em:'⚠️',n:sum('violations',arr),t:'مخالفات مسجّلة', key:'violations'},
+      {em:'📜',n:sum('legal_docs_new',arr),t:'صكوك قانونية جديدة', key:'legal_docs_new'},
       {em:'📝',n:sum('legal_docs_review',arr),t:'صكوك قيد المراجعة'},
-      {em:'📋',n:sum('work_permits_new',arr),t:'تراخيص عمل جديدة (غير سوريين)'},
-      {em:'🔄',n:sum('work_permits_renew',arr),t:'تجديد تراخيص العمل'},
+      {em:'📋',n:sum('work_permits_new',arr),t:'تراخيص عمل جديدة (غير سوريين)', key:'work_permits_new'},
+      {em:'🔄',n:sum('work_permits_renew',arr),t:'تجديد تراخيص العمل', key:'work_permits_renew'},
       {em:'🏢',n:sum('recruitment_offices',arr),t:'مكاتب استقدام عاملات منزليات'},
       {em:'👩',n:sum('domestic_permits_new',arr),t:'تراخيص عاملات منزليات جديدة'},
       {em:'🏠',n:sum('domestic_offices_syrian',arr),t:'مكاتب تشغيل عمال منزليين سوريين'},
@@ -1581,7 +1683,7 @@ function renderCategory(cat){
       {em:'♀️',n:avg('female_participation',arr)+'%',t:'مشاركة الإناث اقتصادياً',raw:true},
       {em:'🏭',n:avg('unorganized_workers',arr)+'%',t:'عمال القطاع غير المنظم'},
       {em:'🎓',n:sum('vocational_centers',arr),t:'مراكز التأهيل والإرشاد (قدرات)'},
-      {em:'👨‍🔧',n:sum('vocational_benef',arr),t:'مستفيدو التأهيل والإرشاد'}
+      {em:'👨‍🔧',n:sum('vocational_benef',arr),t:'مستفيدو التأهيل والإرشاد', key:'vocational_benef'}
     ]);
     // Add text card for employment relation if exists
     const empRelation = arr.map(d => d.employment_relation).filter(v => v && v.trim()).join(' | ');
@@ -1608,7 +1710,7 @@ function renderCategory(cat){
       {em:'💰',n:sum('work_injury_comp',arr),t:'تعويضات إصابات العمل'},
       {em:'📋',n:sum('service_merge_decisions',arr),t:'قرارات ضم الخدمة'},
       {em:'🏥',n:sum('injury_beneficiaries',arr),t:'مستفيدو تعويضات الإصابات'},
-      {em:'🏢',n:sum('insurance_establishments',arr),t:'المنشآت المشمولة بالتأمينات'},
+      {em:'🏢',n:sum('insurance_establishments',arr),t:'المنشآت المشمولة بالتأمينات', key:'insurance_establishments'},
       {em:'🆕',n:sum('new_workers_insp',arr),t:'مسجّلون جدد عبر الزيارات التفتيشية'}
     ]);
     const pub = sum('insurance_public', arr);
@@ -1622,8 +1724,8 @@ function renderCategory(cat){
     barChart('chart-aid', 'food_baskets');
     renderCards('cards-aid', [
       {em:'🍞',n:sum('food_baskets',arr),t:'سلل غذائية موزّعة', key:'food_baskets'},
-      {em:'💊',n:sum('in_kind_aid',arr),t:'مساعدات عينية (أدوية/عمليات)'},
-      {em:'💵',n:sum('cash_assistance',arr),t:'إعانات مالية'},
+      {em:'💊',n:sum('in_kind_aid',arr),t:'مساعدات عينية (أدوية/عمليات)', key:'in_kind_aid'},
+      {em:'💵',n:sum('cash_assistance',arr),t:'إعانات مالية', key:'cash_assistance'},
       {em:'🏠',n:sum('unhcr_centers',arr),t:'المراكز المجتمعية (UNHCR)'},
       {em:'🛡️',n:sum('unfpa_safe_spaces',arr),t:'مساحات آمنة للنساء (UNFPA)'}
     ]);
@@ -1651,9 +1753,9 @@ function renderCategory(cat){
     barChart('chart-platform', 'platform_registered');
     renderCards('cards-platform', [
       {em:'👤',n:sum('platform_registered',arr),t:'مسجّلون على المنصة', key:'platform_registered'},
-      {em:'🏢',n:sum('platform_establishments',arr),t:'المنشآت المسجّلة'},
-      {em:'💼',n:sum('platform_jobs',arr),t:'فرص العمل المتاحة'},
-      {em:'🎓',n:sum('platform_training',arr),t:'فرص التدريب'}
+      {em:'🏢',n:sum('platform_establishments',arr),t:'المنشآت المسجّلة', key:'platform_establishments'},
+      {em:'💼',n:sum('platform_jobs',arr),t:'فرص العمل المتاحة', key:'platform_jobs'},
+      {em:'🎓',n:sum('platform_training',arr),t:'فرص التدريب', key:'platform_training'}
     ]);
     const reg = sum('platform_registered', arr);
     const est = sum('platform_establishments', arr);
