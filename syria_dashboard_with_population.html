@@ -975,7 +975,7 @@ const INLINE_CSV_DATA = `المحافظة,الشهر,السنة,عدد السك�
 const SHEETS_CONFIG = {
   apiKey: 'AIzaSyCJ1xkZxmF0UnWMdQYjLElklIPYgCkHM2A',
   spreadsheetId: '1gbP938zd_pO3qfYRG4Yd7LmH7MOSbeyvuwjq0Tnnnds',
-  range: 'سوريا!A1:AZ1000'
+  range: 'سوريا!A1:ZZ5000'
 };
 
 const COLUMN_MAP = {
@@ -5021,7 +5021,7 @@ function openGovProfile(gov){
   renderRadarChart(gov, scores);
   renderGaugeChart(scores.overall);
   generateGovInsights(gov, scores);
-  renderMiniKpis(scores.agg);
+  renderMiniKpis(gov);
 }
 
 function closeGovProfile(){
@@ -5167,13 +5167,24 @@ function generateGovInsights(gov, scores){
   ).join('') || '<div class="insight-item weakness"><span class="insight-icon">⚠️</span><div>لا توجد بيانات كافية</div></div>';
 }
 
-function renderMiniKpis(agg){
-  document.getElementById('miniPop').textContent = fmt(agg.population || 0);
-  document.getElementById('miniEmployed').textContent = fmt(agg.employed || 0);
-  document.getElementById('miniUnemp').textContent = (agg.unemployment_rate || 0) + '%';
-  document.getElementById('miniInsurance').textContent = fmt(agg.insurance_total || 0);
-  document.getElementById('miniAid').textContent = fmt((agg.food_baskets || 0) + (agg.cash_assistance || 0) + (agg.in_kind_aid || 0));
-  document.getElementById('miniDigital').textContent = fmt(agg.platform_registered || 0);
+function renderMiniKpis(gov){
+  const rows = getGovData(gov);
+  // Sum absolute values across all months
+  const pop = rows.reduce((a,d) => a + (parseFloat(d.population) || 0), 0);
+  const employed = rows.reduce((a,d) => a + (parseFloat(d.employed) || 0), 0);
+  // Average percentage values (don't sum rates!)
+  const unempRates = rows.map(d => parseFloat(d.unemployment_rate)).filter(v => !isNaN(v));
+  const avgUnemp = unempRates.length ? (unempRates.reduce((a,b) => a+b, 0) / unempRates.length).toFixed(1) : 0;
+  const insurance = rows.reduce((a,d) => a + (parseFloat(d.insurance_total) || 0), 0);
+  const aid = rows.reduce((a,d) => a + (parseFloat(d.food_baskets) || 0) + (parseFloat(d.cash_assistance) || 0) + (parseFloat(d.in_kind_aid) || 0), 0);
+  const digital = rows.reduce((a,d) => a + (parseFloat(d.platform_registered) || 0), 0);
+
+  document.getElementById('miniPop').textContent = fmt(pop);
+  document.getElementById('miniEmployed').textContent = fmt(employed);
+  document.getElementById('miniUnemp').textContent = avgUnemp + '%';
+  document.getElementById('miniInsurance').textContent = fmt(insurance);
+  document.getElementById('miniAid').textContent = fmt(aid);
+  document.getElementById('miniDigital').textContent = fmt(digital);
 }
 
 // =====================
