@@ -881,7 +881,9 @@
           <option value="platform_jobs">فرص العمل على المنصة</option>
           <option value="insurance_total">المسجلون القائمون على رأس عملهم</option>
           <option value="camps_count">عدد المخيمات</option>
-          <option value="ngo_active">المنظمات المشهرة</option>
+          <option value="ngo_active">المنظمات المسحوب ترخيصها</option>
+          <option value="ngo_new_pct">المنظمات المشهرة (عام)</option>
+          <option value="ngo_new_pct_2025">المنظمات المشهرة 2025</option>
         </select>
         <span class="analytics-note">تتبع الرسوم فلاتر المحافظة والشهر المحددة في أعلى اللوحة.</span>
       </div>
@@ -1056,9 +1058,9 @@ const COLUMN_MAP = {
   "المستفيدين من دار لحن الحياة": "dar_lahn_benef",
 
   // === Vocational Rehab ===
-  "عدد مراكز التأهيل المهني": "vocational_centers",
+  "عدد مراكز التأهيل والتدريب المهني  (مراكز تمكين الشباب ان وجدت)": "vocational_centers",
   "عدد المراكز في الخدمة الفعلية": "vocational_active",
-  "عدد المستفيدين من التأهيل": "vocational_benef",
+  "عدد المستفيدين من برامج مراكز التأهيل والتدريب المهني (مراكز تمكين الشباب ان وجدت)": "vocational_benef",
 
   // === Platform ===
   "عدد المسجلين على منصة سوق العمل(2024- 2025)": "platform_registered",
@@ -1140,7 +1142,7 @@ const COLUMN_MAP = {
   "عدد الزيارات التفتيشية على المنشآت (صناعي)": "insp_industrial",
   "عدد الزيارات التفتيشية على المنشآت (زراعي)": "insp_agricultural",
   "عدد المخالفات الناتجة عن الزيارات": "violations",
-  "عدد المنظمات غير الحكومية المشهرة في العام  2025": "ngo_new_pct",
+  "عدد المنظمات غير الحكومية المشهرة في العام  2025": "ngo_new_pct_2025",
   "مشاريع الصكوك القانونية قيد المراجعة والتحديث": "legal_docs_review",
   "طابع زمني": "timestamp",
   "عنوان البريد الإلكتروني": "email",
@@ -1498,7 +1500,8 @@ function kpiDefs(arr){
     {em:"💞",lbl:"كفالة داخلية",val:sum("sponsor_internal",arr)},
     {em:"🌍",lbl:"كفالة خارجية",val:sum("sponsor_external",arr)},
     {em:"🤝",lbl:"عدد المنظمات غير الحكومية المسحوب ترخيصها",val:sum("ngo_active",arr)},
-    {em:"📜",lbl:"عدد المنظمات غير الحكومية المشهرة 2025",val:sum("ngo_new_pct",arr)},
+    {em:"📜",lbl:"عدد المنظمات غير الحكومية المشهرة 2025",val:sum("ngo_new_pct_2025",arr)},
+    {em:"📜",lbl:"عدد المنظمات غير الحكومية المشهرة",val:sum("ngo_new_pct",arr)},
     {em:"🏗️",lbl:"المنشآت المسجلة",val:sum("platform_establishments",arr)},
     {em:"📋",lbl:"فرص العمل",val:sum("platform_jobs",arr)},
     {em:"🎓",lbl:"فرص التدريب",val:sum("platform_training",arr)},
@@ -1506,8 +1509,7 @@ function kpiDefs(arr){
     {em:"🍞",lbl:"سلل غذائية",val:sum("food_baskets",arr)},
     {em:"🏕️",lbl:"المخيمات",val:sum("camps_count",arr)},
     {em:"⚠️",lbl:"مخالفات مسجّلة",val:sum("violations",arr)},
-    {em:"📜",lbl:"تراخيص عمل جديدة",val:sum("work_permits_new",arr)},
-  ];
+    {em:"📜",lbl:"تراخيص عمل جديدة",val:sum("work_permits_new",arr)}];
 }
 
 function avg(field, arr){
@@ -1647,9 +1649,9 @@ function renderSingleGovChart(canvasId, arr, categoryField){
       {key:'dar_lahn_benef', label:'مستفيدو دار لحن'}
     ],
     'ngo_active': [
-      {key:'ngo_total', label:'إجمالي المنظمات'},
-      {key:'ngo_active', label:'منظمات مشهرة 2025'},
-      {key:'ngo_new_pct', label:'منظمات جديدة مشهرة'}
+      {key:'ngo_active', label:'المنظمات المسحوب ترخيصها'},
+      {key:'ngo_new_pct', label:'المنظمات المشهرة (عام)'},
+      {key:'ngo_new_pct_2025', label:'المنظمات المشهرة 2025'}
     ],
     'juvenile_inmates': [
       {key:'juvenile_inst', label:'معاهد أحداث'},
@@ -1711,7 +1713,9 @@ function renderSingleGovChart(canvasId, arr, categoryField){
       {key:'platform_registered', label:'مسجّلون على المنصة'},
       {key:'platform_establishments', label:'منشآت مسجّلة'},
       {key:'platform_jobs', label:'فرص عمل'},
-      {key:'platform_training', label:'فرص تدريب'}
+      {key:'platform_training', label:'فرص تدريب'},
+      {key:'vocational_centers', label:'مراكز التأهيل والإرشاد (قدرات)'},
+      {key:'vocational_benef', label:'مستفيدو التأهيل والإرشاد'}
     ],
     'insurance_total': [
       {key:'insurance_public', label:'قطاع عام'},
@@ -1733,10 +1737,7 @@ function renderSingleGovChart(canvasId, arr, categoryField){
       {key:'youth_unemployment', label:'بطالة الشباب %'},
       {key:'male_participation', label:'مشاركة الذكور %'},
       {key:'female_participation', label:'مشاركة الإناث %'},
-      {key:'unorganized_workers', label:'عمال غير منظم %'},
-      {key:'vocational_centers', label:'مراكز تأهيل مهني'},
-      {key:'vocational_benef', label:'مستفيدو التأهيل'}
-    ],
+      {key:'unorganized_workers', label:'عمال غير منظم %'}],
     'camps_count': [
       {key:'camps_count', label:'المخيمات'},
       {key:'camp_families', label:'الأسر المقيمة'}
@@ -1937,12 +1938,11 @@ function renderCategory(cat){
   if(cat === 'ngo'){
     barChart('chart-ngo', 'ngo_active');
     renderCards('cards-ngo', [
-      {em:'📜',n:sum('ngo_new_pct',arr),t:'عدد المنظمات غير الحكومية المشهرة 2025'},
-      {em:'🤝',n:sum('ngo_active',arr),t:'عدد المنظمات غير الحكومية المسحوب ترخيصها'},
-      {em:'📊',n:sum('ngo_total',arr),t:'إجمالي عدد المنظمات غير الحكومية'}
-    ]);
+      {em:'📜',n:sum('ngo_new_pct',arr),t:'عدد المنظمات غير الحكومية المشهرة (عام)'},
+      {em:'📅',n:sum('ngo_new_pct_2025',arr),t:'عدد المنظمات غير الحكومية المشهرة 2025'},
+      {em:'🤝',n:sum('ngo_active',arr),t:'عدد المنظمات غير الحكومية المسحوب ترخيصها'}]);
     document.getElementById('note-ngo').textContent = 
-      `💡 ${sum('ngo_active',arr)} منظمة مشهرة في 2025 من إجمالي ${sum('ngo_total',arr)} منظمة — عدد المنظمات الجديدة المشهرة: ${sum('ngo_new_pct',arr)}.`;
+      `💡 ${sum('ngo_active',arr)} منظمة مسحوبة الترخيص من إجمالي ${sum('ngo_total',arr)} منظمة — المشهرة (عام): ${sum('ngo_new_pct',arr)} | المشهرة (2025): ${sum('ngo_new_pct_2025',arr)}.`;
   }
 
   if(cat === 'juvenile'){
@@ -2060,10 +2060,7 @@ function renderCategory(cat){
       {em:'🧑‍🎓',n:avg('youth_unemployment',arr)+'%',t:'بطالة الشباب',raw:true},
       {em:'♂️',n:avg('male_participation',arr)+'%',t:'مشاركة الذكور اقتصادياً',raw:true},
       {em:'♀️',n:avg('female_participation',arr)+'%',t:'مشاركة الإناث اقتصادياً',raw:true},
-      {em:'🏭',n:avg('unorganized_workers',arr)+'%',t:'عمال القطاع غير المنظم'},
-      {em:'🎓',n:sum('vocational_centers',arr),t:'مراكز التأهيل والإرشاد (قدرات)'},
-      {em:'👨‍🔧',n:sum('vocational_benef',arr),t:'مستفيدو التأهيل والإرشاد'}
-    ]);
+      {em:'🏭',n:avg('unorganized_workers',arr)+'%',t:'عمال القطاع غير المنظم'}]);
     // Add text card for employment relation if exists
     const empRelation = arr.map(d => d.employment_relation).filter(v => v && v.trim()).join(' | ');
     if(empRelation){
@@ -2074,9 +2071,8 @@ function renderCategory(cat){
     const unemp = sum('unemployed', arr);
     const total = emp + unemp;
     const rate = total > 0 ? ((unemp/total)*100).toFixed(1) : 0;
-    const vocTotal = sum('vocational_benef', arr);
     document.getElementById('note-labor_market').textContent = 
-      `💡 إجمالي القوى العاملة: ${fmt(total)} — منهم ${fmt(emp)} مشتغل و${fmt(unemp)} متعطل (معدل بطالة: ${rate}%). مستفيدو التأهيل: ${fmt(vocTotal)}.`;
+      `💡 إجمالي القوى العاملة: ${fmt(total)} — منهم ${fmt(emp)} مشتغل و${fmt(unemp)} متعطل (معدل بطالة: ${rate}%).`;
   }
 
   if(cat === 'insurance'){
@@ -2134,14 +2130,17 @@ function renderCategory(cat){
       {em:'👤',n:sum('platform_registered',arr),t:'مسجّلون على المنصة'},
       {em:'🏢',n:sum('platform_establishments',arr),t:'المنشآت المسجّلة'},
       {em:'💼',n:sum('platform_jobs',arr),t:'فرص العمل المتاحة'},
-      {em:'🎓',n:sum('platform_training',arr),t:'فرص التدريب'}
+      {em:'🎓',n:sum('platform_training',arr),t:'فرص التدريب'},
+      {em:'🏫',n:sum('vocational_centers',arr),t:'مراكز التأهيل والإرشاد (قدرات)'},
+      {em:'👨‍🔧',n:sum('vocational_benef',arr),t:'مستفيدو التأهيل والإرشاد'}
     ]);
     const reg = sum('platform_registered', arr);
     const est = sum('platform_establishments', arr);
     const jobs = sum('platform_jobs', arr);
     const train = sum('platform_training', arr);
+    const voc = sum('vocational_benef', arr);
     document.getElementById('note-platform').textContent = 
-      `💡 المنصة تضم ${fmt(reg)} مسجّل و${fmt(est)} منشأة مع ${fmt(jobs)} فرصة عمل و${fmt(train)} فرصة تدريب.`;
+      `💡 المنصة تضم ${fmt(reg)} مسجّل و${fmt(est)} منشأة مع ${fmt(jobs)} فرصة عمل و${fmt(train)} فرصة تدريب. مراكز التأهيل: ${fmt(sum('vocational_centers',arr))} | مستفيدو التأهيل: ${fmt(voc)}.`;
   }
 
   if(cat === 'demographics'){
@@ -2263,7 +2262,9 @@ const ANALYTICS_METRICS = {
   platform_jobs: {label:'فرص العمل على المنصة', unit:'فرصة'},
   insurance_total: {label:'المسجلون القائمون على رأس عملهم', unit:'مسجل'},
   camps_count: {label:'عدد المخيمات', unit:'مخيم'},
-  ngo_active: {label:'المنظمات المشهرة', unit:'منظمة'}
+  ngo_active: {label:'المنظمات المسحوب ترخيصها', unit:'منظمة'},
+  ngo_new_pct: {label:'المنظمات المشهرة (عام)', unit:'منظمة'},
+  ngo_new_pct_2025: {label:'المنظمات المشهرة 2025', unit:'منظمة'}
 };
 
 function analyticsNumber(value){
@@ -2802,7 +2803,7 @@ function renderSectorHeatmap(arr){
     {key:'insp_total', name:'إجمالي الزيارات التفتيشية', icon:'🏗️'},
     {key:'food_baskets', name:'المساعدات الغذائية', icon:'🍞'},
     {key:'platform_registered', name:'المنصة الرقمية', icon:'💻'},
-    {key:'ngo_active', name:'المنظمات', icon:'🤝'},
+    {key:'ngo_active', name:'المنظمات المسحوب ترخيصها', icon:'🤝'},
     {key:'rural_dev_benef', name:'التنمية الريفية', icon:'🌾'}
   ];
 
@@ -3564,9 +3565,9 @@ function updateMapMarkers(){
         <div style="border-top:2px solid #0B5A7A;margin:10px 0;padding-top:8px;">
           <span style="font-weight:700;color:var(--syria-green);font-size:12px;">🤝 المنظمات غير الحكومية</span>
         </div>
-        <div class="info-row"><span class="info-label">منظمات نشطة</span><span class="info-val">${fmt(d.ngo_active||0)}</span></div>
-        <div class="info-row"><span class="info-label">إجمالي المنظمات</span><span class="info-val">${fmt(d.ngo_total||0)}</span></div>
-        <div class="info-row"><span class="info-label">المنظمات الجديدة المشهرة</span><span class="info-val">${fmt(d.ngo_new_pct||0)}</span></div>
+        <div class="info-row"><span class="info-label">المنظمات المسحوب ترخيصها</span><span class="info-val">${fmt(d.ngo_active||0)}</span></div>
+        <div class="info-row"><span class="info-label">المنظمات المشهرة (عام)</span><span class="info-val">${fmt(d.ngo_new_pct||0)}</span></div>
+        <div class="info-row"><span class="info-label">المنظمات المشهرة 2025</span><span class="info-val">${fmt(d.ngo_new_pct_2025||0)}</span></div>
 
         <div style="border-top:2px solid #0B5A7A;margin:10px 0;padding-top:8px;">
           <span style="font-weight:700;color:var(--syria-green);font-size:12px;">⚖️ معاهد الأحداث</span>
@@ -3654,6 +3655,8 @@ function updateMapMarkers(){
         <div class="info-row"><span class="info-label">🏢 منشآت</span><span class="info-val">${fmt(d.platform_establishments||0)}</span></div>
         <div class="info-row"><span class="info-label">💼 فرص عمل</span><span class="info-val">${fmt(d.platform_jobs||0)}</span></div>
         <div class="info-row"><span class="info-label">🎓 فرص تدريب</span><span class="info-val">${fmt(d.platform_training||0)}</span></div>
+        <div class="info-row"><span class="info-label">🏫 مراكز التأهيل والإرشاد</span><span class="info-val">${fmt(d.vocational_centers||0)}</span></div>
+        <div class="info-row"><span class="info-label">👨‍🔧 مستفيدو التأهيل</span><span class="info-val">${fmt(d.vocational_benef||0)}</span></div>
 
         <div style="border-top:2px solid #0B5A7A;margin:10px 0;padding-top:8px;">
           <span style="font-weight:700;color:var(--syria-green);font-size:12px;">📊 مؤشرات اجتماعية</span>
