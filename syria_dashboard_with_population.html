@@ -399,9 +399,6 @@
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<base target="_blank">
-<base target="_blank">
 </head>
 <body class="locked">
 
@@ -434,7 +431,7 @@
       </label>
     </div>
 
-    <input type="password" id="passwordInput" placeholder="••••••" maxlength="20" autocomplete="off">
+    <input type="password" id="passwordInput" placeholder="••••••" maxlength="20" autocomplete="new-password" autocapitalize="off" spellcheck="false">
     <button class="btn-login" onclick="checkPassword()">🔓 دخول</button>
     <div class="error-msg" id="passwordError">❌ كلمة المرور غير صحيحة</div>
   </div>
@@ -3350,14 +3347,12 @@ async function loadFromSheet(){
     statusEl.textContent = msg;
     statusEl.className = 'status-badge status-error';
 
-    // fallback to inline data
+    // fallback to inline data immediately
     if(typeof INLINE_CSV_DATA !== 'undefined' && INLINE_CSV_DATA){
       console.log('استخدام البيانات المحلية كاحتياط...');
-      setTimeout(() => {
-        processCSVData(INLINE_CSV_DATA);
-        statusEl.textContent = '⚠️ تم التحميل من البيانات المحلية (فشل الاتصال)';
-        statusEl.className = 'status-badge status-loading';
-      }, 800);
+      processCSVData(INLINE_CSV_DATA);
+      statusEl.textContent = '⚠️ تم التحميل من البيانات المحلية (لا يوجد إنترنت)';
+      statusEl.className = 'status-badge status-loading';
     }
   } finally {
     if(refreshBtn) refreshBtn.disabled = false;
@@ -3469,7 +3464,7 @@ function initMap(){
 }
 
 function updateMapMarkers(){
-  if(!map) return;
+  if(!map || typeof L === 'undefined') return;
   if(typeof L === 'undefined') return;
 
   // Clear existing markers
@@ -3759,13 +3754,21 @@ function savePasswords() {
 
 function selectUserType(type) {
   document.querySelectorAll('.user-type-option').forEach(opt => opt.classList.remove('active'));
-  document.querySelector(`.user-type-option:has(input[value="${type}"])`).classList.add('active');
-  document.querySelector(`input[name="userType"][value="${type}"]`).checked = true;
+  // Fixed: avoid :has() selector for older browser compatibility
+  document.querySelectorAll('.user-type-option').forEach(function(opt){
+    var inp = opt.querySelector('input[value="' + type + '"]');
+    if(inp){
+      opt.classList.add('active');
+      inp.checked = true;
+    }
+  });
 }
 
 function checkPassword(){
+  try {
   const input = document.getElementById('passwordInput').value.trim();
-  const selectedType = document.querySelector('input[name="userType"]:checked').value;
+  var selectedTypeEl = document.querySelector('input[name="userType"]:checked');
+  var selectedType = selectedTypeEl ? selectedTypeEl.value : 'admin';
   const errorEl = document.getElementById('passwordError');
 
   errorEl.classList.remove('show');
@@ -3793,6 +3796,11 @@ function checkPassword(){
     errorEl.classList.add('show');
     document.getElementById('passwordInput').value = '';
     document.getElementById('passwordInput').focus();
+  }
+  } catch(err) {
+    console.error('Login error:', err);
+    document.getElementById('passwordError').textContent = '❌ حدث خطأ تقني. جرّب متصفحًا آخر (Chrome/Edge).';
+    document.getElementById('passwordError').classList.add('show');
   }
 }
 
