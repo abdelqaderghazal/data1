@@ -484,7 +484,10 @@
         <h3>⚙️ لوحة تحكم المدير</h3>
         <div class="current-user-pill" id="adminCurrentUser">👤 المدير</div>
       </div>
-      <button class="btn btn-danger btn-sm" onclick="logout()">خروج</button>
+      <div class="admin-actions" style="margin-top:0;justify-content:flex-start;align-items:center;">
+        <button class="btn btn-primary btn-sm" onclick="enterIndicatorsFromAdmin()">📊 الدخول إلى صفحة المؤشرات</button>
+        <button class="btn btn-danger btn-sm" onclick="logout()">خروج</button>
+      </div>
     </div>
 
     <div class="admin-tabs">
@@ -4001,6 +4004,17 @@ function showAdminPanel(){
   loadGoogleClientIdIntoForm();
   renderUsers();
   renderAuditLogs();
+}
+function enterIndicatorsFromAdmin(){
+  // Keep the administrator authenticated and open the main indicators dashboard.
+  document.getElementById('passwordOverlay').style.display='none';
+  document.getElementById('adminPanel').style.display='none';
+  document.body.classList.remove('locked');
+  applyRoleUI();
+  updateLastUpdatedDisplay();
+  setTimeout(()=>autoLoadOnStartup(),200);
+  setTimeout(()=>initMapOnDemand(),700);
+  setTimeout(()=>updateConnectionStatus(),100);
 }
 function openAdminTab(tab){
   document.querySelectorAll('.admin-tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===tab));
