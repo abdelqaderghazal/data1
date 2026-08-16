@@ -394,11 +394,55 @@
   .analytics-card .chart-wrap{margin:0;min-height:260px;background:var(--sand);}
   .analytics-narrative{font-size:13px;color:var(--ink-soft);line-height:1.9;background:var(--sand);border-inline-start:3px solid #0D8BA8;padding:12px 14px;border-radius:6px;}
   @media(max-width:760px){.analytics-grid{grid-template-columns:1fr;}.analytics-body{padding:16px;}.analytics-head{padding:16px;}.analytics-controls{align-items:stretch;flex-direction:column;}.analytics-controls select{width:100%;}}
+
+/* ===== LOCAL USERS / ROLES / AUDIT LOGS ===== */
+.auth-methods{margin-top:16px;padding-top:16px;border-top:1px dashed var(--line);}
+.auth-divider{display:flex;align-items:center;gap:10px;color:var(--ink-soft);font-size:11px;margin:12px 0;}
+.auth-divider::before,.auth-divider::after{content:"";height:1px;background:var(--line);flex:1;}
+#googleSignIn{display:flex;justify-content:center;min-height:44px;}
+.auth-hint{font-size:11px;color:var(--ink-soft);line-height:1.7;margin-top:8px;}
+.login-fields{display:grid;gap:10px;margin-bottom:12px;text-align:right;}
+.login-fields input,.admin-form input,.admin-form select{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-family:'Cairo',sans-serif;font-size:13px;color:var(--ink);background:var(--sand);}
+.login-fields input:focus,.admin-form input:focus,.admin-form select:focus{outline:none;border-color:#0B5A7A;background:#fff;}
+.admin-dashboard{background:var(--paper);border-radius:20px;padding:24px;max-width:980px;width:100%;max-height:90vh;overflow:auto;text-align:right;box-shadow:0 20px 70px rgba(0,0,0,.35);}
+.admin-dashboard-head{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:15px;margin-bottom:18px;}
+.admin-dashboard-head h3{margin:0;font-family:'Tajawal';font-size:20px;color:var(--ink);}
+.admin-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.admin-tab{border:1px solid var(--line);background:var(--sand);color:var(--ink);padding:8px 14px;border-radius:100px;cursor:pointer;font-family:'Cairo';font-weight:600;font-size:12px;}
+.admin-tab.active{background:#0B5A7A;color:#fff;border-color:#0B5A7A;}
+.admin-section{display:none;}
+.admin-section.active{display:block;}
+.users-table,.logs-table{width:100%;border-collapse:collapse;font-size:12px;}
+.users-table th,.users-table td,.logs-table th,.logs-table td{padding:9px 8px;border-bottom:1px solid var(--sand-2);vertical-align:top;}
+.users-table th,.logs-table th{background:var(--sand);color:var(--ink);font-family:'Tajawal';font-weight:700;position:sticky;top:0;}
+.users-table tr:hover,.logs-table tr:hover{background:#fbfdfe;}
+.role-badge{display:inline-flex;padding:3px 8px;border-radius:100px;font-size:10.5px;font-weight:700;}
+.role-admin{background:#e8f5e9;color:#2e7d32;}
+.role-editor{background:#e3f2fd;color:#1565c0;}
+.role-viewer{background:#f3e5f5;color:#7b1fa2;}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.form-grid .full{grid-column:1/-1;}
+.admin-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.admin-message{font-size:12px;padding:9px 12px;border-radius:8px;margin-top:10px;display:none;}
+.admin-message.show{display:block;}
+.admin-message.success{background:#e8f5e9;color:#2e7d32;}
+.admin-message.error{background:#ffebee;color:#c62828;}
+.log-filter{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.log-filter input,.log-filter select{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-family:'Cairo';font-size:12px;}
+.small-note{font-size:11px;color:var(--ink-soft);line-height:1.7;background:var(--sand);padding:9px 12px;border-radius:8px;margin-bottom:12px;}
+.device-cell{font-size:11px;line-height:1.6;color:var(--ink-soft);}
+.current-user-pill{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;background:var(--sand);border:1px solid var(--line);border-radius:100px;font-size:11px;color:var(--ink);}
+.btn-danger{background:#c62828;color:#fff;}
+.btn-danger:hover{background:#a61f1f;}
+.btn-warning{background:#f0a500;color:#fff;}
+@media(max-width:760px){.form-grid,.log-filter{grid-template-columns:1fr;}.admin-dashboard{padding:16px;}.users-table,.logs-table{font-size:10.5px;}}
+
 </style>
 <base target="_blank">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="locked">
 
@@ -410,74 +454,114 @@
 <!-- ═══════════════════════════════════════
      LOGIN SCREEN
      ═══════════════════════════════════════ -->
+
 <div class="password-overlay" id="passwordOverlay">
   <div class="password-box" id="loginBox">
-    <div class="lock-icon">🔒</div>
+    <div class="lock-icon">🔐</div>
     <h2>سِجل المؤشرات التشغيلية</h2>
-    <p>هذه الصفحة محمية بكلمة مرور.<br>اختر نوع المستخدم وأدخل كلمة المرور.</p>
+    <p>الدخول الآمن للمستخدمين المحليين أو عبر حساب Google.</p>
 
-    <div class="user-type-selector">
-      <label class="user-type-option active" onclick="selectUserType('admin')">
-        <input type="radio" name="userType" value="admin" checked>
-        <span class="user-icon">👨‍💼</span>
-        <span class="user-label">مدير النظام</span>
-        <span class="user-desc">تعديل البيانات + تغيير كلمات المرور</span>
-      </label>
-      <label class="user-type-option" onclick="selectUserType('viewer')">
-        <input type="radio" name="userType" value="viewer">
-        <span class="user-icon">👁️</span>
-        <span class="user-label">مطلع</span>
-        <span class="user-desc">عرض التقارير فقط</span>
-      </label>
+    <div class="login-fields">
+      <input type="email" id="loginEmail" placeholder="البريد الإلكتروني / اسم المستخدم" autocomplete="username">
+      <input type="password" id="passwordInput" placeholder="كلمة المرور" autocomplete="current-password">
     </div>
 
-    <input type="password" id="passwordInput" placeholder="••••••" maxlength="20" autocomplete="new-password" autocapitalize="off" spellcheck="false">
-    <button class="btn-login" onclick="checkPassword()">🔓 دخول</button>
-    <div class="error-msg" id="passwordError">❌ كلمة المرور غير صحيحة</div>
+    <button class="btn-login" onclick="loginWithPassword()">🔓 تسجيل الدخول</button>
+    <div class="error-msg" id="passwordError">❌ بيانات الدخول غير صحيحة</div>
+
+    <div class="auth-methods">
+      <div class="auth-divider"><span>أو</span></div>
+      <div id="googleSignIn"></div>
+      <div class="auth-hint" id="googleHint">
+        تسجيل الدخول بواسطة Google يتطلب ضبط Google Client ID من لوحة المدير أولاً.
+      </div>
+    </div>
   </div>
 
-  <!-- Admin Panel (hidden by default, shown after admin login) -->
-  <div class="password-box" id="adminPanel" style="display:none;">
-    <div class="lock-icon">⚙️</div>
-    <h2>لوحة تحكم المدير</h2>
-    <p>إدارة المستخدمين وتغيير كلمات المرور</p>
-
-    <div class="user-management">
-      <div class="user-row">
-        <div class="user-info">
-          <span class="user-role-badge admin">👨‍💼 مدير</span>
-          <span class="user-name">المسؤول الرئيسي</span>
-        </div>
-        <button class="btn btn-sm btn-primary" onclick="showChangePw('admin')">🔐 تغيير</button>
+  <div class="admin-dashboard" id="adminPanel" style="display:none;">
+    <div class="admin-dashboard-head">
+      <div>
+        <h3>⚙️ لوحة تحكم المدير</h3>
+        <div class="current-user-pill" id="adminCurrentUser">👤 المدير</div>
       </div>
-      <div class="user-row">
-        <div class="user-info">
-          <span class="user-role-badge viewer">👁️ مطلع</span>
-          <span class="user-name">المستخدم الافتراضي</span>
+      <button class="btn btn-danger btn-sm" onclick="logout()">خروج</button>
+    </div>
+
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-tab="users" onclick="openAdminTab('users')">👥 المستخدمون</button>
+      <button class="admin-tab" data-tab="logs" onclick="openAdminTab('logs')">🧾 سجل الدخول</button>
+      <button class="admin-tab" data-tab="google" onclick="openAdminTab('google')">🔵 إعداد Google</button>
+    </div>
+
+    <div class="admin-section active" id="adminTab-users">
+      <div class="small-note">يمكن للمدير إضافة/تعديل/حذف المستخدمين وتغيير أدوارهم. الأدوار: مدير، محرر، مطلع.</div>
+      <form class="admin-form" onsubmit="return saveUserFromForm(event)">
+        <div class="form-grid">
+          <div><input id="userNameInput" placeholder="اسم المستخدم" required></div>
+          <div><input id="userEmailInput" type="email" placeholder="البريد الإلكتروني" required></div>
+          <div><input id="userPasswordInput" type="password" placeholder="كلمة المرور الجديدة"></div>
+          <div>
+            <select id="userRoleInput">
+              <option value="admin">مدير</option>
+              <option value="editor" selected>محرر</option>
+              <option value="viewer">مطلع</option>
+            </select>
+          </div>
         </div>
-        <button class="btn btn-sm btn-primary" onclick="showChangePw('viewer')">🔐 تغيير</button>
+        <input type="hidden" id="userIdInput">
+        <div class="admin-actions">
+          <button class="btn btn-primary btn-sm" type="submit">💾 حفظ المستخدم</button>
+          <button class="btn btn-sm" type="button" onclick="resetUserForm()" style="background:var(--sand);color:var(--ink-soft)">مسح</button>
+        </div>
+        <div id="userFormMsg" class="admin-message"></div>
+      </form>
+      <div style="overflow:auto;margin-top:16px;">
+        <table class="users-table">
+          <thead><tr><th>الاسم</th><th>البريد</th><th>الدور</th><th>المصدر</th><th>آخر دخول</th><th>إجراءات</th></tr></thead>
+          <tbody id="usersTableBody"></tbody>
+        </table>
       </div>
     </div>
 
-    <div class="change-pw-form" id="changePwForm" style="display:none;">
-      <h4 id="changePwTitle">تغيير كلمة المرور</h4>
-      <input type="hidden" id="targetUserType">
-      <input type="password" id="currentPwInput" placeholder="كلمة المرور الحالية">
-      <input type="password" id="newPwInput" placeholder="كلمة المرور الجديدة">
-      <input type="password" id="confirmPwInput" placeholder="تأكيد كلمة المرور الجديدة">
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-primary btn-sm" onclick="changePassword()" style="flex:1;">💾 حفظ</button>
-        <button class="btn btn-sm" onclick="hideChangePw()" style="background:var(--sand);color:var(--ink-soft);">إلغاء</button>
+    <div class="admin-section" id="adminTab-logs">
+      <div class="small-note">السجل يحفظ وقت الحدث، المستخدم، العملية، الجهاز، المتصفح ونظام التشغيل داخل المتصفح الحالي. لا يتم تسجيل عنوان IP لأن قاعدة البيانات محلية.</div>
+      <div class="log-filter">
+        <input id="logSearch" placeholder="بحث باسم أو بريد" oninput="renderAuditLogs()">
+        <select id="logAction" onchange="renderAuditLogs()">
+          <option value="">كل العمليات</option>
+          <option value="login">تسجيل دخول</option>
+          <option value="logout">تسجيل خروج</option>
+          <option value="failed_login">دخول فاشل</option>
+          <option value="user_create">إضافة مستخدم</option>
+          <option value="user_update">تعديل مستخدم</option>
+          <option value="user_delete">حذف مستخدم</option>
+          <option value="google_login">دخول Google</option>
+        </select>
+        <button class="btn btn-sm btn-warning" onclick="exportAuditLogs()">⬇️ تصدير CSV</button>
       </div>
-      <div class="success-msg" id="pwSuccessMsg">✅ تم تغيير كلمة المرور بنجاح!</div>
-      <div class="error-msg" id="pwChangeError" style="margin-top:8px;display:none;"></div>
+      <div style="overflow:auto;max-height:48vh;">
+        <table class="logs-table">
+          <thead><tr><th>التاريخ والوقت</th><th>المستخدم</th><th>العملية</th><th>الجهاز والمتصفح</th></tr></thead>
+          <tbody id="logsTableBody"></tbody>
+        </table>
+      </div>
     </div>
 
-    <div style="margin-top:20px;border-top:1px solid var(--line);padding-top:16px;">
-      <button class="btn btn-login" onclick="enterDashboard()">📊 الدخول للوحة التحكم</button>
+    <div class="admin-section" id="adminTab-google">
+      <div class="small-note">
+        Google Identity Services يحتاج OAuth 2.0 Client ID من Google Cloud. بعد وضعه هنا سيظهر زر Google في شاشة الدخول.
+      </div>
+      <div class="admin-form">
+        <input id="googleClientIdInput" placeholder="1234567890-xxxx.apps.googleusercontent.com">
+        <div class="admin-actions">
+          <button class="btn btn-primary btn-sm" onclick="saveGoogleClientId()">💾 حفظ وتفعيل Google</button>
+        </div>
+        <div id="googleConfigMsg" class="admin-message"></div>
+      </div>
     </div>
   </div>
 </div>
+
 
 
 <div class="read-only-banner" id="readOnlyBanner">👁️ وضع القراءة فقط — لا يمكنك تعديل البيانات <button class="close-banner" onclick="document.getElementById('readOnlyBanner').classList.remove('show')">×</button></div>
@@ -3722,184 +3806,427 @@ function initMapOnDemand(){
   }
 }
 
-// =====================
-// MULTI-USER AUTH SYSTEM
-// =====================
-// Default passwords - change these before publishing!
-const DEFAULT_PASSWORDS = {
-  admin: "246269",    // Admin password
-  viewer: "123456"    // Viewer password (read-only)
-};
 
-let currentUser = null; // 'admin' or 'viewer'
-let passwords = { ...DEFAULT_PASSWORDS };
+// =====================
+// LOCAL USERS / ROLES / GOOGLE AUTH
+// =====================
+const AUTH_DB_NAME = 'syriaDashboardAuthDB';
+const AUTH_DB_VERSION = 1;
+const USERS_STORE = 'users';
+const LOGS_STORE = 'auditLogs';
+const GOOGLE_CLIENT_ID_KEY = 'govDashboard_googleClientId';
+const DEFAULT_LOCAL_USERS = [
+  { id:'u-admin', name:'المدير الرئيسي', email:'admin@local', role:'admin', password:'246269', provider:'local', active:true },
+  { id:'u-editor', name:'المحرر الافتراضي', email:'editor@local', role:'editor', password:'editor123', provider:'local', active:true },
+  { id:'u-viewer', name:'المطلع الافتراضي', email:'viewer@local', role:'viewer', password:'123456', provider:'local', active:true }
+];
+let currentUser = null;
+let authDbPromise = null;
 
-// Load saved passwords from localStorage
-function loadSavedPasswords() {
-  const saved = localStorage.getItem('govDashboard_passwords');
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      passwords = { ...DEFAULT_PASSWORDS, ...parsed };
-    } catch(e) {
-      console.log('Failed to load saved passwords, using defaults');
-    }
-  }
+function openAuthDB(){
+  if(authDbPromise) return authDbPromise;
+  authDbPromise = new Promise((resolve,reject)=>{
+    const req = indexedDB.open(AUTH_DB_NAME, AUTH_DB_VERSION);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if(!db.objectStoreNames.contains(USERS_STORE)){
+        const s = db.createObjectStore(USERS_STORE,{keyPath:'id'});
+        s.createIndex('email','email',{unique:true});
+      }
+      if(!db.objectStoreNames.contains(LOGS_STORE)){
+        const s = db.createObjectStore(LOGS_STORE,{keyPath:'id'});
+        s.createIndex('createdAt','createdAt',{unique:false});
+      }
+    };
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = () => reject(req.error);
+  });
+  return authDbPromise;
 }
 
-// Save passwords to localStorage
-function savePasswords() {
-  localStorage.setItem('govDashboard_passwords', JSON.stringify(passwords));
+async function sha256(text){
+  const data = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest('SHA-256',data);
+  return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,'0')).join('');
 }
-
-function selectUserType(type) {
-  document.querySelectorAll('.user-type-option').forEach(opt => opt.classList.remove('active'));
-  // Fixed: avoid :has() selector for older browser compatibility
-  document.querySelectorAll('.user-type-option').forEach(function(opt){
-    var inp = opt.querySelector('input[value="' + type + '"]');
-    if(inp){
-      opt.classList.add('active');
-      inp.checked = true;
-    }
+async function getAllUsers(){
+  const db = await openAuthDB();
+  return new Promise((resolve,reject)=>{
+    const req = db.transaction(USERS_STORE,'readonly').objectStore(USERS_STORE).getAll();
+    req.onsuccess=()=>resolve(req.result||[]);
+    req.onerror=()=>reject(req.error);
   });
 }
-
-function checkPassword(){
-  try {
-  const input = document.getElementById('passwordInput').value.trim();
-  var selectedTypeEl = document.querySelector('input[name="userType"]:checked');
-  var selectedType = selectedTypeEl ? selectedTypeEl.value : 'admin';
-  const errorEl = document.getElementById('passwordError');
-
-  errorEl.classList.remove('show');
-
-  if(input === passwords[selectedType]){
-    currentUser = selectedType;
-    // Save session to localStorage
-    try {
-      localStorage.setItem(SESSION_KEY, JSON.stringify({
-        userType: selectedType,
-        loginTime: new Date().toISOString()
-      }));
-    } catch(e) { console.warn('Failed to save session:', e); }
-
-    if(selectedType === 'admin'){
-      // Show admin panel instead of dashboard
-      document.getElementById('loginBox').style.display = 'none';
-      document.getElementById('adminPanel').style.display = 'block';
-    } else {
-      // Viewer goes directly to dashboard in read-only mode
-      enterDashboard();
-    }
-  } else {
-    errorEl.textContent = '❌ كلمة المرور غير صحيحة';
-    errorEl.classList.add('show');
-    document.getElementById('passwordInput').value = '';
-    document.getElementById('passwordInput').focus();
+async function getUserByEmail(email){
+  const db=await openAuthDB();
+  return new Promise((resolve,reject)=>{
+    const idx=db.transaction(USERS_STORE,'readonly').objectStore(USERS_STORE).index('email');
+    const req=idx.get(email.toLowerCase());
+    req.onsuccess=()=>resolve(req.result||null);
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function putUser(user){
+  const db=await openAuthDB();
+  return new Promise((resolve,reject)=>{
+    const req=db.transaction(USERS_STORE,'readwrite').objectStore(USERS_STORE).put(user);
+    req.onsuccess=()=>resolve(user);
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function deleteUserDb(id){
+  const db=await openAuthDB();
+  return new Promise((resolve,reject)=>{
+    const req=db.transaction(USERS_STORE,'readwrite').objectStore(USERS_STORE).delete(id);
+    req.onsuccess=()=>resolve();
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function seedUsers(){
+  const users = await getAllUsers();
+  if(users.length) return;
+  for(const item of DEFAULT_LOCAL_USERS){
+    await putUser({
+      id:item.id, name:item.name, email:item.email.toLowerCase(), role:item.role,
+      passwordHash:await sha256(item.password), provider:'local', active:true,
+      createdAt:new Date().toISOString(), lastLogin:null
+    });
   }
-  } catch(err) {
-    console.error('Login error:', err);
-    document.getElementById('passwordError').textContent = '❌ حدث خطأ تقني. جرّب متصفحًا آخر (Chrome/Edge).';
-    document.getElementById('passwordError').classList.add('show');
+}
+function deviceInfo(){
+  const ua=navigator.userAgent||'';
+  let browser='متصفح غير معروف';
+  if(/Edg\//.test(ua)) browser='Microsoft Edge';
+  else if(/Chrome\//.test(ua)) browser='Google Chrome';
+  else if(/Firefox\//.test(ua)) browser='Mozilla Firefox';
+  else if(/Safari\//.test(ua) && !/Chrome\//.test(ua)) browser='Safari';
+  let os='نظام غير معروف';
+  if(/Windows NT/.test(ua)) os='Windows';
+  else if(/Android/.test(ua)) os='Android';
+  else if(/iPhone|iPad|iPod/.test(ua)) os='iOS';
+  else if(/Mac OS X/.test(ua)) os='macOS';
+  else if(/Linux/.test(ua)) os='Linux';
+  return { browser, os, platform:navigator.platform||'', ua };
+}
+async function addAudit(action,user,details=''){
+  try{
+    const db=await openAuthDB();
+    const d=deviceInfo();
+    const item={
+      id:crypto.randomUUID ? crypto.randomUUID() : ('log-'+Date.now()+'-'+Math.random()),
+      createdAt:new Date().toISOString(),
+      action,
+      userId:user?.id||null,
+      userName:user?.name||'غير معروف',
+      email:user?.email||'',
+      role:user?.role||'',
+      details,
+      browser:d.browser, os:d.os, platform:d.platform
+    };
+    db.transaction(LOGS_STORE,'readwrite').objectStore(LOGS_STORE).put(item);
+  }catch(e){ console.warn('Audit log failed',e); }
+}
+async function getAllLogs(){
+  const db=await openAuthDB();
+  return new Promise((resolve,reject)=>{
+    const req=db.transaction(LOGS_STORE,'readonly').objectStore(LOGS_STORE).getAll();
+    req.onsuccess=()=>resolve((req.result||[]).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)));
+    req.onerror=()=>reject(req.error);
+  });
+}
+function roleLabel(role){
+  return role==='admin'?'مدير':role==='editor'?'محرر':'مطلع';
+}
+function roleClass(role){ return role==='admin'?'role-admin':role==='editor'?'role-editor':'role-viewer'; }
+
+async function showLoginError(msg){
+  const el=document.getElementById('passwordError');
+  el.textContent=msg; el.classList.add('show');
+}
+
+async function loginWithPassword(){
+  try{
+    await openAuthDB(); await seedUsers();
+    const email=(document.getElementById('loginEmail').value||'').trim().toLowerCase();
+    const password=document.getElementById('passwordInput').value||'';
+    if(!email || !password){ return showLoginError('❌ أدخل البريد الإلكتروني وكلمة المرور'); }
+    const user=await getUserByEmail(email);
+    const valid=user && user.active && user.passwordHash===await sha256(password);
+    if(!valid){
+      await addAudit('failed_login',{name:email,email,role:''},'بيانات دخول غير صحيحة');
+      document.getElementById('passwordInput').value='';
+      return showLoginError('❌ البريد أو كلمة المرور غير صحيحة');
+    }
+    user.lastLogin=new Date().toISOString();
+    await putUser(user);
+    currentUser=user;
+    await addAudit('login',user,'تسجيل دخول بكلمة مرور');
+    saveSession(user);
+    if(user.role==='admin') showAdminPanel();
+    else enterDashboard();
+  }catch(err){
+    console.error(err);
+    showLoginError('❌ تعذر فتح قاعدة المستخدمين المحلية');
   }
 }
 
+function saveSession(user){
+  localStorage.setItem(SESSION_KEY,JSON.stringify({
+    userId:user.id, role:user.role, email:user.email, loginTime:new Date().toISOString()
+  }));
+}
+function applyRoleUI(){
+  document.body.classList.remove('readonly');
+  const banner=document.getElementById('readOnlyBanner');
+  const source=document.querySelector('.data-source-bar');
+  const viewerMsg=document.getElementById('viewerMessage');
+  if(currentUser?.role==='viewer'){
+    document.body.classList.add('readonly');
+    banner?.classList.add('show');
+    if(source) source.style.display='none';
+    if(viewerMsg) viewerMsg.style.display='block';
+  } else {
+    banner?.classList.remove('show');
+    if(source) source.style.display='';
+    if(viewerMsg) viewerMsg.style.display='none';
+  }
+  // Editors can edit data, but only admins can open account administration.
+  document.body.dataset.role=currentUser?.role||'';
+}
+function showAdminPanel(){
+  document.body.classList.add('locked');
+  document.getElementById('loginBox').style.display='none';
+  document.getElementById('adminPanel').style.display='block';
+  document.getElementById('adminCurrentUser').textContent=`👤 ${currentUser?.name||'المدير'} — ${roleLabel(currentUser?.role)}`;
+  loadGoogleClientIdIntoForm();
+  renderUsers();
+  renderAuditLogs();
+}
+function openAdminTab(tab){
+  document.querySelectorAll('.admin-tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===tab));
+  document.querySelectorAll('.admin-section').forEach(x=>x.classList.toggle('active',x.id==='adminTab-'+tab));
+  if(tab==='users') renderUsers();
+  if(tab==='logs') renderAuditLogs();
+}
 function enterDashboard(){
   document.body.classList.remove('locked');
-  document.getElementById('passwordOverlay').style.display = 'none';
-
-  if(currentUser === 'viewer'){
-    // Enable read-only mode
-    document.body.classList.add('readonly');
-    document.getElementById('readOnlyBanner').classList.add('show');
-    // Hide data source controls for viewers
-    document.querySelector('.data-source-bar').style.display = 'none';
-    document.getElementById('viewerMessage').style.display = 'block';
-  }
-
-  // Save session state
-  try {
-    localStorage.setItem(SESSION_KEY, JSON.stringify({
-      userType: currentUser,
-      loginTime: new Date().toISOString()
+  document.getElementById('passwordOverlay').style.display='none';
+  applyRoleUI();
+  try{
+    localStorage.setItem(SESSION_KEY,JSON.stringify({
+      userId:currentUser?.id, role:currentUser?.role, email:currentUser?.email, loginTime:new Date().toISOString()
     }));
-  } catch(e) { console.warn('Failed to save session:', e); }
-
-  // Show last updated panel if data exists
+  }catch(e){}
   updateLastUpdatedDisplay();
-
-  // Auto-load data (with offline support)
-  setTimeout(() => { autoLoadOnStartup(); }, 500);
-  setTimeout(() => { initMapOnDemand(); }, 1200);
-  setTimeout(() => { updateConnectionStatus(); }, 100);
+  setTimeout(()=>autoLoadOnStartup(),500);
+  setTimeout(()=>initMapOnDemand(),1200);
+  setTimeout(()=>updateConnectionStatus(),100);
+}
+async function restoreSession(){
+  try{
+    await openAuthDB(); await seedUsers();
+    const saved=localStorage.getItem(SESSION_KEY);
+    if(!saved) return false;
+    const session=JSON.parse(saved);
+    if(!session?.userId) return false;
+    const ageDays=(Date.now()-new Date(session.loginTime).getTime())/(1000*60*60*24);
+    if(ageDays>1){ localStorage.removeItem(SESSION_KEY); return false; }
+    const users=await getAllUsers();
+    const user=users.find(u=>u.id===session.userId && u.active);
+    if(!user){ localStorage.removeItem(SESSION_KEY); return false; }
+    currentUser=user;
+    document.body.classList.remove('locked');
+    document.getElementById('passwordOverlay').style.display='none';
+    applyRoleUI();
+    return true;
+  }catch(e){ console.warn('Session restore failed',e); return false; }
+}
+async function logout(){
+  if(currentUser) await addAudit('logout',currentUser,'تسجيل خروج');
+  localStorage.removeItem(SESSION_KEY);
+  currentUser=null;
+  location.reload();
 }
 
-function showChangePw(userType){
-  document.getElementById('changePwForm').style.display = 'block';
-  document.getElementById('targetUserType').value = userType;
-  document.getElementById('changePwTitle').textContent = userType === 'admin' ? '🔐 تغيير كلمة مرور المدير' : '🔐 تغيير كلمة مرور المطلع';
-  document.getElementById('pwSuccessMsg').classList.remove('show');
-  document.getElementById('pwChangeError').classList.remove('show');
-  document.getElementById('currentPwInput').value = '';
-  document.getElementById('newPwInput').value = '';
-  document.getElementById('confirmPwInput').value = '';
-  document.getElementById('currentPwInput').focus();
+// ----- user administration -----
+async function renderUsers(){
+  if(!currentUser || currentUser.role!=='admin') return;
+  const tbody=document.getElementById('usersTableBody');
+  if(!tbody) return;
+  const users=await getAllUsers();
+  tbody.innerHTML=users.map(u=>{
+    const canDelete=u.id!==currentUser.id;
+    return `<tr>
+      <td><b>${escapeHtml(u.name)}</b></td>
+      <td>${escapeHtml(u.email)}</td>
+      <td><span class="role-badge ${roleClass(u.role)}">${roleLabel(u.role)}</span></td>
+      <td>${u.provider==='google'?'Google':'محلي'}</td>
+      <td>${u.lastLogin?formatDate(u.lastLogin):'—'}</td>
+      <td>
+        <button class="btn btn-sm btn-primary" onclick="editUser('${u.id}')">تعديل</button>
+        ${canDelete?`<button class="btn btn-sm btn-danger" onclick="removeUser('${u.id}')">حذف</button>`:''}
+      </td>
+    </tr>`;
+  }).join('');
 }
-
-function hideChangePw(){
-  document.getElementById('changePwForm').style.display = 'none';
+function escapeHtml(v){
+  return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
-
-function changePassword(){
-  const targetType = document.getElementById('targetUserType').value;
-  const current = document.getElementById('currentPwInput').value.trim();
-  const newPw = document.getElementById('newPwInput').value.trim();
-  const confirm = document.getElementById('confirmPwInput').value.trim();
-  const errorEl = document.getElementById('pwChangeError');
-  const successEl = document.getElementById('pwSuccessMsg');
-
-  errorEl.classList.remove('show');
-  successEl.classList.remove('show');
-
-  if(current !== passwords[targetType]){
-    errorEl.textContent = '❌ كلمة المرور الحالية غير صحيحة';
-    errorEl.classList.add('show');
-    return;
-  }
-
-  if(newPw.length < 4){
-    errorEl.textContent = '❌ كلمة المرور الجديدة يجب أن تكون 4 أحرف على الأقل';
-    errorEl.classList.add('show');
-    return;
-  }
-
-  if(newPw !== confirm){
-    errorEl.textContent = '❌ كلمة المرور الجديدة غير متطابقة مع التأكيد';
-    errorEl.classList.add('show');
-    return;
-  }
-
-  passwords[targetType] = newPw;
-  savePasswords();
-
-  document.getElementById('currentPwInput').value = '';
-  document.getElementById('newPwInput').value = '';
-  document.getElementById('confirmPwInput').value = '';
-
-  successEl.classList.add('show');
-  setTimeout(() => { 
-    successEl.classList.remove('show');
-    hideChangePw();
-  }, 2000);
+function formatDate(iso){
+  try{return new Date(iso).toLocaleString('ar-SY',{dateStyle:'short',timeStyle:'short'});}catch{return iso;}
 }
-
-// Allow Enter key to submit password
-document.addEventListener('keydown', function(e){
-  if(e.key === 'Enter' && document.body.classList.contains('locked')){
-    if(document.getElementById('loginBox').style.display !== 'none'){
-      checkPassword();
+async function editUser(id){
+  const users=await getAllUsers(); const u=users.find(x=>x.id===id); if(!u) return;
+  document.getElementById('userIdInput').value=u.id;
+  document.getElementById('userNameInput').value=u.name;
+  document.getElementById('userEmailInput').value=u.email;
+  document.getElementById('userRoleInput').value=u.role;
+  document.getElementById('userPasswordInput').value='';
+  showUserMsg('يمكن تعديل الاسم والدور أو تعيين كلمة مرور جديدة.','success');
+}
+function resetUserForm(){
+  ['userIdInput','userNameInput','userEmailInput','userPasswordInput'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('userRoleInput').value='editor';
+  document.getElementById('userFormMsg').className='admin-message';
+}
+function showUserMsg(msg,type){
+  const el=document.getElementById('userFormMsg'); el.textContent=msg; el.className='admin-message show '+type;
+}
+async function saveUserFromForm(e){
+  e.preventDefault();
+  try{
+    const id=document.getElementById('userIdInput').value.trim();
+    const name=document.getElementById('userNameInput').value.trim();
+    const email=document.getElementById('userEmailInput').value.trim().toLowerCase();
+    const password=document.getElementById('userPasswordInput').value;
+    const role=document.getElementById('userRoleInput').value;
+    if(!name||!email) return false;
+    const existing=await getUserByEmail(email);
+    if(existing && existing.id!==id) return showUserMsg('❌ البريد مستخدم من قبل.','error');
+    let user;
+    if(id){
+      const users=await getAllUsers(); user=users.find(x=>x.id===id);
+      if(!user) return false;
+      user.name=name; user.email=email; user.role=role;
+      if(password) user.passwordHash=await sha256(password);
+      await putUser(user); await addAudit('user_update',currentUser,`تعديل المستخدم ${email}`);
+      if(currentUser.id===id){currentUser=user; applyRoleUI();}
+      showUserMsg('✅ تم تعديل المستخدم.','success');
+    }else{
+      if(!password || password.length<6) return showUserMsg('❌ كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل.','error');
+      user={id:crypto.randomUUID?crypto.randomUUID():'u-'+Date.now(),name,email,role,
+        passwordHash:await sha256(password),provider:'local',active:true,createdAt:new Date().toISOString(),lastLogin:null};
+      await putUser(user); await addAudit('user_create',currentUser,`إضافة المستخدم ${email} بدور ${roleLabel(role)}`);
+      showUserMsg('✅ تم إنشاء المستخدم.','success');
     }
+    resetUserForm(); await renderUsers();
+  }catch(err){ console.error(err); showUserMsg('❌ تعذر حفظ المستخدم.','error'); }
+  return false;
+}
+async function removeUser(id){
+  if(!confirm('هل تريد حذف هذا المستخدم؟')) return;
+  const users=await getAllUsers(); const u=users.find(x=>x.id===id); if(!u) return;
+  await deleteUserDb(id); await addAudit('user_delete',currentUser,`حذف المستخدم ${u.email}`); await renderUsers();
+}
+
+// ----- audit log viewer -----
+async function renderAuditLogs(){
+  const body=document.getElementById('logsTableBody'); if(!body || !currentUser) return;
+  const search=(document.getElementById('logSearch')?.value||'').toLowerCase();
+  const action=document.getElementById('logAction')?.value||'';
+  const logs=(await getAllLogs()).filter(l=>{
+    const hay=(l.userName+' '+l.email).toLowerCase();
+    return (!search||hay.includes(search)) && (!action||l.action===action);
+  }).slice(0,500);
+  body.innerHTML=logs.map(l=>`<tr>
+    <td>${formatDate(l.createdAt)}</td>
+    <td><b>${escapeHtml(l.userName)}</b><br><span class="device-cell">${escapeHtml(l.email)}</span></td>
+    <td>${escapeHtml(l.action)}${l.details?`<br><span class="device-cell">${escapeHtml(l.details)}</span>`:''}</td>
+    <td><div class="device-cell">🖥️ ${escapeHtml(l.os)}<br>🌐 ${escapeHtml(l.browser)}<br>⌨️ ${escapeHtml(l.platform)}</div></td>
+  </tr>`).join('') || `<tr><td colspan="4" style="text-align:center;color:var(--ink-soft)">لا توجد سجلات</td></tr>`;
+}
+async function exportAuditLogs(){
+  const logs=await getAllLogs();
+  const rows=[['التاريخ والوقت','المستخدم','البريد','الدور','العملية','التفاصيل','نظام التشغيل','المتصفح','المنصة'],
+    ...logs.map(l=>[l.createdAt,l.userName,l.email,l.role,l.action,l.details,l.os,l.browser,l.platform])];
+  const csv='\uFEFF'+rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})); a.download='سجل_دخول_لوحة_المؤشرات.csv'; a.click();
+}
+
+// ----- Google Identity Services -----
+function getGoogleClientId(){ return localStorage.getItem(GOOGLE_CLIENT_ID_KEY)||''; }
+function loadGoogleClientIdIntoForm(){
+  const el=document.getElementById('googleClientIdInput'); if(el) el.value=getGoogleClientId();
+}
+function saveGoogleClientId(){
+  const id=(document.getElementById('googleClientIdInput').value||'').trim();
+  const msg=document.getElementById('googleConfigMsg');
+  if(!/\.apps\.googleusercontent\.com$/.test(id)){msg.textContent='❌ أدخل Google OAuth Client ID صحيحاً.';msg.className='admin-message show error';return;}
+  localStorage.setItem(GOOGLE_CLIENT_ID_KEY,id);
+  msg.textContent='✅ تم الحفظ. سيظهر زر Google في شاشة الدخول عند إعادة فتح الصفحة.';
+  msg.className='admin-message show success';
+}
+function decodeJwtPayload(token){
+  const part=token.split('.')[1]; if(!part) throw new Error('Bad JWT');
+  const b64=part.replace(/-/g,'+').replace(/_/g,'/');
+  return JSON.parse(decodeURIComponent(atob(b64).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));
+}
+async function handleGoogleCredential(response){
+  try{
+    const p=decodeJwtPayload(response.credential);
+    const clientId=getGoogleClientId();
+    if(clientId && p.aud!==clientId) throw new Error('Invalid audience');
+    if(p.iss!=='https://accounts.google.com' && p.iss!=='accounts.google.com') throw new Error('Invalid issuer');
+    await openAuthDB(); await seedUsers();
+    let user=await getUserByEmail(p.email.toLowerCase());
+    if(!user){
+      user={id:'g-'+p.sub,name:p.name||p.email.split('@')[0],email:p.email.toLowerCase(),
+        role:'viewer',passwordHash:null,provider:'google',googleSub:p.sub,active:true,
+        createdAt:new Date().toISOString(),lastLogin:null};
+      await putUser(user);
+      await addAudit('user_create',user,'إنشاء مستخدم Google تلقائياً بدور مطلع');
+    }else if(!user.active){
+      await addAudit('failed_login',user,'حساب Google معطل');
+      return showLoginError('❌ هذا الحساب معطل من المدير');
+    }
+    user.lastLogin=new Date().toISOString(); await putUser(user);
+    currentUser=user; saveSession(user);
+    await addAudit('google_login',user,'تسجيل دخول بواسطة Google');
+    if(user.role==='admin') showAdminPanel(); else enterDashboard();
+  }catch(e){
+    console.error('Google sign-in error',e);
+    showLoginError('❌ تعذر التحقق من حساب Google');
   }
+}
+function initGoogleSignIn(){
+  const holder=document.getElementById('googleSignIn');
+  const hint=document.getElementById('googleHint');
+  if(!holder) return;
+  const clientId=getGoogleClientId();
+  if(!clientId){
+    holder.innerHTML='';
+    if(hint) hint.style.display='block';
+    return;
+  }
+  if(!window.google || !google.accounts || !google.accounts.id){
+    setTimeout(initGoogleSignIn,500); return;
+  }
+  if(hint) hint.style.display='none';
+  holder.innerHTML='';
+  google.accounts.id.initialize({client_id:clientId,callback:handleGoogleCredential});
+  google.accounts.id.renderButton(holder,{theme:'outline',size:'large',shape:'rectangular',width:300,text:'signin_with',locale:'ar'});
+}
+
+// Helpers for old code compatibility
+function selectUserType(type) {}
+function showChangePw() {}
+function hideChangePw() {}
+function changePassword() {}
+
+// Keep Enter key support
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter' && document.body.classList.contains('locked') &&
+     document.getElementById('loginBox').style.display!=='none') loginWithPassword();
 });
 // =====================
 // DIAGNOSTICS & COMPATIBILITY
@@ -4698,81 +5025,30 @@ window.addEventListener('offline', () => {
 
 
 
-// =====================
-// SESSION MANAGEMENT (Remember Login)
-// =====================
-function logout(){
-  try {
-    localStorage.removeItem(SESSION_KEY);
-  } catch(e) {}
-  currentUser = null;
-  // Reload page to show login screen
-  window.location.reload();
-}
-
-function restoreSession(){
-  try {
-    const saved = localStorage.getItem(SESSION_KEY);
-    if(!saved) return false;
-    const session = JSON.parse(saved);
-    if(!session || !session.userType) return false;
-
-    // Optional: check if session is too old (e.g., 30 days)
-    const loginTime = new Date(session.loginTime);
-    const daysOld = (Date.now() - loginTime.getTime()) / (1000 * 60 * 60 * 24);
-    if(daysOld > 30){
-      localStorage.removeItem(SESSION_KEY);
-      return false;
-    }
-
-    currentUser = session.userType;
-
-    // Skip login screen and enter dashboard directly
-    document.body.classList.remove('locked');
-    document.getElementById('passwordOverlay').style.display = 'none';
-
-    if(currentUser === 'viewer'){
-      document.body.classList.add('readonly');
-      document.getElementById('readOnlyBanner').classList.add('show');
-      document.querySelector('.data-source-bar').style.display = 'none';
-      document.getElementById('viewerMessage').style.display = 'block';
-    }
-
-    // Show last updated panel if data exists
-    updateLastUpdatedDisplay();
-
-    return true;
-  } catch(e) {
-    console.warn('Failed to restore session:', e);
-    return false;
-  }
-}
+// Session management is implemented in LOCAL USERS / ROLES / GOOGLE AUTH above.
 
 // =====================
 // INIT
 // =====================
-window.addEventListener('DOMContentLoaded', () => {
-  loadSavedPasswords(); // Load saved passwords from localStorage
+window.addEventListener('DOMContentLoaded', async () => {
   setupGovFilter();
   setupMonthFilter();
+  try { await openAuthDB(); await seedUsers(); } catch(e) { console.error('Auth DB init failed',e); }
+  initGoogleSignIn();
 
-  // Auto-load from Google Sheets on startup (after brief delay for login)
   setTimeout(() => {
     if(SHEETS_CONFIG.apiKey && !SHEETS_CONFIG.apiKey.includes('ضع_')){
       loadFromSheet();
     }
   }, 1200);
 
-  // Try to restore saved session (skip login if valid)
-  const restored = restoreSession();
+  const restored = await restoreSession();
   if(restored){
-    console.log('✅ Session restored for user:', currentUser);
-    // Auto-load data for returning user
+    console.log('✅ Session restored for user:', currentUser?.email);
     setTimeout(() => { autoLoadOnStartup(); }, 300);
     setTimeout(() => { initMapOnDemand(); }, 1000);
     setTimeout(() => { updateConnectionStatus(); }, 100);
   }
-  // If not restored, login screen remains visible (default locked state)
 });</script>
 
 
