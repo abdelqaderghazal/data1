@@ -25,14 +25,17 @@
   .month-badge{display:inline-flex;align-items:center;gap:8px;background:var(--syria-green);border:2px solid var(--syria-green);padding:7px 16px;border-radius:100px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--syria-white);font-weight:600;}
   .toolbar{position:sticky;top:0;z-index:30;background:var(--paper);border-bottom:1px solid var(--line);box-shadow:0 4px 14px rgba(18,60,68,0.06);}
   .toolbar-inner{max-width:1180px;margin:0 auto;padding:14px 28px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
-  .toolbar-label{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);margin-inline-end:6px;white-space:nowrap;}
-  .chip{border:1px solid var(--line);background:var(--sand);color:var(--ink);padding:7px 15px;border-radius:100px;font-size:13.5px;font-weight:600;cursor:pointer;transition:.15s ease;font-family:'Cairo',sans-serif;}
-  .chip:hover{border-color:#0D8BA8;}
-  .chip.active{background:#0B5A7A;color:#fff;border-color:#0B5A7A;}
-  .chip:disabled{opacity:0.3;cursor:not-allowed;}
+  .toolbar-label{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);white-space:nowrap;display:inline-flex;align-items:center;gap:7px;}
+  .filter-select-wrap{position:relative;min-width:230px;}
+  .filter-select-wrap::after{content:'⌄';position:absolute;top:50%;inset-inline-end:15px;transform:translateY(-56%);font-size:20px;font-weight:700;color:#0D8BA8;pointer-events:none;line-height:1;}
+  .filter-select{appearance:none;-webkit-appearance:none;width:100%;border:1px solid var(--line);background:linear-gradient(135deg,#fff 0%,#f4fafc 100%);color:var(--ink);padding:11px 42px 11px 16px;border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer;transition:.2s ease;font-family:'Cairo',sans-serif;box-shadow:0 3px 10px rgba(11,90,122,.06);}
+  .filter-select:hover{border-color:#0D8BA8;box-shadow:0 5px 14px rgba(13,139,168,.14);transform:translateY(-1px);}
+  .filter-select:focus{outline:none;border-color:#0B5A7A;box-shadow:0 0 0 4px rgba(13,139,168,.14);}
+  .filter-select option{font-family:'Cairo',sans-serif;background:#fff;color:var(--ink);font-weight:600;}
+  .filter-caption{font-size:11px;color:var(--ink-soft);margin-inline-start:4px;opacity:.85;}
   .month-toolbar{background:var(--sand);border-bottom:1px solid var(--line);position:static;box-shadow:none;}
-  .month-toolbar .chip{background:var(--paper);}
-  .month-toolbar .chip.active{background:#0D8BA8;color:#fff;border-color:#0D8BA8;}
+  .month-toolbar .filter-select{background:linear-gradient(135deg,#fff 0%,#eef8fb 100%);} 
+  @media(max-width:640px){.filter-select-wrap{min-width:100%;}.toolbar-inner{padding:12px 18px;}.toolbar-label{width:100%;}.filter-caption{display:none;}}
   .data-panel{max-width:1180px;margin:0 auto;padding:20px 28px 0;}
   .data-source-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:20px;}
   .data-source-bar .label{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);font-weight:600;white-space:nowrap;}
@@ -585,21 +588,26 @@
 <div class="toolbar" id="govToolbar">
   <div class="toolbar-inner">
     <span class="toolbar-label">🏛️ تصفية حسب المحافظة</span>
-    <button class="chip active" data-gov="all">الكل</button>
-    <button class="chip" data-gov="دمشق">دمشق</button>
-    <button class="chip" data-gov="ريف دمشق">ريف دمشق</button>
-    <button class="chip" data-gov="حلب">حلب</button>
-    <button class="chip" data-gov="حمص">حمص</button>
-    <button class="chip" data-gov="حماه">حماه</button>
-    <button class="chip" data-gov="اللاذقية">اللاذقية</button>
-    <button class="chip" data-gov="طرطوس">طرطوس</button>
-    <button class="chip" data-gov="السويداء">السويداء</button>
-    <button class="chip" data-gov="درعا">درعا</button>
-    <button class="chip" data-gov="القنيطرة">القنيطرة</button>
-    <button class="chip" data-gov="ادلب">ادلب</button>
-    <button class="chip" data-gov="الرقة">الرقة</button>
-    <button class="chip" data-gov="دير الزور">دير الزور</button>
-    <button class="chip" data-gov="الحسكة">الحسكة</button>
+    <div class="filter-select-wrap">
+      <select class="filter-select" id="govSelect" aria-label="اختيار المحافظة">
+        <option value="all">كل المحافظات</option>
+        <option value="دمشق">دمشق</option>
+        <option value="ريف دمشق">ريف دمشق</option>
+        <option value="حلب">حلب</option>
+        <option value="حمص">حمص</option>
+        <option value="حماه">حماه</option>
+        <option value="اللاذقية">اللاذقية</option>
+        <option value="طرطوس">طرطوس</option>
+        <option value="السويداء">السويداء</option>
+        <option value="درعا">درعا</option>
+        <option value="القنيطرة">القنيطرة</option>
+        <option value="ادلب">ادلب</option>
+        <option value="الرقة">الرقة</option>
+        <option value="دير الزور">دير الزور</option>
+        <option value="الحسكة">الحسكة</option>
+      </select>
+    </div>
+    <span class="filter-caption">اختر محافظة لعرض بياناتها</span>
   </div>
 </div>
 
@@ -607,19 +615,24 @@
 <div class="toolbar month-toolbar" id="monthToolbar">
   <div class="toolbar-inner">
     <span class="toolbar-label">📅 تصفية حسب الشهر</span>
-    <button class="chip active" data-month="all">الكل</button>
-    <button class="chip" data-month="كانون الثاني">كانون الثاني</button>
-    <button class="chip" data-month="شباط">شباط</button>
-    <button class="chip" data-month="آذار">آذار</button>
-    <button class="chip" data-month="نيسان">نيسان</button>
-    <button class="chip" data-month="أيار">أيار</button>
-    <button class="chip" data-month="حزيران">حزيران</button>
-    <button class="chip" data-month="تموز">تموز</button>
-    <button class="chip" data-month="آب">آب</button>
-    <button class="chip" data-month="أيلول">أيلول</button>
-    <button class="chip" data-month="تشرين الأول">تشرين الأول</button>
-    <button class="chip" data-month="تشرين الثاني">تشرين الثاني</button>
-    <button class="chip" data-month="كانون الأول">كانون الأول</button>
+    <div class="filter-select-wrap">
+      <select class="filter-select" id="monthSelect" aria-label="اختيار الشهر">
+        <option value="all">كل الأشهر</option>
+        <option value="كانون الثاني">كانون الثاني</option>
+        <option value="شباط">شباط</option>
+        <option value="آذار">آذار</option>
+        <option value="نيسان">نيسان</option>
+        <option value="أيار">أيار</option>
+        <option value="حزيران">حزيران</option>
+        <option value="تموز">تموز</option>
+        <option value="آب">آب</option>
+        <option value="أيلول">أيلول</option>
+        <option value="تشرين الأول">تشرين الأول</option>
+        <option value="تشرين الثاني">تشرين الثاني</option>
+        <option value="كانون الأول">كانون الأول</option>
+      </select>
+    </div>
+    <span class="filter-caption">اختر شهرًا لعرض بياناته</span>
   </div>
 </div>
 
@@ -1527,17 +1540,10 @@ function filterByMonth(chipEl){
 
 function syncMonthChipsWithData(){
   const availableMonths = new Set(ALL_DATA.map(d => normalizeMonth(d.month)));
-  document.querySelectorAll('#monthToolbar .chip').forEach(chip => {
-    const m = chip.getAttribute('data-month');
-    if(m !== 'all'){
-      if(!availableMonths.has(m)){
-        chip.disabled = true;
-        chip.style.opacity = '0.3';
-      } else {
-        chip.disabled = false;
-        chip.style.opacity = '1';
-      }
-    }
+  const monthSelect = document.getElementById('monthSelect');
+  if(!monthSelect) return;
+  [...monthSelect.options].forEach(option => {
+    if(option.value !== 'all') option.disabled = !availableMonths.has(option.value);
   });
 }
 
@@ -1545,10 +1551,18 @@ function syncMonthChipsWithData(){
 // MONTH FILTER SETUP
 // =====================
 function setupMonthFilter(){
-  document.querySelectorAll('#monthToolbar .chip').forEach(chip => {
-    chip.addEventListener('click', function(){
-      filterByMonth(this);
-    });
+  const monthSelect = document.getElementById('monthSelect');
+  if(!monthSelect) return;
+  monthSelect.addEventListener('change', function(){
+    const month = normalizeMonth(this.value);
+    if(month === 'all'){
+      selectedMonthChips.clear();
+      selectedMonths = new Set([...new Set(ALL_DATA.map(d => d.month))]);
+    } else {
+      selectedMonthChips = new Set([month]);
+      selectedMonths = new Set([month]);
+    }
+    renderAll();
   });
 }
 
@@ -1556,14 +1570,12 @@ function setupMonthFilter(){
 // GOVERNORATE FILTER
 // =====================
 function setupGovFilter(){
-  document.querySelectorAll('#govToolbar .chip').forEach(chip => {
-    chip.addEventListener('click', function(){
-      document.querySelectorAll('#govToolbar .chip').forEach(c => c.classList.remove('active'));
-      this.classList.add('active');
-      activeGov = this.getAttribute('data-gov');
-      console.log('Selected governorate:', activeGov);
-      renderAll();
-    });
+  const govSelect = document.getElementById('govSelect');
+  if(!govSelect) return;
+  govSelect.addEventListener('change', function(){
+    activeGov = this.value;
+    console.log('Selected governorate:', activeGov);
+    renderAll();
   });
 }
 
