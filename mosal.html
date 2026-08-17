@@ -239,7 +239,7 @@
 
   /* ===== OFFLINE & LAST UPDATED STYLES ===== */
   .connection-bar{position:fixed;top:0;left:0;right:0;z-index:998;padding:6px 20px;text-align:center;font-size:12.5px;font-weight:600;font-family:'Cairo';display:none;box-shadow:0 2px 8px rgba(0,0,0,0.15);transition:.3s ease;}
-  .connection-bar.offline{background:linear-gradient(90deg,#c62828,#e53935);color:white;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .connection-bar.offline{background:linear-gradient(90deg,#c62828,#e53935);color:white;align-items:center;justify-content:center;gap:8px;}
   .connection-bar.online{background:linear-gradient(90deg,#2e7d32,#43a047);color:white;display:none;}
   .connection-bar.show{display:flex !important;}  .connection-bar[data-manually-closed="true"]{display:none !important;}
   .last-updated-badge{display:inline-flex;align-items:center;gap:6px;background:var(--sand);border:1px solid var(--line);padding:5px 12px;border-radius:100px;font-family:'IBM Plex Mono';font-size:11.5px;color:var(--ink-soft);font-weight:600;white-space:nowrap;}
@@ -447,7 +447,7 @@
 <body class="locked">
 
 <!-- Connection Status Bar -->
-<div class="connection-bar offline" id="offlineBar" style="position:relative;">📵 لا يوجد اتصال بالإنترنت — تعمل ببيانات محفوظة محلياً <button class="close-banner" onclick="var el=document.getElementById('offlineBar');el.classList.remove('show');el.setAttribute('data-manually-closed','true');el.style.display='none';" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);background:none;border:none;color:white;font-size:18px;cursor:pointer;line-height:1;padding:0 8px;" aria-label="إغلاق">×</button></div>
+<div class="connection-bar offline" id="offlineBar">📵 لا يوجد اتصال بالإنترنت — تعمل ببيانات محفوظة محلياً <button class="close-banner" onclick="var el=document.getElementById('offlineBar');el.classList.remove('show');el.setAttribute('data-manually-closed','true');el.style.display='none';" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);background:none;border:none;color:white;font-size:18px;cursor:pointer;line-height:1;padding:0 8px;" aria-label="إغلاق">×</button></div>
 <div class="connection-bar online" id="onlineBar">🌐 تم استعادة الاتصال — <button onclick="loadFromSheet()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.5);color:white;padding:3px 12px;border-radius:100px;font-family:Cairo;font-size:11px;font-weight:600;cursor:pointer;margin-inline-start:8px;">تحديث الآن</button></div>
 
 
@@ -1186,7 +1186,6 @@ const COLUMN_MAP = {
 
   // === Pensions ===
   "عدد المتقاعدين المستفيدين": "pensioners",
-  "عدد المستفيدين من تعويضات إصابات العمل": "work_injury_comp",
   "قرارات ضم الخدمة": "service_merge_decisions",
   "عدد المستفيدين من تعويضات إصابات العمل": "injury_beneficiaries",
   "عدد المنشآت التي تم اشراكها بالتامينات": "insurance_establishments",
@@ -2144,7 +2143,7 @@ function renderCategory(cat){
       {em:'🧑‍🎓',n:avg('youth_unemployment',arr)+'%',t:'بطالة الشباب',raw:true},
       {em:'♂️',n:avg('male_participation',arr)+'%',t:'مشاركة الذكور اقتصادياً',raw:true},
       {em:'♀️',n:avg('female_participation',arr)+'%',t:'مشاركة الإناث اقتصادياً',raw:true},
-      {em:'🏭',n:avg('unorganized_workers',arr)+'%',t:'عمال القطاع غير المنظم'}]);
+      {em:'🏭',n:avg('unorganized_workers',arr)+'%',t:'عمال القطاع غير المنظم',raw:true}]);
     // Add text card for employment relation if exists
     const empRelation = arr.map(d => d.employment_relation).filter(v => v && v.trim()).join(' | ');
     if(empRelation){
@@ -2236,10 +2235,10 @@ function renderCategory(cat){
       {em:'👶',n:sumStatic('pop_under15'),t:'السكان دون 15 سنة'},
       {em:'🧑',n:sumStatic('pop_15_60'),t:'السكان 15-60 سنة'},
       {em:'👴',n:sumStatic('pop_over60'),t:'السكان 60+ سنة'},
-      {em:'📉',n:avgStatic('unemployment_rate')+'%',t:'معدل البطالة العام (متوسط)'},
+      {em:'📉',n:avgStatic('unemployment_rate')+'%',t:'معدل البطالة العام (متوسط)',raw:true},
       {em:'📉',n:avgStatic('male_unemployment')+'%',t:'معدل بطالة الذكور',raw:true},
       {em:'📉',n:avgStatic('female_unemployment')+'%',t:'معدل بطالة الإناث',raw:true},
-      {em:'📉',n:avgStatic('youth_unemployment')+'%',t:'معدل بطالة الشباب (متوسط)'},
+      {em:'📉',n:avgStatic('youth_unemployment')+'%',t:'معدل بطالة الشباب (متوسط)',raw:true},
       {em:'♂️',n:avgStatic('male_participation')+'%',t:'مشاركة الذكور اقتصادياً',raw:true},
       {em:'♀️',n:avgStatic('female_participation')+'%',t:'مشاركة الإناث اقتصادياً',raw:true},
       {em:'💼',n:sumStatic('employed'),t:'المشتغلون'},
@@ -2248,9 +2247,9 @@ function renderCategory(cat){
       {em:'💍',n:avgStatic('child_marriage_rate')+'%',t:'معدل زواج القاصرات',raw:true},
       {em:'👷',n:avgStatic('child_labor_rate')+'%',t:'معدل عمل الأطفال',raw:true},
       {em:'📚',n:avgStatic('basic_edu_completion')+'%',t:'معدل إكمال التعليم الأساسي',raw:true},
-      {em:'🍞',n:avgStatic('food_secure_pct')+'%',t:'% الأسر الآمنة غذائياً'},
-      {em:'⚠️',n:avgStatic('food_vulnerable_pct')+'%',t:'% الأسر ذات الهشاشة الغذائية'},
-      {em:'🔴',n:avgStatic('food_insecure_pct')+'%',t:'% الأسر المعدومة غذائياً'}
+      {em:'🍞',n:avgStatic('food_secure_pct')+'%',t:'% الأسر الآمنة غذائياً',raw:true},
+      {em:'⚠️',n:avgStatic('food_vulnerable_pct')+'%',t:'% الأسر ذات الهشاشة الغذائية',raw:true},
+      {em:'🔴',n:avgStatic('food_insecure_pct')+'%',t:'% الأسر المعدومة غذائياً',raw:true}
     ]);
     // Add text card for employment relation if exists
     const demoEmpRelation = arr.map(d => d.employment_relation).filter(v => v && v.trim()).join(' | ');
@@ -3662,9 +3661,9 @@ function updateMapMarkers(){
           <span style="font-weight:700;color:var(--syria-green);font-size:12px;">🌾 التنمية الريفية</span>
         </div>
         <div class="info-row"><span class="info-label">مراكز التنمية في الخدمة</span><span class="info-val">${fmt(d.rural_dev_active||0)}</span></div>
-        <div class="info-row"><span class="info-label">مراكز تنمية ريفية (خارج الخدمة)</span><span class="info-val">${fmt(d.rural_dev_inactive||0)}</span></div>
+        <div class="info-row"><span class="info-label">مراكز تنمية ريفية (خارج الخدمة)</span><span class="info-val">${fmt(d.rural_dev_total||0)}</span></div>
         <div class="info-row"><span class="info-label">عدد وحدات الصناعة في الخدمة</span><span class="info-val">${fmt(d.rural_ind_active||0)}</span></div>
-        <div class="info-row"><span class="info-label">وحدات صناعات ريفية (خارج الخدمة)</span><span class="info-val">${fmt(d.rural_ind_inactive||0)}</span></div>
+        <div class="info-row"><span class="info-label">وحدات صناعات ريفية (خارج الخدمة)</span><span class="info-val">${fmt(d.rural_ind_total||0)}</span></div>
         <div class="info-row"><span class="info-label">مستفيدو التنمية الريفية</span><span class="info-val">${fmt(d.rural_dev_benef||0)}</span></div>
         <div class="info-row"><span class="info-label">مستفيدو الصناعات الريفية</span><span class="info-val">${fmt(d.rural_ind_benef||0)}</span></div>
         <div style="border-top:2px solid #0B5A7A;margin:10px 0;padding-top:8px;">
@@ -5499,15 +5498,18 @@ function generateGovInsights(gov, scores){
 
 function renderMiniKpis(gov){
   const rows = getGovData(gov);
-  // Sum absolute values across all months
-  const pop = rows.reduce((a,d) => a + (parseFloat(d.population) || 0), 0);
-  const employed = rows.reduce((a,d) => a + (parseFloat(d.employed) || 0), 0);
+  // Stock indicators (population, employed, insured, platform users) must NOT be
+  // summed across months — take the latest recorded value instead.
+  const sortedRows = [...rows].sort((a,b) => analyticsMonthOrder(a.month) - analyticsMonthOrder(b.month));
+  const latestOf = f => { for(let i=sortedRows.length-1;i>=0;i--){ const v=parseFloat(sortedRows[i][f]); if(!isNaN(v)) return v; } return 0; };
+  const pop = latestOf('population');
+  const employed = latestOf('employed');
   // Average percentage values (don't sum rates!)
   const unempRates = rows.map(d => parseFloat(d.unemployment_rate)).filter(v => !isNaN(v));
   const avgUnemp = unempRates.length ? (unempRates.reduce((a,b) => a+b, 0) / unempRates.length).toFixed(1) : 0;
-  const insurance = rows.reduce((a,d) => a + (parseFloat(d.insurance_total) || 0), 0);
+  const insurance = latestOf('insurance_total');
   const aid = rows.reduce((a,d) => a + (parseFloat(d.food_baskets) || 0) + (parseFloat(d.cash_assistance) || 0) + (parseFloat(d.in_kind_aid) || 0), 0);
-  const digital = rows.reduce((a,d) => a + (parseFloat(d.platform_registered) || 0), 0);
+  const digital = latestOf('platform_registered');
 
   document.getElementById('miniPop').textContent = fmt(pop);
   document.getElementById('miniEmployed').textContent = fmt(employed);
