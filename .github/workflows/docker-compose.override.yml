@@ -1,0 +1,24 @@
+# ═══════════════════════════════════════════════════════════════
+# Docker Compose Override (Development)
+# ═══════════════════════════════════════════════════════════════
+# يُحمّل تلقائياً مع docker-compose.yml
+# استخدمه لتجاوز الإعدادات دون تعديل الملف الرئيسي
+# ═══════════════════════════════════════════════════════════════
+
+version: '3.8'
+
+services:
+  proxy:
+    # Mount source code for live reload during development
+    volumes:
+      - ./proxy-server.js:/app/proxy-server.js:ro
+      - ./.env:/app/.env:ro
+      - ./data:/app/data:ro
+    # Enable debug mode
+    environment:
+      - NODE_ENV=development
+      - DEBUG=*
+    # Expose for debugging
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Node.js debugger
