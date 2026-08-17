@@ -3948,10 +3948,10 @@ async function showLoginError(msg){
 }
 
 async function loginWithPassword(){
+  const email=(document.getElementById('loginEmail').value||'').trim().toLowerCase();
+  const password=document.getElementById('passwordInput').value||'';
   try{
     await openAuthDB(); await seedUsers();
-    const email=(document.getElementById('loginEmail').value||'').trim().toLowerCase();
-    const password=document.getElementById('passwordInput').value||'';
     if(!email || !password){ return showLoginError('❌ أدخل البريد الإلكتروني وكلمة المرور'); }
     const user=await getUserByEmail(email);
     const valid=user && user.active && user.passwordHash===await sha256(password);
@@ -3968,8 +3968,28 @@ async function loginWithPassword(){
     if(user.role==='admin') showAdminPanel();
     else enterDashboard();
   }catch(err){
-    console.error(err);
-    showLoginError('❌ تعذر فتح قاعدة المستخدمين المحلية');
+    // Some browsers block IndexedDB for file:// pages. Allow the bundled
+    // default accounts to authenticate instead of blocking the dashboard.
+    console.error('Auth DB unavailable; using local fallback:',err);
+    try{
+      const fallback=DEFAULT_LOCAL_USERS.find(u=>u.email.toLowerCase()===email);
+      const valid=fallback && fallback.active && fallback.password===password;
+      if(!valid){
+        document.getElementById('passwordInput').value='';
+        return showLoginError('❌ البريد أو كلمة المرور غير صحيحة');
+      }
+      currentUser={
+        id:fallback.id,name:fallback.name,email:fallback.email.toLowerCase(),
+        role:fallback.role,passwordHash:null,provider:'local',active:true,
+        createdAt:new Date().toISOString(),lastLogin:new Date().toISOString()
+      };
+      saveSession(currentUser);
+      if(currentUser.role==='admin') showAdminPanel();
+      else enterDashboard();
+    }catch(fallbackErr){
+      console.error('Local fallback login failed:',fallbackErr);
+      showLoginError('❌ تعذر تشغيل تسجيل الدخول المحلي. افتح الملف عبر خادم محلي أو اسمح بالتخزين المحلي.');
+    }
   }
 }
 
@@ -3995,6 +4015,15 @@ function applyRoleUI(){
   }
   // Editors can edit data, but only admins can open account administration.
   document.body.dataset.role=currentUser?.role||'';
+
+  // Show the annual-target editor only for authenticated administrators.
+  const stratAdminTools=document.getElementById('stratAdminTools');
+  if(stratAdminTools){
+    stratAdminTools.style.display=currentUser?.role==='admin'?'flex':'none';
+  }
+  if(currentUser?.role!=='admin'){
+    document.getElementById('stratSettingsPanel')?.classList.remove('open');
+  }
 }
 function showAdminPanel(){
   document.body.classList.add('locked');
@@ -4940,9 +4969,9 @@ function renderStrategicCompass(){
     }).join('');
   }
 
-  // Show admin tools if admin
+  // Show admin tools only for authenticated administrators.
   const adminTools = el('stratAdminTools');
-  if(adminTools) adminTools.style.display = (currentUser === 'admin') ? 'flex' : 'none';
+  if(adminTools) adminTools.style.display = (currentUser?.role === 'admin') ? 'flex' : 'none';
 
   // Update category strategic badges
   renderCategoryStrategicBadges(targets, actuals);
