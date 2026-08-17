@@ -23,21 +23,16 @@
   .sub{color:rgba(255,255,255,0.95);font-size:clamp(16px,2.4vw,22px);max-width:640px;line-height:1.6;margin:0 0 16px;font-weight:900;font-family:'Tajawal',sans-serif;}
   @media(max-width:640px){.masthead-inner{flex-direction:column;gap:14px;text-align:center;}.masthead-emblem{width:70px;height:70px;}}
   .month-badge{display:inline-flex;align-items:center;gap:8px;background:var(--syria-green);border:2px solid var(--syria-green);padding:7px 16px;border-radius:100px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--syria-white);font-weight:600;}
-  .toolbar{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);box-shadow:0 3px 12px rgba(11,90,122,.08);backdrop-filter:blur(8px);}
-  .toolbar-inner{max-width:1180px;margin:0 auto;padding:12px 28px;display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;}
-  .toolbar-label{font-family:'Tajawal',sans-serif;font-size:14px;color:var(--ink);white-space:nowrap;display:inline-flex;align-items:center;gap:8px;font-weight:800;min-width:178px;}
-  .filter-select-wrap{position:relative;min-width:250px;flex:0 1 300px;}
-  .filter-select-wrap::after{content:'⌄';position:absolute;top:50%;inset-inline-end:14px;transform:translateY(-58%);font-size:19px;font-weight:800;color:var(--ink-soft);pointer-events:none;line-height:1;transition:.2s ease;}
-  .filter-select-wrap:focus-within::after{color:var(--brass);transform:translateY(-58%) rotate(180deg);}
-  .filter-select{appearance:none;-webkit-appearance:none;width:100%;height:44px;border:1px solid #b7d0d9;background:var(--paper);color:var(--ink);padding:8px 42px 8px 16px;border-radius:9px;font-size:13.5px;font-weight:700;cursor:pointer;transition:.2s ease;font-family:'Cairo',sans-serif;box-shadow:inset 0 1px 2px rgba(11,90,122,.04);}
-  .filter-select:hover{border-color:var(--brass);background:#fcfeff;}
-  .filter-select:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 3px rgba(13,139,168,.16);}
-  .filter-select option{font-family:'Cairo',sans-serif;background:#fff;color:var(--ink);font-weight:600;}
-  .filter-caption{font-size:11px;color:var(--ink-soft);margin-inline-start:auto;opacity:.78;white-space:nowrap;}
+  .toolbar{position:sticky;top:0;z-index:30;background:var(--paper);border-bottom:1px solid var(--line);box-shadow:0 4px 14px rgba(18,60,68,0.06);}
+  .toolbar-inner{max-width:1180px;margin:0 auto;padding:14px 28px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+  .toolbar-label{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);margin-inline-end:6px;white-space:nowrap;}
+  .chip{border:1px solid var(--line);background:var(--sand);color:var(--ink);padding:7px 15px;border-radius:100px;font-size:13.5px;font-weight:600;cursor:pointer;transition:.15s ease;font-family:'Cairo',sans-serif;}
+  .chip:hover{border-color:#0D8BA8;}
+  .chip.active{background:#0B5A7A;color:#fff;border-color:#0B5A7A;}
+  .chip:disabled{opacity:0.3;cursor:not-allowed;}
   .month-toolbar{background:var(--sand);border-bottom:1px solid var(--line);position:static;box-shadow:none;}
-  .month-toolbar .filter-select{border-color:#b8d8df;}
-  @media(max-width:760px){.toolbar-inner{padding:12px 18px;gap:8px 12px;}.toolbar-label{min-width:160px;}.filter-select-wrap{min-width:220px;flex:1;}.filter-caption{display:none;}}
-  @media(max-width:480px){.toolbar-label{width:100%;min-width:0;font-size:13px;}.filter-select-wrap{min-width:100%;}}
+  .month-toolbar .chip{background:var(--paper);}
+  .month-toolbar .chip.active{background:#0D8BA8;color:#fff;border-color:#0D8BA8;}
   .data-panel{max-width:1180px;margin:0 auto;padding:20px 28px 0;}
   .data-source-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:20px;}
   .data-source-bar .label{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);font-weight:600;white-space:nowrap;}
@@ -442,6 +437,64 @@
 .btn-warning{background:#f0a500;color:#fff;}
 @media(max-width:760px){.form-grid,.log-filter{grid-template-columns:1fr;}.admin-dashboard{padding:16px;}.users-table,.logs-table{font-size:10.5px;}}
 
+
+  /* ===== UNIFIED DESIGN SYSTEM ===== */
+  :root{
+    --radius-sm:10px;
+    --radius-md:14px;
+    --radius-lg:18px;
+    --shadow-card:0 6px 22px rgba(11,90,122,.07);
+    --shadow-hover:0 10px 30px rgba(11,90,122,.13);
+  }
+  body{background:#f3f8fa;}
+  .toolbar{position:static;background:transparent;border:0;box-shadow:none;}
+  .toolbar-inner{max-width:1180px;margin:0 auto;padding:0;}
+  .filter-panel{max-width:1180px;margin:20px auto 0;padding:20px 24px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);}
+  .filter-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;}
+  .filter-kicker{display:block;color:var(--brass);font-size:11px;font-weight:700;margin-bottom:3px;}
+  .filter-head h3{margin:0;color:var(--ink);font-family:'Tajawal',sans-serif;font-size:20px;}
+  .filter-head p{margin:4px 0 0;color:var(--ink-soft);font-size:12px;}
+  .filter-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
+  .filter-field{display:grid;gap:7px;color:var(--ink);font-size:12px;font-weight:700;}
+  .filter-field select{width:100%;min-height:44px;padding:9px 13px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--sand);color:var(--ink);font-family:'Cairo',sans-serif;font-size:13px;cursor:pointer;}
+  .filter-field select:focus{outline:none;border-color:var(--brass);background:#fff;box-shadow:0 0 0 3px rgba(13,139,168,.12);}
+  .filter-reset{border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px 14px;background:var(--sand);color:var(--ink);font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
+  .filter-reset:hover{border-color:var(--brass);color:var(--brass);}
+  .active-filters{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:15px;padding-top:13px;border-top:1px dashed var(--line);}
+  .active-filters-label{color:var(--ink-soft);font-size:11px;}
+  .filter-tag{padding:5px 10px;border-radius:100px;background:#e0f5f5;color:var(--ink);font-size:11px;font-weight:700;}
+  .data-source-bar,.last-updated-panel>div{border-radius:var(--radius-md);box-shadow:var(--shadow-card);}
+  .kpi-grid{gap:16px;margin-bottom:30px;}
+  .kpi{border:1px solid rgba(255,255,255,.35);border-radius:var(--radius-md);box-shadow:var(--shadow-card);transition:transform .18s ease,box-shadow .18s ease;}
+  .kpi:hover{transform:translateY(-3px);box-shadow:var(--shadow-hover);}
+  section.category,.map-section,.insights-section,.strategic-compass,.analytics-section{border-radius:var(--radius-lg);box-shadow:var(--shadow-card);}
+  .cat-head,.map-head,.insights-head{padding:18px 22px;background:linear-gradient(90deg,#edf7fa 0%,#fff 72%);}
+  .cat-body,.insights-body,.strategic-compass-body{padding:20px 22px 24px;}
+  .ind-cards,.comparison-grid,.strat-axes,.analytics-grid{gap:16px;}
+  .ind-card,.comparison-card,.analytics-card,.strat-axis-card,.strat-overall-card{border-radius:var(--radius-md);box-shadow:0 3px 14px rgba(11,90,122,.05);transition:transform .18s ease,box-shadow .18s ease;}
+  .ind-card:hover,.comparison-card:hover,.analytics-card:hover,.strat-axis-card:hover,.strat-overall-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover);}
+  .gov-item{border-radius:var(--radius-md);box-shadow:0 2px 10px rgba(11,90,122,.04);}
+  .chart-wrap{border:1px solid var(--sand-2);box-shadow:inset 0 1px 0 rgba(255,255,255,.6);}
+  .insight-card,.monthly-report-card{border-radius:var(--radius-md);box-shadow:0 3px 14px rgba(11,90,122,.05);}
+  .table-scroll{overflow:auto;border:1px solid var(--line);border-radius:var(--radius-md);background:#fff;box-shadow:var(--shadow-card);}
+  .users-table,.logs-table{min-width:680px;border-collapse:separate;border-spacing:0;font-size:12px;}
+  .users-table th,.users-table td,.logs-table th,.logs-table td{padding:12px 13px;border-bottom:1px solid var(--sand-2);}
+  .users-table th,.logs-table th{background:#eaf5f8;color:var(--ink);font-size:12px;letter-spacing:.01em;}
+  .users-table tbody tr:last-child td,.logs-table tbody tr:last-child td{border-bottom:0;}
+  .users-table tbody tr:hover,.logs-table tbody tr:hover{background:#f4fbfc;}
+  .admin-actions{display:flex;flex-wrap:wrap;gap:8px;}
+  .small-note,.diag-box,.file-protocol-warning{border-radius:var(--radius-md);}
+  input,select,textarea{transition:border-color .15s ease,box-shadow .15s ease;}
+  input:focus,select:focus,textarea:focus{box-shadow:0 0 0 3px rgba(13,139,168,.12);}
+  @media(max-width:640px){
+    .filter-panel{margin:14px 14px 0;padding:16px;}
+    .filter-head{align-items:stretch;flex-direction:column;}
+    .filter-reset{width:100%;}
+    .filter-fields{grid-template-columns:1fr;}
+    .cat-head,.map-head,.insights-head{padding:16px;}
+    .cat-body,.insights-body,.strategic-compass-body{padding:16px;}
+  }
+
 </style>
 <base target="_blank">
 
@@ -523,7 +576,7 @@
         </div>
         <div id="userFormMsg" class="admin-message"></div>
       </form>
-      <div style="overflow:auto;margin-top:16px;">
+      <div class="table-scroll" style="margin-top:16px;">
         <table class="users-table">
           <thead><tr><th>الاسم</th><th>البريد</th><th>الدور</th><th>المصدر</th><th>آخر دخول</th><th>إجراءات</th></tr></thead>
           <tbody id="usersTableBody"></tbody>
@@ -547,7 +600,7 @@
         </select>
         <button class="btn btn-sm btn-warning" onclick="exportAuditLogs()">⬇️ تصدير CSV</button>
       </div>
-      <div style="overflow:auto;max-height:48vh;">
+      <div class="table-scroll" style="max-height:48vh;">
         <table class="logs-table">
           <thead><tr><th>التاريخ والوقت</th><th>المستخدم</th><th>العملية</th><th>الجهاز والمتصفح</th></tr></thead>
           <tbody id="logsTableBody"></tbody>
@@ -586,55 +639,42 @@
   </div>
 </header>
 
-<!-- Governorate Filter -->
-<div class="toolbar" id="govToolbar">
-  <div class="toolbar-inner">
-    <span class="toolbar-label">🏛️ تصفية حسب المحافظة</span>
-    <div class="filter-select-wrap">
-      <select class="filter-select" id="govSelect" aria-label="اختيار المحافظة">
-        <option value="all">كل المحافظات</option>
-        <option value="دمشق">دمشق</option>
-        <option value="ريف دمشق">ريف دمشق</option>
-        <option value="حلب">حلب</option>
-        <option value="حمص">حمص</option>
-        <option value="حماه">حماه</option>
-        <option value="اللاذقية">اللاذقية</option>
-        <option value="طرطوس">طرطوس</option>
-        <option value="السويداء">السويداء</option>
-        <option value="درعا">درعا</option>
-        <option value="القنيطرة">القنيطرة</option>
-        <option value="ادلب">ادلب</option>
-        <option value="الرقة">الرقة</option>
-        <option value="دير الزور">دير الزور</option>
-        <option value="الحسكة">الحسكة</option>
-      </select>
+<!-- Unified Filters -->
+<div class="filter-panel" id="filterPanel">
+  <div class="filter-head">
+    <div>
+      <span class="filter-kicker">خيارات العرض</span>
+      <h3>تصفية المؤشرات</h3>
+      <p>اختر المحافظة والشهر لعرض البيانات المطلوبة</p>
     </div>
-    <span class="filter-caption">اختر محافظة لعرض بياناتها</span>
+    <button class="filter-reset" id="filterReset" type="button">إعادة التعيين</button>
   </div>
-</div>
-
-<!-- Month Filter -->
-<div class="toolbar month-toolbar" id="monthToolbar">
-  <div class="toolbar-inner">
-    <span class="toolbar-label">📅 تصفية حسب الشهر</span>
-    <div class="filter-select-wrap">
-      <select class="filter-select" id="monthSelect" aria-label="اختيار الشهر">
-        <option value="all">كل الأشهر</option>
-        <option value="كانون الثاني">كانون الثاني</option>
-        <option value="شباط">شباط</option>
-        <option value="آذار">آذار</option>
-        <option value="نيسان">نيسان</option>
-        <option value="أيار">أيار</option>
-        <option value="حزيران">حزيران</option>
-        <option value="تموز">تموز</option>
-        <option value="آب">آب</option>
-        <option value="أيلول">أيلول</option>
-        <option value="تشرين الأول">تشرين الأول</option>
-        <option value="تشرين الثاني">تشرين الثاني</option>
-        <option value="كانون الأول">كانون الأول</option>
+  <div class="filter-fields">
+    <label class="filter-field">
+      <span>🏛️ المحافظة</span>
+      <select id="govSelect">
+        <option value="all">كل المحافظات</option>
+        <option value="دمشق">دمشق</option><option value="ريف دمشق">ريف دمشق</option><option value="حلب">حلب</option>
+        <option value="حمص">حمص</option><option value="حماه">حماه</option><option value="اللاذقية">اللاذقية</option>
+        <option value="طرطوس">طرطوس</option><option value="السويداء">السويداء</option><option value="درعا">درعا</option>
+        <option value="القنيطرة">القنيطرة</option><option value="ادلب">ادلب</option><option value="الرقة">الرقة</option>
+        <option value="دير الزور">دير الزور</option><option value="الحسكة">الحسكة</option>
       </select>
-    </div>
-    <span class="filter-caption">اختر شهرًا لعرض بياناته</span>
+    </label>
+    <label class="filter-field">
+      <span>📅 الشهر</span>
+      <select id="monthSelect">
+        <option value="all">كل الأشهر</option>
+        <option value="كانون الثاني">كانون الثاني</option><option value="شباط">شباط</option><option value="آذار">آذار</option>
+        <option value="نيسان">نيسان</option><option value="أيار">أيار</option><option value="حزيران">حزيران</option>
+        <option value="تموز">تموز</option><option value="آب">آب</option><option value="أيلول">أيلول</option>
+        <option value="تشرين الأول">تشرين الأول</option><option value="تشرين الثاني">تشرين الثاني</option><option value="كانون الأول">كانون الأول</option>
+      </select>
+    </label>
+  </div>
+  <div class="active-filters" id="activeFilters">
+    <span class="active-filters-label">الحالة الحالية:</span>
+    <span class="filter-tag">كل المحافظات</span><span class="filter-tag">كل الأشهر</span>
   </div>
 </div>
 
@@ -1312,7 +1352,7 @@ function filtered(){
     data = data.filter(d => d.gov === activeGov);
   }
   if(selectedMonths.size > 0){
-    data = data.filter(d => selectedMonths.has(d.month));
+    data = data.filter(d => selectedMonths.has(normalizeMonth(d.month)));
   }
   return data;
 }
@@ -1542,10 +1582,8 @@ function filterByMonth(chipEl){
 
 function syncMonthChipsWithData(){
   const availableMonths = new Set(ALL_DATA.map(d => normalizeMonth(d.month)));
-  const monthSelect = document.getElementById('monthSelect');
-  if(!monthSelect) return;
-  [...monthSelect.options].forEach(option => {
-    if(option.value !== 'all') option.disabled = !availableMonths.has(option.value);
+  document.querySelectorAll('#monthSelect option').forEach(option => {
+    if(option.value !== 'all') option.disabled = !availableMonths.has(normalizeMonth(option.value));
   });
 }
 
@@ -1553,17 +1591,18 @@ function syncMonthChipsWithData(){
 // MONTH FILTER SETUP
 // =====================
 function setupMonthFilter(){
-  const monthSelect = document.getElementById('monthSelect');
-  if(!monthSelect) return;
-  monthSelect.addEventListener('change', function(){
+  const select = document.getElementById('monthSelect');
+  if(!select) return;
+  select.addEventListener('change', function(){
     const month = normalizeMonth(this.value);
     if(month === 'all'){
       selectedMonthChips.clear();
-      selectedMonths = new Set([...new Set(ALL_DATA.map(d => d.month))]);
+      selectedMonths = new Set([...new Set(ALL_DATA.map(d => normalizeMonth(d.month)))]);
     } else {
       selectedMonthChips = new Set([month]);
       selectedMonths = new Set([month]);
     }
+    updateActiveFilters();
     renderAll();
   });
 }
@@ -1572,13 +1611,38 @@ function setupMonthFilter(){
 // GOVERNORATE FILTER
 // =====================
 function setupGovFilter(){
-  const govSelect = document.getElementById('govSelect');
-  if(!govSelect) return;
-  govSelect.addEventListener('change', function(){
-    activeGov = this.value;
-    console.log('Selected governorate:', activeGov);
-    renderAll();
-  });
+  const select = document.getElementById('govSelect');
+  const reset = document.getElementById('filterReset');
+  if(select){
+    select.addEventListener('change', function(){
+      activeGov = this.value;
+      updateActiveFilters();
+      renderAll();
+    });
+  }
+  if(reset){
+    reset.addEventListener('click', function(){
+      activeGov = 'all';
+      selectedMonthChips.clear();
+      selectedMonths = new Set([...new Set(ALL_DATA.map(d => normalizeMonth(d.month)))]);
+      if(select) select.value = 'all';
+      const monthSelect = document.getElementById('monthSelect');
+      if(monthSelect) monthSelect.value = 'all';
+      updateActiveFilters();
+      renderAll();
+    });
+  }
+  updateActiveFilters();
+}
+
+function updateActiveFilters(){
+  const container = document.getElementById('activeFilters');
+  if(!container) return;
+  const govText = activeGov === 'all' ? 'كل المحافظات' : activeGov;
+  const monthValues = [...selectedMonthChips];
+  const monthText = monthValues.length === 0 ? 'كل الأشهر' : monthValues.join('، ');
+  container.innerHTML = '<span class="active-filters-label">الحالة الحالية:</span>' +
+    `<span class="filter-tag">${govText}</span><span class="filter-tag">${monthText}</span>`;
 }
 
 // =====================
