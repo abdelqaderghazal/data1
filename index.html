@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>سِجل المؤشرات التشغيلية — المحافظات</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Cairo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  
+  <!-- Leaflet Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Google Sign-In -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="locked">
+
+  <!-- Connection Status Bar -->
+  <div class="connection-bar offline" id="offlineBar">📵 لا يوجد اتصال بالإنترنت — تعمل ببيانات محفوظة محلياً</div>
+  <div class="connection-bar online" id="onlineBar">🌐 تم استعادة الاتصال</div>
+
+  <!-- ═════════════════════════════════════════
+       LOGIN SCREEN
+       ═════════════════════════════════════════ -->
+  <div class="password-overlay" id="passwordOverlay">
+    <div class="password-box" id="loginBox">
+      <div class="lock-icon">🔐</div>
+      <h2>سِجل المؤشرات التشغيلية</h2>
+      <p>الدخول الآمن للمستخدمين المحليين أو عبر حساب Google.</p>
+
+      <div class="login-fields">
+        <input type="email" id="loginEmail" placeholder="البريد الإلكتروني / اسم المستخدم" autocomplete="username">
+        <input type="password" id="passwordInput" placeholder="كلمة المرور" autocomplete="current-password">
+      </div>
+
+      <button class="btn-login" onclick="loginWithPassword()">🔓 تسجيل الدخول</button>
+      <div class="error-msg" id="passwordError">❌ بيانات الدخول غير صحيحة</div>
+
+      <div class="auth-methods">
+        <div class="auth-divider"><span>أو</span></div>
+        <div id="googleSignIn"></div>
+        <div class="auth-hint" id="googleHint">تسجيل الدخول بواسطة Google يتطلب ضبط Google Client ID من لوحة المدير أولاً.</div>
+      </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div class="admin-dashboard" id="adminPanel" style="display:none;">
+      <div class="admin-dashboard-head">
+        <div>
+          <h3>⚙️ لوحة تحكم المدير</h3>
+          <div class="current-user-pill" id="adminCurrentUser">👤 المدير</div>
+        </div>
+        <div class="admin-actions" style="margin-top:0;justify-content:flex-start;align-items:center;">
+          <button class="btn btn-primary btn-sm" onclick="enterIndicatorsFromAdmin()">📊 الدخول إلى صفحة المؤشرات</button>
+          <button class="btn btn-danger btn-sm" onclick="logout()">خروج</button>
+        </div>
+      </div>
+
+      <div class="admin-tabs">
+        <button class="admin-tab active" data-tab="users" onclick="openAdminTab('users')">👥 المستخدمون</button>
+        <button class="admin-tab" data-tab="logs" onclick="openAdminTab('logs')">🧾 سجل الدخول</button>
+        <button class="admin-tab" data-tab="google" onclick="openAdminTab('google')">🔵 إعداد Google</button>
+      </div>
+
+      <!-- Users Tab -->
+      <div class="admin-section active" id="adminTab-users">
+        <div class="small-note">يمكن للمدير إضافة/تعديل/حذف المستخدمين وتغيير أدوارهم. الأدوار: مدير، محرر، مطلع.</div>
+        <form class="admin-form" onsubmit="return saveUserFromForm(event)">
+          <div class="form-grid">
+            <div><input id="userNameInput" placeholder="اسم المستخدم" required></div>
+            <div><input id="userEmailInput" type="email" placeholder="البريد الإلكتروني" required></div>
+            <div><input id="userPasswordInput" type="password" placeholder="كلمة المرور الجديدة"></div>
+            <div>
+              <select id="userRoleInput">
+                <option value="admin">مدير</option>
+                <option value="editor" selected>محرر</option>
+                <option value="viewer">مطلع</option>
+              </select>
+            </div>
+          </div>
+          <input type="hidden" id="userIdInput">
+          <div class="admin-actions">
+            <button class="btn btn-primary btn-sm" type="submit">💾 حفظ المستخدم</button>
+            <button class="btn btn-sm" type="button" onclick="resetUserForm()" style="background:var(--sand);color:var(--ink-soft)">مسح</button>
+            <button class="btn btn-sm btn-sync-users" type="button" onclick="syncUsersStorage()">🔄 تحديث ومزامنة الحسابات</button>
+          </div>
+          <div id="userFormMsg" class="admin-message"></div>
+        </form>
+        <div class="table-scroll" style="margin-top:16px;">
+          <table class="users-table">
+            <thead><tr><th>الاسم</th><th>البريد</th><th>الدور</th><th>المصدر</th><th>آخر دخول</th><th>إجراءات</th></tr></thead>
+            <tbody id="usersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Logs Tab -->
+      <div class="admin-section" id="adminTab-logs">
+        <div class="small-note"><span id="auditRetentionStatus">السجل يُحدّث فورياً — تُحذف السجلات الأقدم من 7 أيام تلقائياً</span></div>
+        <div class="storage-meter" id="auditStorageMeter" aria-live="polite">
+          <div class="storage-meter-head">
+            <span>💾 التخزين المحلي للسجل</span>
+            <strong id="auditStorageLabel">جاري الحساب...</strong>
+          </div>
+          <div class="storage-meter-track"><div class="storage-meter-fill" id="auditStorageFill"></div></div>
+          <div class="storage-meter-note" id="auditStorageNote">يتم قياس حجم سجلات التدقيق المحفوظة داخل المتصفح</div>
+        </div>
+        <div class="log-filter">
+          <input id="logSearch" placeholder="بحث باسم أو بريد" oninput="renderAuditLogs()">
+          <select id="logAction" onchange="renderAuditLogs()">
+            <option value="">كل العمليات</option>
+            <option value="login">تسجيل دخول</option>
+            <option value="logout">تسجيل خروج</option>
+            <option value="failed_login">دخول فاشل</option>
+            <option value="user_create">إضافة مستخدم</option>
+            <option value="user_update">تعديل مستخدم</option>
+            <option value="user_delete">حذف مستخدم</option>
+            <option value="google_login">دخول Google</option>
+            <option value="force_logout">إخراج مستخدم</option>
+            <option value="user_reactivate">إعادة تفعيل مستخدم</option>
+          </select>
+          <button class="btn btn-sm btn-warning" onclick="exportAuditLogs()">⬇️ تصدير CSV</button>
+        </div>
+        <div class="table-scroll" style="max-height:48vh;">
+          <table class="logs-table">
+            <thead><tr><th>التاريخ والوقت</th><th>المستخدم</th><th>العملية</th><th>الجهاز والمتصفح</th></tr></thead>
+            <tbody id="logsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Google Config Tab -->
+      <div class="admin-section" id="adminTab-google">
+        <div class="small-note">Google Identity Services يحتاج OAuth 2.0 Client ID من Google Cloud. بعد وضعه هنا سيظهر زر Google في شاشة الدخول.</div>
+        <div class="admin-form">
+          <input id="googleClientIdInput" placeholder="1234567890-xxxx.apps.googleusercontent.com">
+          <div class="admin-actions">
+            <button class="btn btn-primary btn-sm" onclick="saveGoogleClientId()">💾 حفظ وتفعيل Google</button>
+          </div>
+          <div id="googleConfigMsg" class="admin-message"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Read-only Banner -->
+  <div class="read-only-banner" id="readOnlyBanner">👁️ وضع القراءة فقط — لا يمكنك تعديل البيانات</div>
+
+  <!-- Header -->
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div class="masthead-emblem">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%230B5A7A'/%3E%3Ctext x='50' y='60' font-size='60' text-anchor='middle' fill='white' font-weight='bold'%3E📊%3C/text%3E%3C/svg%3E" alt="شعار الوزارة">
+      </div>
+      <div class="masthead-content">
+        <p class="sub">وزارة الشؤون الاجتماعية والعمل — مديرية التخطيط والإحصاء</p>
+        <h1>سِجل المؤشرات التشغيلية وفق المحافظات</h1>
+        <span class="month-badge" id="mastheadBadge">🗓️ ارفع ملف CSV للبدء</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filter Panel -->
+  <div class="filter-panel" id="filterPanel">
+    <div class="filter-head">
+      <div>
+        <span class="filter-kicker">خيارات العرض</span>
+        <h3>تصفية المؤشرات</h3>
+        <p>اختر المحافظة والشهر لعرض البيانات المطلوبة</p>
+      </div>
+      <button class="filter-reset" id="filterReset" type="button">إعادة التعيين</button>
+    </div>
+    <div class="filter-fields">
+      <label class="filter-field">
+        <span>🏛️ المحافظة</span>
+        <select id="govSelect" onchange="applyFilters()">
+          <option value="all">كل المحافظات</option>
+          <option value="دمشق">دمشق</option>
+          <option value="ريف دمشق">ريف دمشق</option>
+          <option value="حلب">حلب</option>
+          <option value="حمص">حمص</option>
+          <option value="حماه">حماه</option>
+          <option value="اللاذقية">اللاذقية</option>
+          <option value="طرطوس">طرطوس</option>
+          <option value="السويداء">السويداء</option>
+          <option value="درعا">درعا</option>
+          <option value="القنيطرة">القنيطرة</option>
+          <option value="ادلب">ادلب</option>
+          <option value="الرقة">الرقة</option>
+          <option value="دير الزور">دير الزور</option>
+          <option value="الحسكة">الحسكة</option>
+        </select>
+      </label>
+      <label class="filter-field">
+        <span>📅 الشهر</span>
+        <select id="monthSelect" onchange="applyFilters()">
+          <option value="all">كل الأشهر</option>
+          <option value="كانون الثاني">كانون الثاني</option>
+          <option value="شباط">شباط</option>
+          <option value="آذار">آذار</option>
+          <option value="نيسان">نيسان</option>
+          <option value="أيار">أيار</option>
+          <option value="حزيران">حزيران</option>
+          <option value="تموز">تموز</option>
+          <option value="آب">آب</option>
+          <option value="أيلول">أيلول</option>
+          <option value="تشرين الأول">تشرين الأول</option>
+          <option value="تشرين الثاني">تشرين الثاني</option>
+          <option value="كانون الأول">كانون الأول</option>
+        </select>
+      </label>
+    </div>
+    <div class="active-filters" id="activeFilters">
+      <span class="active-filters-label">الحالة الحالية:</span>
+      <span class="filter-tag">كل المحافظات</span>
+      <span class="filter-tag">كل الأشهر</span>
+    </div>
+  </div>
+
+  <!-- Data Source Bar -->
+  <div class="data-panel">
+    <div class="data-source-bar">
+      <span class="label">📁 مصدر البيانات:</span>
+      <input type="text" class="gsheet-input" id="gsheetUrl" value="متصل بـ Google Sheets API" readonly>
+      <button class="btn btn-primary" onclick="loadFromSheet()" id="refreshBtn">🔄 تحديث من الرابط</button>
+      <button class="btn btn-success" onclick="showUploadModal()">📁 رفع ملف CSV يدوياً</button>
+      <span class="status-badge status-loading" id="dataStatus">جاري التحميل التلقائي...</span>
+    </div>
+  </div>
+
+  <!-- Last Updated Panel -->
+  <div class="data-panel" id="lastUpdatedPanel" style="display:none;">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:linear-gradient(90deg,#E0F5F5,#ffffff);border:1px solid #0D8BA8;border-radius:12px;padding:12px 18px;">
+      <span style="font-size:20px;">📅</span>
+      <div style="flex:1;min-width:0;">
+        <span style="font-family:'Tajawal';font-weight:700;font-size:13px;color:#0B5A7A;">البيانات محدّثة حتى:</span>
+        <span id="lastUpdatedDisplay" style="font-family:'IBM Plex Mono';font-weight:600;font-size:13px;color:var(--ink);margin-inline-start:6px;">—</span>
+      </div>
+      <span id="lastUpdatedDot" style="width:10px;height:10px;border-radius:50%;background:#4F7A63;animation:pulse 2s infinite;flex-shrink:0;"></span>
+      <span id="lastUpdatedLabel" style="font-size:11.5px;color:var(--ink-soft);font-weight:600;white-space:nowrap;">بيانات محلية</span>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main>
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <!-- Strategic Compass -->
+    <section class="strategic-compass open" id="strategicCompass">
+      <div class="strategic-compass-head" onclick="toggleStrategicCompass()">
+        <div class="icon">🎯</div>
+        <div>
+          <h2>بوصلة الخطة الاستراتيجية</h2>
+          <p>مقارنة المؤشرات التشغيلية بالأهداف السنوية — تتبع الإنجاز في الوقت الفعلي</p>
+        </div>
+        <div class="chev">⌄</div>
+      </div>
+      <div class="strategic-compass-body">
+        <div class="strat-overall" id="stratOverall"></div>
+        <div class="strat-timeline" id="stratTimeline"></div>
+        <div class="strat-axes" id="stratAxesGrid"></div>
+      </div>
+    </section>
+
+    <!-- Interactive Map -->
+    <section class="category open map-section" data-cat="map">
+      <div class="cat-head" onclick="toggleCat(this)">
+        <div class="icon">🗺️</div>
+        <div><h2>الخريطة التفاعلية للمحافظات</h2><p>انقر على أي محافظة لعرض مؤشراتها التشغيلية</p></div>
+        <div class="chev">⌄</div>
+      </div>
+      <div class="cat-body" style="padding:0;">
+        <div class="map-legend" id="mapLegend"></div>
+        <div id="govMap" style="height:500px;"></div>
+      </div>
+    </section>
+
+    <!-- Content Sections (Dynamically Generated) -->
+    <div id="categorySections"></div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="assets/auth.js"></script>
+  <script src="assets/storage.js"></script>
+  <script src="assets/data.js"></script>
+  <script src="assets/ui.js"></script>
+  <script src="assets/map.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
