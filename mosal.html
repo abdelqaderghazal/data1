@@ -3999,12 +3999,17 @@ function stopSessionGuard(){
 }
 
 async function getUserById(id){
-  const db=await openAuthDB();
-  return new Promise((resolve,reject)=>{
-    const req=db.transaction(USERS_STORE,'readonly').objectStore(USERS_STORE).get(id);
-    req.onsuccess=()=>resolve(req.result||null);
-    req.onerror=()=>reject(req.error);
-  });
+  try{
+    const db=await openAuthDB();
+    return await new Promise((resolve,reject)=>{
+      const req=db.transaction(USERS_STORE,'readonly').objectStore(USERS_STORE).get(id);
+      req.onsuccess=()=>resolve(req.result||null);
+      req.onerror=()=>reject(req.error);
+    });
+  }catch(error){
+    const users=await ensureFallbackUsers();
+    return users.find(u=>u.id===id)||null;
+  }
 }
 
 async function checkCurrentSession(){
@@ -4053,48 +4058,95 @@ async function sha256(text){
   const hash = await crypto.subtle.digest('SHA-256',data);
   return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,'0')).join('');
 }
+const FALLBACK_USERS_KEY='govDashboard_localUsers';
+
+function readFallbackUsers(){
+  try{return JSON.parse(localStorage.getItem(FALLBACK_USERS_KEY)||'[]');}
+  catch(e){return [];}
+}
+function writeFallbackUsers(users){
+  localStorage.setItem(FALLBACK_USERS_KEY,JSON.stringify(users));
+}
+async function ensureFallbackUsers(){
+  let users=readFallbackUsers();
+  if(users.length) return users;
+  users=await Promise.all(DEFAULT_LOCAL_USERS.map(async item=>({
+    id:item.id,name:item.name,email:item.email.toLowerCase(),role:item.role,
+    passwordHash:await sha256(item.password),provider:'local',active:true,
+    createdAt:new Date().toISOString(),lastLogin:null
+  })));
+  writeFallbackUsers(users);
+  return users;
+}
 async function getAllUsers(){
-  const db = await openAuthDB();
-  return new Promise((resolve,reject)=>{
-    const req = db.transaction(USERS_STORE,'readonly').objectStore(USERS_STORE).getAll();
-    req.onsuccess=()=>resolve(req.result||[]);
-    req.onerror=()=>reject(req.error);
-  });
+  try{
+    const db = await openAuthDB();
+    return await new Promise((resolve,reject)=>{
+      const req=db.transaction(USERS_STORE,'readonly').objectStore(USERS_STORE).getAll();
+      req.onsuccess=()=>resolve(req.result||[]);
+      req.onerror=()=>reject(req.error);
+    });
+  }catch(error){
+    console.warn('Using LocalStorage users fallback:',error);
+    return ensureFallbackUsers();
+  }
 }
 async function getUserByEmail(email){
-  const db=await openAuthDB();
-  return new Promise((resolve,reject)=>{
-    const idx=db.transaction(USERS_STORE,'readonly').objectStore(USERS_STORE).index('email');
-    const req=idx.get(email.toLowerCase());
-    req.onsuccess=()=>resolve(req.result||null);
-    req.onerror=()=>reject(req.error);
-  });
+  const normalized=String(email||'').trim().toLowerCase();
+  try{
+    const db=await openAuthDB();
+    return await new Promise((resolve,reject)=>{
+      const idx=db.transaction(USERS_STORE,'readonly').objectStore(USERS_STORE).index('email');
+      const req=idx.get(normalized);
+      req.onsuccess=()=>resolve(req.result||null);
+      req.onerror=()=>reject(req.error);
+    });
+  }catch(error){
+    const users=await ensureFallbackUsers();
+    return users.find(u=>u.email===normalized)||null;
+  }
 }
 async function putUser(user){
-  const db=await openAuthDB();
-  return new Promise((resolve,reject)=>{
-    const req=db.transaction(USERS_STORE,'readwrite').objectStore(USERS_STORE).put(user);
-    req.onsuccess=()=>resolve(user);
-    req.onerror=()=>reject(req.error);
-  });
+  try{
+    const db=await openAuthDB();
+    return await new Promise((resolve,reject)=>{
+      const req=db.transaction(USERS_STORE,'readwrite').objectStore(USERS_STORE).put(user);
+      req.onsuccess=()=>resolve(user);
+      req.onerror=()=>reject(req.error);
+    });
+  }catch(error){
+    const users=await ensureFallbackUsers();
+    const index=users.findIndex(u=>u.id===user.id);
+    if(index>=0) users[index]=user; else users.push(user);
+    writeFallbackUsers(users);
+    return user;
+  }
 }
 async function deleteUserDb(id){
-  const db=await openAuthDB();
-  return new Promise((resolve,reject)=>{
-    const req=db.transaction(USERS_STORE,'readwrite').objectStore(USERS_STORE).delete(id);
-    req.onsuccess=()=>resolve();
-    req.onerror=()=>reject(req.error);
-  });
+  try{
+    const db=await openAuthDB();
+    return await new Promise((resolve,reject)=>{
+      const req=db.transaction(USERS_STORE,'readwrite').objectStore(USERS_STORE).delete(id);
+      req.onsuccess=()=>resolve();
+      req.onerror=()=>reject(req.error);
+    });
+  }catch(error){
+    writeFallbackUsers(readFallbackUsers().filter(u=>u.id!==id));
+  }
 }
 async function seedUsers(){
-  const users = await getAllUsers();
-  if(users.length) return;
-  for(const item of DEFAULT_LOCAL_USERS){
-    await putUser({
-      id:item.id, name:item.name, email:item.email.toLowerCase(), role:item.role,
-      passwordHash:await sha256(item.password), provider:'local', active:true,
-      createdAt:new Date().toISOString(), lastLogin:null
-    });
+  try{
+    const users=await getAllUsers();
+    if(users.length) return;
+    for(const item of DEFAULT_LOCAL_USERS){
+      await putUser({
+        id:item.id,name:item.name,email:item.email.toLowerCase(),role:item.role,
+        passwordHash:await sha256(item.password),provider:'local',active:true,
+        createdAt:new Date().toISOString(),lastLogin:null
+      });
+    }
+  }catch(error){
+    await ensureFallbackUsers();
   }
 }
 function deviceInfo(){
@@ -4254,17 +4306,17 @@ async function loginWithPassword(){
     // default accounts to authenticate instead of blocking the dashboard.
     console.error('Auth DB unavailable; using local fallback:',err);
     try{
-      const fallback=DEFAULT_LOCAL_USERS.find(u=>u.email.toLowerCase()===email);
-      const valid=fallback && fallback.active && fallback.password===password;
+      const fallbackUsers=await getAllUsers();
+      const fallback=fallbackUsers.find(u=>u.email===email);
+      const valid=fallback && fallback.active && fallback.passwordHash===await sha256(password);
       if(!valid){
         document.getElementById('passwordInput').value='';
         return showLoginError('❌ البريد أو كلمة المرور غير صحيحة');
       }
       currentUser={
-        id:fallback.id,name:fallback.name,email:fallback.email.toLowerCase(),
-        role:fallback.role,passwordHash:null,provider:'local',active:true,
-        createdAt:new Date().toISOString(),lastLogin:new Date().toISOString()
+        ...fallback,lastLogin:new Date().toISOString()
       };
+      await putUser(currentUser);
       saveSession(currentUser);
       if(currentUser.role==='admin') showAdminPanel();
       else enterDashboard();
