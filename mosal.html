@@ -452,6 +452,20 @@
   .filter-panel{position:sticky;top:10px;z-index:40;max-width:1180px;margin:20px auto 0;padding:20px 24px;background:rgba(255,255,255,.97);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:0 10px 28px rgba(11,90,122,.14);backdrop-filter:blur(8px);}
   .filter-panel::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background:var(--paper);}
   .filter-panel .filter-head,.filter-panel .filter-fields,.filter-panel .active-filters{position:relative;}
+  /* Compact filter layout */
+  .filter-panel{padding:11px 16px;margin-top:12px;border-radius:12px;}
+  .filter-head{gap:10px;margin-bottom:9px;}
+  .filter-kicker{font-size:9px;margin-bottom:1px;}
+  .filter-head h3{font-size:15px;}
+  .filter-head p{font-size:10px;margin-top:1px;}
+  .filter-fields{gap:8px;}
+  .filter-field{gap:3px;font-size:10px;}
+  .filter-field select{min-height:34px;padding:5px 9px;border-radius:8px;font-size:11px;}
+  .filter-reset{padding:5px 10px;border-radius:7px;font-size:10px;}
+  .active-filters{gap:5px;margin-top:8px;padding-top:7px;}
+  .active-filters-label{font-size:9px;}
+  .filter-tag{padding:3px 7px;font-size:9px;}
+  @media(max-width:640px){.filter-panel{top:5px;margin:8px 10px 0;padding:10px 12px;}.filter-head{flex-direction:row;align-items:center;}.filter-reset{width:auto;}.filter-head p{display:none;}}
   .filter-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;}
   .filter-kicker{display:block;color:var(--brass);font-size:11px;font-weight:700;margin-bottom:3px;}
   .filter-head h3{margin:0;color:var(--ink);font-family:'Tajawal',sans-serif;font-size:20px;}
@@ -497,6 +511,28 @@
     .cat-body,.insights-body,.strategic-compass-body{padding:16px;}
   }
 
+  /* Final compact filter overrides */
+  .filter-panel{padding:11px 16px;margin-top:12px;border-radius:12px;}
+  .filter-head{gap:10px;margin-bottom:9px;}
+  .filter-kicker{font-size:9px;margin-bottom:1px;}
+  .filter-head h3{font-size:15px;}
+  .filter-head p{font-size:10px;margin-top:1px;}
+  .filter-fields{gap:8px;}
+  .filter-field{gap:3px;font-size:10px;}
+  .filter-field select{min-height:34px;padding:5px 9px;border-radius:8px;font-size:11px;}
+  .filter-reset{padding:5px 10px;border-radius:7px;font-size:10px;}
+  .active-filters{gap:5px;margin-top:8px;padding-top:7px;}
+  .active-filters-label{font-size:9px;}
+  .filter-tag{padding:3px 7px;font-size:9px;}
+  @media(max-width:640px){.filter-panel{top:5px;margin:8px 10px 0;padding:10px 12px;}.filter-head{flex-direction:row;align-items:center;}.filter-reset{width:auto;}.filter-head p{display:none;}}
+  .storage-meter{margin:10px 0 14px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--sand);}
+  .storage-meter-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;color:var(--ink);font-size:12px;font-weight:700;}
+  .storage-meter-head strong{color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:11px;direction:ltr;}
+  .storage-meter-track{height:8px;overflow:hidden;border-radius:100px;background:var(--sand-2);}
+  .storage-meter-fill{width:0%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#0B5A7A,#0D8BA8);transition:width .35s ease;}
+  .storage-meter-fill.warning{background:linear-gradient(90deg,#f0a500,#ffc107);}
+  .storage-meter-fill.danger{background:linear-gradient(90deg,#c62828,#ef5350);}
+  .storage-meter-note{margin-top:6px;color:var(--ink-soft);font-size:10.5px;line-height:1.5;}
 </style>
 <base target="_blank">
 
@@ -587,7 +623,15 @@
     </div>
 
     <div class="admin-section" id="adminTab-logs">
-      <div class="small-note">السجل يحفظ وقت الحدث، المستخدم، العملية، الجهاز، المتصفح ونظام التشغيل داخل المتصفح الحالي. لا يتم تسجيل عنوان IP لأن قاعدة البيانات محلية.</div>
+      <div class="small-note"><span id="auditRetentionStatus">السجل يُحدّث فورياً — تُحذف السجلات الأقدم من 7 أيام تلقائياً عند فتح الصفحة. لا يتم تسجيل عنوان IP لأن قاعدة البيانات محلية.</span></div>
+      <div class="storage-meter" id="auditStorageMeter" aria-live="polite">
+        <div class="storage-meter-head">
+          <span>💾 التخزين المحلي للسجل</span>
+          <strong id="auditStorageLabel">جاري الحساب...</strong>
+        </div>
+        <div class="storage-meter-track"><div class="storage-meter-fill" id="auditStorageFill"></div></div>
+        <div class="storage-meter-note" id="auditStorageNote">يتم قياس حجم سجلات التدقيق المحفوظة داخل المتصفح</div>
+      </div>
       <div class="log-filter">
         <input id="logSearch" placeholder="بحث باسم أو بريد" oninput="renderAuditLogs()">
         <select id="logAction" onchange="renderAuditLogs()">
@@ -3921,6 +3965,23 @@ const DEFAULT_LOCAL_USERS = [
 ];
 let currentUser = null;
 let authDbPromise = null;
+const AUDIT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+const AUDIT_CLEANUP_KEY = 'govDashboard_auditCleanupAt';
+const AUDIT_REVISION_KEY = 'govDashboard_auditRevision';
+
+function notifyAuditLogChanged(){
+  window.dispatchEvent(new CustomEvent('audit-log-changed'));
+  try{ localStorage.setItem(AUDIT_REVISION_KEY, String(Date.now())); }catch(e){}
+  updateAuditStorageMeter();
+}
+
+window.addEventListener('audit-log-changed', () => {
+  if(currentUser?.role === 'admin') renderAuditLogs();
+});
+
+window.addEventListener('storage', e => {
+  if(e.key === AUDIT_REVISION_KEY && currentUser?.role === 'admin') renderAuditLogs();
+});
 
 function openAuthDB(){
   if(authDbPromise) return authDbPromise;
@@ -4022,8 +4083,49 @@ async function addAudit(action,user,details=''){
       details,
       browser:d.browser, os:d.os, platform:d.platform
     };
-    db.transaction(LOGS_STORE,'readwrite').objectStore(LOGS_STORE).put(item);
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction(LOGS_STORE,'readwrite');
+      tx.objectStore(LOGS_STORE).put(item);
+      tx.oncomplete=resolve;
+      tx.onerror=()=>reject(tx.error);
+      tx.onabort=()=>reject(tx.error||new Error('Audit transaction aborted'));
+    });
+    // تحديث فوري في نفس التبويب وجميع التبويبات المفتوحة للصفحة.
+    notifyAuditLogChanged();
   }catch(e){ console.warn('Audit log failed',e); }
+}
+
+async function cleanupAuditLogsWeekly(){
+  try{
+    const now=Date.now();
+    const last=Number(localStorage.getItem(AUDIT_CLEANUP_KEY)||0);
+    if(last && now-last < AUDIT_RETENTION_MS) return 0;
+
+    const db=await openAuthDB();
+    const cutoff=now-AUDIT_RETENTION_MS;
+    const logs=await getAllLogs();
+    const expired=logs.filter(l => new Date(l.createdAt).getTime() < cutoff);
+
+    if(expired.length){
+      await new Promise((resolve,reject)=>{
+        const tx=db.transaction(LOGS_STORE,'readwrite');
+        const store=tx.objectStore(LOGS_STORE);
+        expired.forEach(l=>store.delete(l.id));
+        tx.oncomplete=resolve;
+        tx.onerror=()=>reject(tx.error);
+        tx.onabort=()=>reject(tx.error||new Error('Audit cleanup aborted'));
+      });
+      notifyAuditLogChanged();
+    }
+
+    localStorage.setItem(AUDIT_CLEANUP_KEY,String(now));
+    const status=document.getElementById('auditRetentionStatus');
+    if(status) status.textContent=`التحديث فوري — تُحذف السجلات الأقدم من 7 أيام تلقائيًا. تم تنظيف ${expired.length} سجل.`;
+    return expired.length;
+  }catch(e){
+    console.warn('Audit cleanup failed',e);
+    return 0;
+  }
 }
 async function getAllLogs(){
   const db=await openAuthDB();
@@ -4032,6 +4134,46 @@ async function getAllLogs(){
     req.onsuccess=()=>resolve((req.result||[]).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)));
     req.onerror=()=>reject(req.error);
   });
+}
+
+function formatBytes(bytes){
+  if(!bytes) return '0 بايت';
+  const units=['بايت','KB','MB','GB'];
+  const index=Math.min(Math.floor(Math.log(bytes)/Math.log(1024)),units.length-1);
+  const value=bytes/Math.pow(1024,index);
+  return `${value.toFixed(index===0?0:2)} ${units[index]}`;
+}
+
+async function updateAuditStorageMeter(){
+  try{
+    const logs=await getAllLogs();
+    const usedBytes=new Blob([JSON.stringify(logs)]).size;
+    const label=document.getElementById('auditStorageLabel');
+    const fill=document.getElementById('auditStorageFill');
+    const note=document.getElementById('auditStorageNote');
+    if(!label || !fill || !note) return;
+
+    // حد بصري للتنبيه فقط، بينما الحجم المعروض هو الحجم المحسوب فعلياً.
+    const visualLimit=5*1024*1024;
+    const percentage=Math.min((usedBytes/visualLimit)*100,100);
+    label.textContent=formatBytes(usedBytes);
+    fill.style.width=`${Math.max(percentage,usedBytes?1:0)}%`;
+    fill.classList.toggle('warning',percentage>=60 && percentage<85);
+    fill.classList.toggle('danger',percentage>=85);
+    note.textContent=`${logs.length} سجل محفوظ محلياً — الحجم التقريبي: ${formatBytes(usedBytes)}`;
+
+    if(navigator.storage?.estimate){
+      const estimate=await navigator.storage.estimate();
+      if(estimate.quota){
+        const totalPercent=((estimate.usage||0)/estimate.quota*100).toFixed(1);
+        note.textContent+=` — إجمالي استخدام الموقع: ${totalPercent}% من الحصة المتاحة`;
+      }
+    }
+  }catch(error){
+    console.warn('تعذر حساب حجم التخزين المحلي:',error);
+    const label=document.getElementById('auditStorageLabel');
+    if(label) label.textContent='غير متاح';
+  }
 }
 function roleLabel(role){
   return role==='admin'?'مدير':role==='editor'?'محرر':'مطلع';
@@ -4128,7 +4270,7 @@ function showAdminPanel(){
   document.getElementById('adminCurrentUser').textContent=`👤 ${currentUser?.name||'المدير'} — ${roleLabel(currentUser?.role)}`;
   loadGoogleClientIdIntoForm();
   renderUsers();
-  renderAuditLogs();
+  cleanupAuditLogsWeekly().then(()=>renderAuditLogs());
 }
 function enterIndicatorsFromAdmin(){
   // Keep the administrator authenticated and open the main indicators dashboard.
@@ -4164,6 +4306,7 @@ function enterDashboard(){
 async function restoreSession(){
   try{
     await openAuthDB(); await seedUsers();
+    await cleanupAuditLogsWeekly();
     const saved=localStorage.getItem(SESSION_KEY);
     if(!saved) return false;
     const session=JSON.parse(saved);
@@ -4283,6 +4426,7 @@ async function renderAuditLogs(){
     <td>${escapeHtml(l.action)}${l.details?`<br><span class="device-cell">${escapeHtml(l.details)}</span>`:''}</td>
     <td><div class="device-cell">🖥️ ${escapeHtml(l.os)}<br>🌐 ${escapeHtml(l.browser)}<br>⌨️ ${escapeHtml(l.platform)}</div></td>
   </tr>`).join('') || `<tr><td colspan="4" style="text-align:center;color:var(--ink-soft)">لا توجد سجلات</td></tr>`;
+  await updateAuditStorageMeter();
 }
 async function exportAuditLogs(){
   const logs=await getAllLogs();
