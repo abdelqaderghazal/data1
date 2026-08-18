@@ -662,7 +662,7 @@
 
     <div class="admin-section" id="adminTab-google">
       <div class="small-note">
-        Google Identity Services يحتاج OAuth 2.0 Client ID من Google Cloud. بعد وضعه هنا سيظهر زر Google في شاشة الدخول.
+        Google Identity Services يحتاج OAuth 2.0 Client ID من Google Cloud. بعد وضعه هنا سيظهر زر Google في شاشة الدخول. أي حساب Google جديد يُضاف تلقائياً بدور <b>مطلع</b> فقط، ولا يحصل على صلاحيات الإدارة.
       </div>
       <div class="admin-form">
         <input id="googleClientIdInput" placeholder="1234567890-xxxx.apps.googleusercontent.com">
@@ -4657,9 +4657,10 @@ async function handleGoogleCredential(response){
     if(clientId && p.aud!==clientId) throw new Error('Invalid audience');
     if(p.iss!=='https://accounts.google.com' && p.iss!=='accounts.google.com') throw new Error('Invalid issuer');
     await openAuthDB(); await seedUsers();
-    let user=await getUserByEmail(p.email.toLowerCase());
+    const googleEmail=p.email.toLowerCase();
+    let user=await getUserByEmail(googleEmail);
     if(!user){
-      user={id:'g-'+p.sub,name:p.name||p.email.split('@')[0],email:p.email.toLowerCase(),
+      user={id:'g-'+p.sub,name:p.name||p.email.split('@')[0],email:googleEmail,
         role:'viewer',passwordHash:null,provider:'google',googleSub:p.sub,active:true,
         createdAt:new Date().toISOString(),lastLogin:null};
       await putUser(user);
@@ -4667,6 +4668,15 @@ async function handleGoogleCredential(response){
     }else if(!user.active){
       await addAudit('failed_login',user,'حساب Google معطل');
       return showLoginError('❌ هذا الحساب معطل من المدير');
+    }else if(user.provider!=='google'){
+      // لا نسمح لحساب Google بانتحال حساب محلي أو وراثة صلاحياته.
+      await addAudit('failed_login',{...user,provider:'google'},'محاولة دخول Google لبريد مرتبط بحساب محلي');
+      return showLoginError('❌ هذا البريد مرتبط بحساب محلي. استخدم كلمة المرور الخاصة به.');
+    }else{
+      // حسابات Google تبقى دائماً في وضع القراءة فقط.
+      user.role='viewer';
+      user.googleSub=p.sub;
+      user.name=p.name||user.name;
     }
     user.lastLogin=new Date().toISOString(); await putUser(user);
     currentUser=user; saveSession(user);
