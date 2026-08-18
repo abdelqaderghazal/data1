@@ -3620,11 +3620,27 @@ function initMap(){
     return;
   }
 
-  map = L.map('govMap').setView([35.0, 38.0], 6);
+  // نطاق سوريا التقريبي: يركّز العرض على الأراضي السورية ويمنع سحب الخريطة بعيداً عنها.
+  const syriaBounds = L.latLngBounds(
+    [32.25, 35.55], // الجنوب الغربي
+    [37.40, 42.45]  // الشمال الشرقي
+  );
+
+  map = L.map('govMap', {
+    minZoom: 6,
+    maxZoom: 13,
+    maxBounds: syriaBounds,
+    maxBoundsViscosity: 1.0,
+    zoomControl: true,
+    worldCopyJump: false
+  });
+
+  map.fitBounds(syriaBounds, {padding: [18, 18]});
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors',
-    maxZoom: 18
+    maxZoom: 19,
+    noWrap: true
   }).addTo(map);
 
   updateMapMarkers();
