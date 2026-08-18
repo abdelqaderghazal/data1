@@ -533,6 +533,9 @@
   .storage-meter-fill.warning{background:linear-gradient(90deg,#f0a500,#ffc107);}
   .storage-meter-fill.danger{background:linear-gradient(90deg,#c62828,#ef5350);}
   .storage-meter-note{margin-top:6px;color:var(--ink-soft);font-size:10.5px;line-height:1.5;}
+  .btn-sync-users{background:#e0f5f5;color:var(--ink);border:1px solid var(--line);}
+  .btn-sync-users:hover{background:#c8edf0;border-color:var(--brass);}
+  .btn-sync-users:disabled{opacity:.65;cursor:wait;}
 </style>
 <base target="_blank">
 
@@ -611,6 +614,7 @@
         <div class="admin-actions">
           <button class="btn btn-primary btn-sm" type="submit">💾 حفظ المستخدم</button>
           <button class="btn btn-sm" type="button" onclick="resetUserForm()" style="background:var(--sand);color:var(--ink-soft)">مسح</button>
+          <button class="btn btn-sm btn-sync-users" type="button" onclick="syncUsersStorage()">🔄 تحديث ومزامنة الحسابات</button>
         </div>
         <div id="userFormMsg" class="admin-message"></div>
       </form>
@@ -4010,6 +4014,8 @@ async function getUserById(id){
     const users=await ensureFallbackUsers();
     return users.find(u=>u.id===id)||null;
   }
+  const users=await ensureFallbackUsers();
+  return users.find(u=>u.id===id)||null;
 }
 
 async function checkCurrentSession(){
@@ -4078,61 +4084,82 @@ async function ensureFallbackUsers(){
   writeFallbackUsers(users);
   return users;
 }
+function mergeUsers(primary,secondary){
+  const result=[];
+  const seen=new Set();
+  [...(primary||[]),...(secondary||[])].forEach(user=>{
+    const key=String(user.email||user.id||'').toLowerCase();
+    if(!key || seen.has(key)) return;
+    seen.add(key); result.push(user);
+  });
+  return result;
+}
+
 async function getAllUsers(){
+  const fallback=await ensureFallbackUsers();
   try{
     const db = await openAuthDB();
-    return await new Promise((resolve,reject)=>{
+    const indexed=await new Promise((resolve,reject)=>{
       const req=db.transaction(USERS_STORE,'readonly').objectStore(USERS_STORE).getAll();
       req.onsuccess=()=>resolve(req.result||[]);
       req.onerror=()=>reject(req.error);
     });
+    return mergeUsers(indexed,fallback);
   }catch(error){
     console.warn('Using LocalStorage users fallback:',error);
-    return ensureFallbackUsers();
+    return fallback;
   }
 }
 async function getUserByEmail(email){
   const normalized=String(email||'').trim().toLowerCase();
+  let indexedUser=null;
   try{
     const db=await openAuthDB();
-    return await new Promise((resolve,reject)=>{
+    indexedUser=await new Promise((resolve,reject)=>{
       const idx=db.transaction(USERS_STORE,'readonly').objectStore(USERS_STORE).index('email');
       const req=idx.get(normalized);
       req.onsuccess=()=>resolve(req.result||null);
       req.onerror=()=>reject(req.error);
     });
   }catch(error){
-    const users=await ensureFallbackUsers();
-    return users.find(u=>u.email===normalized)||null;
+    console.warn('IndexedDB email lookup unavailable:',error);
   }
+  if(indexedUser) return indexedUser;
+  const users=await ensureFallbackUsers();
+  return users.find(u=>String(u.email||'').toLowerCase()===normalized)||null;
 }
 async function putUser(user){
+  let savedInIndexedDB=false;
   try{
     const db=await openAuthDB();
-    return await new Promise((resolve,reject)=>{
+    await new Promise((resolve,reject)=>{
       const req=db.transaction(USERS_STORE,'readwrite').objectStore(USERS_STORE).put(user);
-      req.onsuccess=()=>resolve(user);
+      req.onsuccess=resolve;
       req.onerror=()=>reject(req.error);
     });
+    savedInIndexedDB=true;
   }catch(error){
-    const users=await ensureFallbackUsers();
-    const index=users.findIndex(u=>u.id===user.id);
-    if(index>=0) users[index]=user; else users.push(user);
-    writeFallbackUsers(users);
-    return user;
+    console.warn('IndexedDB user save unavailable:',error);
   }
+  // حفظ نسخة متزامنة حتى يعمل الحساب إذا تغير سياق فتح الملف أو تعذر IndexedDB.
+  const users=await ensureFallbackUsers();
+  const index=users.findIndex(u=>u.id===user.id || String(u.email).toLowerCase()===String(user.email).toLowerCase());
+  if(index>=0) users[index]=user; else users.push(user);
+  writeFallbackUsers(users);
+  return savedInIndexedDB ? user : user;
 }
 async function deleteUserDb(id){
   try{
     const db=await openAuthDB();
-    return await new Promise((resolve,reject)=>{
+    await new Promise((resolve,reject)=>{
       const req=db.transaction(USERS_STORE,'readwrite').objectStore(USERS_STORE).delete(id);
-      req.onsuccess=()=>resolve();
+      req.onsuccess=resolve;
       req.onerror=()=>reject(req.error);
     });
   }catch(error){
-    writeFallbackUsers(readFallbackUsers().filter(u=>u.id!==id));
+    console.warn('IndexedDB user delete unavailable:',error);
   }
+  writeFallbackUsers(readFallbackUsers().filter(u=>u.id!==id));
 }
 async function seedUsers(){
   try{
@@ -4476,6 +4503,43 @@ function resetUserForm(){
 }
 function showUserMsg(msg,type){
   const el=document.getElementById('userFormMsg'); el.textContent=msg; el.className='admin-message show '+type;
+}
+
+async function syncUsersStorage(){
+  if(!currentUser || currentUser.role!=='admin') return;
+  const button=document.querySelector('.btn-sync-users');
+  if(button){button.disabled=true;button.textContent='⏳ جارٍ المزامنة...';}
+  try{
+    const fallbackUsers=readFallbackUsers();
+    let indexedUsers=[];
+    try{
+      const db=await openAuthDB();
+      indexedUsers=await new Promise((resolve,reject)=>{
+        const req=db.transaction(USERS_STORE,'readonly').objectStore(USERS_STORE).getAll();
+        req.onsuccess=()=>resolve(req.result||[]);
+        req.onerror=()=>reject(req.error);
+      });
+    }catch(error){
+      console.warn('IndexedDB unavailable during sync:',error);
+    }
+
+    const merged=mergeUsers(indexedUsers,fallbackUsers);
+    if(!merged.length) await ensureFallbackUsers();
+    const finalUsers=merged.length?merged:readFallbackUsers();
+    writeFallbackUsers(finalUsers);
+
+    for(const user of finalUsers){
+      try{ await putUser(user); }catch(error){ console.warn('Could not sync user:',user.email,error); }
+    }
+
+    await renderUsers();
+    showUserMsg(`✅ تمت المزامنة بنجاح: ${finalUsers.length} حساب. تم تحديث IndexedDB وLocalStorage.`,`success`);
+  }catch(error){
+    console.error('Users sync failed:',error);
+    showUserMsg('❌ تعذرت مزامنة الحسابات. جرّب إعادة فتح الصفحة أو تشغيلها عبر خادم محلي.','error');
+  }finally{
+    if(button){button.disabled=false;button.textContent='🔄 تحديث ومزامنة الحسابات';}
+  }
 }
 async function saveUserFromForm(e){
   e.preventDefault();
