@@ -643,6 +643,8 @@
           <option value="user_update">تعديل مستخدم</option>
           <option value="user_delete">حذف مستخدم</option>
           <option value="google_login">دخول Google</option>
+          <option value="force_logout">إخراج مستخدم</option>
+          <option value="user_reactivate">إعادة تفعيل مستخدم</option>
         </select>
         <button class="btn btn-sm btn-warning" onclick="exportAuditLogs()">⬇️ تصدير CSV</button>
       </div>
@@ -3968,6 +3970,8 @@ let authDbPromise = null;
 const AUDIT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 const AUDIT_CLEANUP_KEY = 'govDashboard_auditCleanupAt';
 const AUDIT_REVISION_KEY = 'govDashboard_auditRevision';
+const SESSION_REVISION_KEY = 'govDashboard_sessionRevision';
+let sessionGuardTimer = null;
 
 function notifyAuditLogChanged(){
   window.dispatchEvent(new CustomEvent('audit-log-changed'));
@@ -3981,7 +3985,47 @@ window.addEventListener('audit-log-changed', () => {
 
 window.addEventListener('storage', e => {
   if(e.key === AUDIT_REVISION_KEY && currentUser?.role === 'admin') renderAuditLogs();
+  if(e.key === SESSION_REVISION_KEY && currentUser) checkCurrentSession();
 });
+
+function startSessionGuard(){
+  if(sessionGuardTimer) return;
+  sessionGuardTimer=setInterval(checkCurrentSession,10000);
+  checkCurrentSession();
+}
+
+function stopSessionGuard(){
+  if(sessionGuardTimer){ clearInterval(sessionGuardTimer); sessionGuardTimer=null; }
+}
+
+async function getUserById(id){
+  const db=await openAuthDB();
+  return new Promise((resolve,reject)=>{
+    const req=db.transaction(USERS_STORE,'readonly').objectStore(USERS_STORE).get(id);
+    req.onsuccess=()=>resolve(req.result||null);
+    req.onerror=()=>reject(req.error);
+  });
+}
+
+async function checkCurrentSession(){
+  if(!currentUser) return true;
+  try{
+    const fresh=await getUserById(currentUser.id);
+    if(!fresh || fresh.active===false){
+      stopSessionGuard();
+      alert('تم إخراج هذا المستخدم وتعطيل حسابه من قبل المدير.');
+      localStorage.removeItem(SESSION_KEY);
+      currentUser=null;
+      location.reload();
+      return false;
+    }
+    currentUser=fresh;
+    return true;
+  }catch(error){
+    console.warn('Session status check failed:',error);
+    return true;
+  }
+}
 
 function openAuthDB(){
   if(authDbPromise) return authDbPromise;
@@ -4269,6 +4313,7 @@ function showAdminPanel(){
   document.getElementById('adminPanel').style.display='block';
   document.getElementById('adminCurrentUser').textContent=`👤 ${currentUser?.name||'المدير'} — ${roleLabel(currentUser?.role)}`;
   loadGoogleClientIdIntoForm();
+  startSessionGuard();
   renderUsers();
   cleanupAuditLogsWeekly().then(()=>renderAuditLogs());
 }
@@ -4278,6 +4323,7 @@ function enterIndicatorsFromAdmin(){
   document.getElementById('adminPanel').style.display='none';
   document.body.classList.remove('locked');
   applyRoleUI();
+  startSessionGuard();
   updateLastUpdatedDisplay();
   setTimeout(()=>autoLoadOnStartup(),200);
   setTimeout(()=>initMapOnDemand(),700);
@@ -4293,6 +4339,7 @@ function enterDashboard(){
   document.body.classList.remove('locked');
   document.getElementById('passwordOverlay').style.display='none';
   applyRoleUI();
+  startSessionGuard();
   try{
     localStorage.setItem(SESSION_KEY,JSON.stringify({
       userId:currentUser?.id, role:currentUser?.role, email:currentUser?.email, loginTime:new Date().toISOString()
@@ -4320,6 +4367,7 @@ async function restoreSession(){
     document.body.classList.remove('locked');
     document.getElementById('passwordOverlay').style.display='none';
     applyRoleUI();
+    startSessionGuard();
     return true;
   }catch(e){ console.warn('Session restore failed',e); return false; }
 }
@@ -4346,6 +4394,9 @@ async function renderUsers(){
       <td>${u.lastLogin?formatDate(u.lastLogin):'—'}</td>
       <td>
         <button class="btn btn-sm btn-primary" onclick="editUser('${u.id}')">تعديل</button>
+        ${u.active===false
+          ? `<button class="btn btn-sm btn-primary" onclick="reactivateUser('${u.id}')">تفعيل</button>`
+          : `<button class="btn btn-sm btn-warning" onclick="forceLogoutUser('${u.id}')">إخراج المستخدم</button>`}
         ${canDelete?`<button class="btn btn-sm btn-danger" onclick="removeUser('${u.id}')">حذف</button>`:''}
       </td>
     </tr>`;
@@ -4405,6 +4456,35 @@ async function saveUserFromForm(e){
   }catch(err){ console.error(err); showUserMsg('❌ تعذر حفظ المستخدم.','error'); }
   return false;
 }
+async function forceLogoutUser(id){
+  if(!currentUser || currentUser.role!=='admin') return;
+  if(id===currentUser.id) return showUserMsg('لا يمكن للمدير إخراج نفسه من الجلسة الحالية.','error');
+  const user=await getUserById(id);
+  if(!user) return;
+  if(!confirm(`هل تريد إخراج المستخدم ${user.name} وتعطيل حسابه؟`)) return;
+  user.active=false;
+  user.disabledAt=new Date().toISOString();
+  user.disabledBy=currentUser.id;
+  await putUser(user);
+  await addAudit('force_logout',currentUser,`إخراج وتعطيل المستخدم ${user.email}`);
+  try{ localStorage.setItem(SESSION_REVISION_KEY,String(Date.now())); }catch(e){}
+  await renderUsers();
+  showUserMsg(`✅ تم إخراج المستخدم ${user.name} وتعطيل حسابه. سيُغلق عند التحقق الدوري التالي.`,`success`);
+}
+
+async function reactivateUser(id){
+  if(!currentUser || currentUser.role!=='admin') return;
+  const user=await getUserById(id);
+  if(!user) return;
+  user.active=true;
+  delete user.disabledAt;
+  delete user.disabledBy;
+  await putUser(user);
+  await addAudit('user_reactivate',currentUser,`إعادة تفعيل المستخدم ${user.email}`);
+  await renderUsers();
+  showUserMsg(`✅ تم تفعيل المستخدم ${user.name}.`,`success`);
+}
+
 async function removeUser(id){
   if(!confirm('هل تريد حذف هذا المستخدم؟')) return;
   const users=await getAllUsers(); const u=users.find(x=>x.id===id); if(!u) return;
