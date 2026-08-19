@@ -2114,11 +2114,11 @@ function avgStatic(field){
 // لأن الملف يحتوي على نسبة بطالة الذكور فقط، ولا يحتوي على قوة العمل/المتعطلين الذكور.
 // لذلك لا نعرض متوسط المحافظات كأنه معدل سورية، حتى لا يظهر رقم مضلل.
 function maleUnemploymentAggregate(){
-  const hasMaleLaborForce = parsedData.some(d => d.male_labor_force != null && !isNaN(parseFloat(d.male_labor_force)));
-  const hasMaleUnemployed = parsedData.some(d => d.male_unemployed != null && !isNaN(parseFloat(d.male_unemployed)));
+  const hasMaleLaborForce = ALL_DATA.some(d => d.male_labor_force != null && !isNaN(parseFloat(d.male_labor_force)));
+  const hasMaleUnemployed = ALL_DATA.some(d => d.male_unemployed != null && !isNaN(parseFloat(d.male_unemployed)));
   if(hasMaleLaborForce && hasMaleUnemployed){
-    const lf = parsedData.reduce((s,d) => s + (parseFloat(d.male_labor_force)||0), 0);
-    const un = parsedData.reduce((s,d) => s + (parseFloat(d.male_unemployed)||0), 0);
+    const lf = ALL_DATA.reduce((s,d) => s + (parseFloat(d.male_labor_force)||0), 0);
+    const un = ALL_DATA.reduce((s,d) => s + (parseFloat(d.male_unemployed)||0), 0);
     return lf > 0 ? (un / lf * 100).toFixed(1) + '%' : 'غير متاح';
   }
   return 'غير متاح';
