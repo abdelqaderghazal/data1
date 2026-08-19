@@ -536,6 +536,28 @@
   .btn-sync-users{background:#e0f5f5;color:var(--ink);border:1px solid var(--line);}
   .btn-sync-users:hover{background:#c8edf0;border-color:var(--brass);}
   .btn-sync-users:disabled{opacity:.65;cursor:wait;}
+  /* ===== MODERN CHART VISUAL SYSTEM ===== */
+  :root{
+    --chart-blue:#2563eb;--chart-cyan:#06b6d4;--chart-teal:#14b8a6;--chart-purple:#8b5cf6;
+    --chart-ink:#0f172a;--chart-muted:#64748b;--chart-grid:rgba(100,116,139,.14);
+  }
+  .chart-wrap,.analytics-card .chart-wrap,.modern-chart-card{
+    position:relative;background:linear-gradient(145deg,#ffffff 0%,#f8fbff 100%);
+    border:1px solid rgba(148,163,184,.22);border-radius:18px;
+    box-shadow:0 12px 30px rgba(15,23,42,.06);overflow:hidden;
+  }
+  .chart-wrap{padding:18px 18px 16px;}
+  .chart-wrap::before,.modern-chart-card::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,var(--chart-blue),var(--chart-cyan),var(--chart-teal));opacity:.9;}
+  .chart-wrap canvas{filter:drop-shadow(0 5px 10px rgba(37,99,235,.05));}
+  .analytics-card{background:rgba(255,255,255,.88);border:1px solid rgba(148,163,184,.2);border-radius:18px;padding:16px;box-shadow:0 10px 28px rgba(15,23,42,.05);}
+  .analytics-card h3{color:var(--chart-ink);font-size:16px;margin:0 0 12px;font-weight:800;}
+  .modern-chart-grid{gap:18px;}
+  .modern-chart-card{padding:18px;transition:transform .2s ease,box-shadow .2s ease;}
+  .modern-chart-card:hover{transform:translateY(-3px);box-shadow:0 18px 38px rgba(37,99,235,.12);}
+  .modern-chart-title h3{color:var(--chart-ink);font-weight:800;}
+  .modern-chart-title small{color:var(--chart-muted);}
+  .modern-chart-canvas{min-height:280px;}
+  @media(max-width:640px){.chart-wrap{padding:14px 10px;}.modern-chart-card{padding:14px;}.modern-chart-canvas{min-height:240px;}}
 </style>
 <base target="_blank">
 
@@ -1440,7 +1462,7 @@ function sum(field, arr, fallback){
 }
 
 const fmt = n => n.toLocaleString('en-US');
-const PALETTE = ['#123C44','#B08D57','#4F7A63','#B5533C','#6E8FA3','#8C7A5B','#3f5a5f','#C99A62','#5f8a70','#a15a4a','#2E6B7E','#8B6914','#5D4E37','#4A6741'];
+const PALETTE = ['#2563EB','#06B6D4','#14B8A6','#8B5CF6','#F59E0B','#F43F5E','#10B981','#6366F1','#0EA5E9','#84CC16','#EC4899','#64748B','#0F766E','#7C3AED'];
 
 // =====================
 // CSV PARSING - Auto detect delimiter
@@ -1817,8 +1839,8 @@ function barChart(canvasId, dataField){
         backgroundColor: labels.map((_,i) => PALETTE[i % PALETTE.length]),
         borderColor: 'rgba(255,255,255,.7)',
         borderWidth: 1,
-        hoverBackgroundColor: '#0D8BA8',
-        borderRadius: 10,
+        hoverBackgroundColor: '#06B6D4',
+        borderRadius: 8,
         maxBarThickness: 30,
         barPercentage: 0.68,
         categoryPercentage: 0.78
@@ -1832,7 +1854,7 @@ function barChart(canvasId, dataField){
       }, 
       scales: { 
         x: { 
-          grid: { color: '#e2d8c2' }, 
+          grid: { color: 'rgba(100,116,139,.14)', drawBorder: false }, 
           ticks: { font: { family: 'IBM Plex Mono', size: 11 } },
           beginAtZero: true
         }, 
@@ -2044,7 +2066,7 @@ function renderSingleGovChart(canvasId, arr, categoryField){
         label: govName,
         data, 
         backgroundColor: labels.map((_,i) => PALETTE[i % PALETTE.length]), 
-        borderRadius: 6, 
+        borderRadius: 8, 
         maxBarThickness: 32,
         barPercentage: 0.65
       }] 
@@ -2067,7 +2089,7 @@ function renderSingleGovChart(canvasId, arr, categoryField){
       }, 
       scales: { 
         x: { 
-          grid: { color: '#e2d8c2' }, 
+          grid: { color: 'rgba(100,116,139,.14)', drawBorder: false }, 
           ticks: { 
             font: { family: 'IBM Plex Mono', size: 11 },
             callback: function(value) {
@@ -6218,6 +6240,23 @@ document.addEventListener('keydown', function(e){
   setTheme(saved || (prefersDark?'dark':'light'),false);
   if(button)button.addEventListener('click',()=>setTheme(root.dataset.theme==='dark'?'light':'dark'));
 })();
+</script>
+<script>
+/* Global Chart.js polish: typography, animation, RTL-friendly interaction */
+if (typeof Chart !== 'undefined') {
+  Chart.defaults.font.family = 'Cairo, sans-serif';
+  Chart.defaults.color = '#64748b';
+  Chart.defaults.animation.duration = 850;
+  Chart.defaults.animation.easing = 'easeOutQuart';
+  Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15,23,42,.94)';
+  Chart.defaults.plugins.tooltip.titleColor = '#fff';
+  Chart.defaults.plugins.tooltip.bodyColor = '#e2e8f0';
+  Chart.defaults.plugins.tooltip.borderColor = 'rgba(255,255,255,.14)';
+  Chart.defaults.plugins.tooltip.borderWidth = 1;
+  Chart.defaults.plugins.tooltip.padding = 12;
+  Chart.defaults.plugins.tooltip.cornerRadius = 12;
+  Chart.defaults.plugins.tooltip.displayColors = false;
+}
 </script>
 </body>
 </html>
