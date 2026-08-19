@@ -564,6 +564,20 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+/* ===== ALL-TABS CHART CONSISTENCY OVERRIDE ===== */
+.chart-wrap,.analytics-card .chart-wrap,.profile-card,.strat-axis-card,.strat-overall-card,.comparison-card,.insight-card,.monthly-report-card{background:linear-gradient(145deg,#fff 0%,#f7fbff 100%);border:1px solid rgba(148,163,184,.24);box-shadow:0 10px 26px rgba(15,23,42,.055);}
+.chart-wrap,.profile-card,.strat-axis-card,.comparison-card,.insight-card,.monthly-report-card{border-radius:18px;}
+.profile-card,.strat-axis-card,.comparison-card,.insight-card,.monthly-report-card{transition:transform .2s ease,box-shadow .2s ease;}
+.profile-card:hover,.strat-axis-card:hover,.comparison-card:hover,.insight-card:hover,.monthly-report-card:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(37,99,235,.11);}
+.chart-wrap,.profile-card{position:relative;overflow:hidden;}
+.chart-wrap::before,.profile-card::before,.strat-axis-card::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,#2563eb,#06b6d4,#14b8a6);opacity:.9;}
+.chart-wrap canvas,.profile-card canvas,.strat-axis-card canvas{filter:drop-shadow(0 5px 10px rgba(37,99,235,.045));}
+.profile-card h3,.strat-axis-card h3,.comparison-card h3,.insight-card h3,.monthly-report-card h3{color:#0f172a;font-weight:800;}
+.gauge-wrap{background:linear-gradient(145deg,#fff,#eff6ff);border:1px solid rgba(37,99,235,.13);border-radius:18px;padding:10px;box-shadow:0 8px 22px rgba(37,99,235,.08);}
+.modern-chart-card,.modern-visuals-section{border-color:rgba(148,163,184,.24);}
+@media(max-width:760px){.chart-wrap,.profile-card,.strat-axis-card,.comparison-card,.insight-card,.monthly-report-card{border-radius:14px;}.chart-wrap{padding:12px 10px;}}
+</style>
 </head>
 <body class="locked">
 
@@ -2500,15 +2514,15 @@ function renderModernVisuals(){
   const gridColor = 'rgba(128,160,172,.18)';
   const totalMales = sum('males', arr), totalFemales = sum('females', arr);
   const genderCanvas = document.getElementById('modernGenderChart');
-  if(genderCanvas) charts.modernGenderChart = new Chart(genderCanvas.getContext('2d'), {type:'doughnut',data:{labels:['الذكور','الإناث'],datasets:[{data:[totalMales,totalFemales],backgroundColor:['#0B5A7A','#0D8BA8'],borderColor:'transparent',hoverOffset:12,spacing:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{position:'bottom',rtl:true,labels:{font:{family:'Cairo',weight:'600'},color:chartInk,usePointStyle:true,padding:18}},tooltip:{rtl:true,padding:12,cornerRadius:10,displayColors:false,callbacks:{label:ctx=>` ${analyticsNumber(ctx.raw)}`}}},animation:{duration:1000,easing:'easeOutQuart'}}});
+  if(genderCanvas) charts.modernGenderChart = new Chart(genderCanvas.getContext('2d'), {type:'doughnut',data:{labels:['الذكور','الإناث'],datasets:[{data:[totalMales,totalFemales],backgroundColor:['#2563EB','#06B6D4'],borderColor:'transparent',hoverOffset:12,spacing:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{position:'bottom',rtl:true,labels:{font:{family:'Cairo',weight:'600'},color:chartInk,usePointStyle:true,padding:18}},tooltip:{rtl:true,padding:12,cornerRadius:10,displayColors:false,callbacks:{label:ctx=>` ${analyticsNumber(ctx.raw)}`}}},animation:{duration:1000,easing:'easeOutQuart'}}});
   const sectorDefs=[['السكان','population'],['المشتغلون','employed'],['السلال','food_baskets'],['فرص العمل','platform_jobs'],['المخيمات','camps_count']];
   const sectorData=sectorDefs.map(([,key])=>sum(key,arr)); const sectorCanvas=document.getElementById('modernSectorChart');
-  if(sectorCanvas) charts.modernSectorChart=new Chart(sectorCanvas.getContext('2d'),{type:'polarArea',data:{labels:sectorDefs.map(([label])=>label),datasets:[{data:sectorData,backgroundColor:['rgba(11,90,122,.82)','rgba(13,139,168,.78)','rgba(91,163,192,.78)','rgba(79,122,99,.78)','rgba(176,141,87,.78)'],borderColor:'rgba(255,255,255,.72)',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{grid:{color:gridColor},angleLines:{color:gridColor},ticks:{display:false},pointLabels:{font:{family:'Cairo',size:11,weight:'600'},color:chartSoft}}},plugins:{legend:{position:'bottom',rtl:true,labels:{font:{family:'Cairo',size:11},color:chartInk,usePointStyle:true,padding:10}},tooltip:{rtl:true,padding:12,cornerRadius:10,displayColors:false,callbacks:{label:ctx=>` ${analyticsNumber(ctx.raw)}`}}},animation:{duration:1000,easing:'easeOutQuart'}}});
+  if(sectorCanvas) charts.modernSectorChart=new Chart(sectorCanvas.getContext('2d'),{type:'polarArea',data:{labels:sectorDefs.map(([label])=>label),datasets:[{data:sectorData,backgroundColor:['rgba(37,99,235,.86)','rgba(6,182,212,.84)','rgba(20,184,166,.84)','rgba(139,92,246,.84)','rgba(245,158,11,.84)'],borderColor:'rgba(255,255,255,.72)',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{grid:{color:gridColor},angleLines:{color:gridColor},ticks:{display:false},pointLabels:{font:{family:'Cairo',size:11,weight:'600'},color:chartSoft}}},plugins:{legend:{position:'bottom',rtl:true,labels:{font:{family:'Cairo',size:11},color:chartInk,usePointStyle:true,padding:10}},tooltip:{rtl:true,padding:12,cornerRadius:10,displayColors:false,callbacks:{label:ctx=>` ${analyticsNumber(ctx.raw)}`}}},animation:{duration:1000,easing:'easeOutQuart'}}});
   const radarDefs=[['مشاركة الذكور','male_participation'],['مشاركة الإناث','female_participation'],['الأمن الغذائي','food_secure_pct'],['التغطية التأمينية','insurance_coverage'],['التمكين الاقتصادي','female_breadwinners']];
   const radarData=radarDefs.map(([,key])=>Math.min(100,Math.max(0,parseFloat(avg(key,arr))||0))); const radarCanvas=document.getElementById('modernRadarChart');
-  if(radarCanvas) charts.modernRadarChart=new Chart(radarCanvas.getContext('2d'),{type:'radar',data:{labels:radarDefs.map(([label])=>label),datasets:[{label:'المؤشر الحالي',data:radarData,backgroundColor:'rgba(13,139,168,.20)',borderColor:'#0D8BA8',pointBackgroundColor:'#0B5A7A',pointBorderColor:'#fff',pointHoverRadius:7,borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{beginAtZero:true,max:100,ticks:{display:false},grid:{color:gridColor},angleLines:{color:gridColor},pointLabels:{font:{family:'Cairo',size:11,weight:'600'},color:chartInk}}},plugins:{legend:{display:false},tooltip:{rtl:true,padding:12,cornerRadius:10,callbacks:{label:ctx=>` ${Number(ctx.raw||0).toFixed(1)}%`}}},animation:{duration:1000,easing:'easeOutQuart'}}});
+  if(radarCanvas) charts.modernRadarChart=new Chart(radarCanvas.getContext('2d'),{type:'radar',data:{labels:radarDefs.map(([label])=>label),datasets:[{label:'المؤشر الحالي',data:radarData,backgroundColor:'rgba(37,99,235,.18)',borderColor:'#2563EB',pointBackgroundColor:'#06B6D4',pointBorderColor:'#fff',pointHoverRadius:7,borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{beginAtZero:true,max:100,ticks:{display:false},grid:{color:gridColor},angleLines:{color:gridColor},pointLabels:{font:{family:'Cairo',size:11,weight:'600'},color:chartInk}}},plugins:{legend:{display:false},tooltip:{rtl:true,padding:12,cornerRadius:10,callbacks:{label:ctx=>` ${Number(ctx.raw||0).toFixed(1)}%`}}},animation:{duration:1000,easing:'easeOutQuart'}}});
   const grouped={}; arr.forEach(d=>{grouped[d.gov]=(grouped[d.gov]||0)+(Number(d.population)||0);}); const govRows=Object.entries(grouped).sort((a,b)=>b[1]-a[1]).slice(0,8); const govCanvas=document.getElementById('modernGovernorChart');
-  if(govCanvas) charts.modernGovernorChart=new Chart(govCanvas.getContext('2d'),{type:'bar',data:{labels:govRows.map(x=>x[0]),datasets:[{label:'عدد السكان',data:govRows.map(x=>x[1]),backgroundColor:govRows.map((_,i)=>i===0?'#0B5A7A':'#5BA3C0'),borderRadius:9,borderSkipped:false,barThickness:22}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{rtl:true,padding:12,cornerRadius:10,displayColors:false,callbacks:{label:ctx=>` ${analyticsNumber(ctx.raw)} نسمة`}}},scales:{x:{beginAtZero:true,grid:{color:gridColor},ticks:{callback:v=>analyticsNumber(v),color:chartSoft}},y:{grid:{display:false},ticks:{font:{family:'Cairo',weight:'600'},color:chartInk}}},animation:{duration:900,easing:'easeOutQuart'}}});
+  if(govCanvas) charts.modernGovernorChart=new Chart(govCanvas.getContext('2d'),{type:'bar',data:{labels:govRows.map(x=>x[0]),datasets:[{label:'عدد السكان',data:govRows.map(x=>x[1]),backgroundColor:govRows.map((_,i)=>i===0?'#2563EB':'#7DD3FC'),borderRadius:9,borderSkipped:false,barThickness:22}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{rtl:true,padding:12,cornerRadius:10,displayColors:false,callbacks:{label:ctx=>` ${analyticsNumber(ctx.raw)} نسمة`}}},scales:{x:{beginAtZero:true,grid:{color:gridColor},ticks:{callback:v=>analyticsNumber(v),color:chartSoft}},y:{grid:{display:false},ticks:{font:{family:'Cairo',weight:'600'},color:chartInk}}},animation:{duration:900,easing:'easeOutQuart'}}});
 }
 
 function renderAll(){
@@ -2652,7 +2666,7 @@ function renderAdvancedAnalytics(){
   });
   charts.analyticsTrend = new Chart(trendCanvas.getContext('2d'), {
     type:'line',
-    data:{labels:months, datasets:[{label:meta.label, data:values, borderColor:'#0B5A7A', backgroundColor:'rgba(13,139,168,.16)', fill:true, tension:.42, borderWidth:3, pointRadius:4, pointHoverRadius:7, pointBorderWidth:2, pointBorderColor:'#fff', pointBackgroundColor:'#0D8BA8'}]},
+    data:{labels:months, datasets:[{label:meta.label, data:values, borderColor:'#2563EB', backgroundColor:'rgba(37,99,235,.14)', fill:true, tension:.42, borderWidth:3, pointRadius:4, pointHoverRadius:7, pointBorderWidth:2, pointBorderColor:'#fff', pointBackgroundColor:'#06B6D4'}]},
     options:{responsive:true, maintainAspectRatio:false, animation:{duration:1000,easing:'easeOutQuart'},interaction:{intersect:false,mode:'index'},plugins:{legend:{display:false},tooltip:{rtl:true,padding:12,cornerRadius:10,displayColors:false,callbacks:{label:ctx=>`${analyticsNumber(ctx.raw)} ${meta.unit}`}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(128,160,172,.16)',drawBorder:false},ticks:{callback:v=>analyticsNumber(v)}},x:{grid:{display:false},ticks:{font:{family:'Cairo',weight:'600'}}}}}
   });
 }
@@ -5972,12 +5986,12 @@ function renderRadarChart(gov, scores){
       datasets: [{
         label: gov,
         data: data,
-        backgroundColor: 'rgba(11, 90, 122, 0.2)',
-        borderColor: '#0B5A7A',
-        pointBackgroundColor: '#0D8BA8',
+        backgroundColor: 'rgba(37, 99, 235, 0.18)',
+        borderColor: '#2563EB',
+        pointBackgroundColor:'#06B6D4',
         pointBorderColor: '#fff',
         pointHoverBackgroundColor: '#fff',
-        pointHoverBorderColor: '#0B5A7A',
+        pointHoverBorderColor: '#2563EB',
         borderWidth: 2,
         pointRadius: 4,
         pointHoverRadius: 6
