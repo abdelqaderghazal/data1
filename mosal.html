@@ -2110,6 +2110,20 @@ function avgStatic(field){
   return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1);
 }
 
+// معدل بطالة الذكور على مستوى التجميع لا يمكن حسابه إحصائياً من البيانات الحالية
+// لأن الملف يحتوي على نسبة بطالة الذكور فقط، ولا يحتوي على قوة العمل/المتعطلين الذكور.
+// لذلك لا نعرض متوسط المحافظات كأنه معدل سورية، حتى لا يظهر رقم مضلل.
+function maleUnemploymentAggregate(){
+  const hasMaleLaborForce = parsedData.some(d => d.male_labor_force != null && !isNaN(parseFloat(d.male_labor_force)));
+  const hasMaleUnemployed = parsedData.some(d => d.male_unemployed != null && !isNaN(parseFloat(d.male_unemployed)));
+  if(hasMaleLaborForce && hasMaleUnemployed){
+    const lf = parsedData.reduce((s,d) => s + (parseFloat(d.male_labor_force)||0), 0);
+    const un = parsedData.reduce((s,d) => s + (parseFloat(d.male_unemployed)||0), 0);
+    return lf > 0 ? (un / lf * 100).toFixed(1) + '%' : 'غير متاح';
+  }
+  return 'غير متاح';
+}
+
 function renderCategory(cat){
   const arr = filtered();
 
@@ -2269,7 +2283,7 @@ function renderCategory(cat){
       {em:'💼',n:sum('employed',arr),t:'المشتغلون'},
       {em:'🚫',n:sum('unemployed',arr),t:'المتعطلون'},
       {em:'📉',n:avg('unemployment_rate',arr)+'%',t:'معدل البطالة العام',raw:true},
-      {em:'👨‍💼',n:avg('male_unemployment',arr)+'%',t:'بطالة الذكور',raw:true},
+      {em:'👨‍💼',n:maleUnemploymentAggregate(),t:'بطالة الذكور',raw:true},
       {em:'👩‍💼',n:avg('female_unemployment',arr)+'%',t:'بطالة الإناث',raw:true},
       {em:'🧑‍🎓',n:avg('youth_unemployment',arr)+'%',t:'بطالة الشباب',raw:true},
       {em:'♂️',n:avg('male_participation',arr)+'%',t:'مشاركة الذكور اقتصادياً',raw:true},
@@ -2315,8 +2329,8 @@ function renderCategory(cat){
       {em:'🍞',n:sum('food_baskets',arr),t:'سلل غذائية موزّعة'},
       {em:'💊',n:sum('in_kind_aid',arr),t:'مساعدات عينية (أدوية/عمليات)'},
       {em:'💵',n:sum('cash_assistance',arr),t:'إعانات مالية'},
-      {em:'🏠',n:sum('unhcr_centers',arr),t:'المراكز المجتمعية (UNHCR)'},
-      {em:'🛡️',n:sum('unfpa_safe_spaces',arr),t:'مساحات آمنة للنساء (UNFPA)'}
+      {em:'🏠',n:sum('unhcr_centers',arr),t:'المراكز المجتمعية'},
+      {em:'🛡️',n:sum('unfpa_safe_spaces',arr),t:'مساحات آمنة للنساء'}
     ]);
     const food = sum('food_baskets', arr);
     const inkind = sum('in_kind_aid', arr);
@@ -2367,7 +2381,7 @@ function renderCategory(cat){
       {em:'🧑',n:sumStatic('pop_15_60'),t:'السكان 15-60 سنة'},
       {em:'👴',n:sumStatic('pop_over60'),t:'السكان 60+ سنة'},
       {em:'📉',n:avgStatic('unemployment_rate')+'%',t:'معدل البطالة العام (متوسط)'},
-      {em:'📉',n:avgStatic('male_unemployment')+'%',t:'معدل بطالة الذكور',raw:true},
+      {em:'📉',n:maleUnemploymentAggregate(),t:'معدل بطالة الذكور',raw:true},
       {em:'📉',n:avgStatic('female_unemployment')+'%',t:'معدل بطالة الإناث',raw:true},
       {em:'📉',n:avgStatic('youth_unemployment')+'%',t:'معدل بطالة الشباب (متوسط)'},
       {em:'♂️',n:avgStatic('male_participation')+'%',t:'مشاركة الذكور اقتصادياً',raw:true},
